@@ -1,0 +1,98 @@
+# ==========================================
+# Elementos Globales / Sistema Operativo
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ==========================================
+# Node.js (Común para Express y React Native)
+# ==========================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+lerna-debug.log*
+
+# Archivos de entorno (¡Contienen claves secretas!)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# Archivos de TypeScript compilados
+# (Descomenta si compilas TS a JS en una carpeta dist/build)
+# dist/
+# build/
+
+# ==========================================
+# React Native (Frontend)
+# ==========================================
+
+# Metro Bundler y caché
+.expo/
+.metro/
+.eas/
+*.metro.js
+metro.config.js.cache
+
+# Android específico
+android/app/build/
+android/.gradle/
+android/local.properties
+android/captures/
+*.apk
+*.aar
+*.keystore
+!android/app/debug.keystore
+
+# iOS específico
+ios/build/
+ios/DerivedData/
+ios/Pods/
+ios/.xcode.env.local
+ios/*.xcworkspace/xcuserdata/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+!default.pbxuser
+!default.mode1v3
+!default.mode2v3
+!default.perspectivev3
+
+# Archivos de configuración de herramientas móviles
+.watchmanconfig
+.flipper/
+
+# ==========================================
+# Express.js (Backend)
+# ==========================================
+# Logs del servidor
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Cobertura de pruebas (Jest/Mocha)
+coverage/
+.nyc_output/
+
+# Archivos de base de datos local (ej. SQLite)
+*.db
+*.sqlite
+
+# Carpetas de subidas de archivos de usuarios (ej. si usas multer)
+# backend/uploads/

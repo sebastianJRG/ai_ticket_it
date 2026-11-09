@@ -1,0 +1,136 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		"name": "ai_ticket_it_v2 Backend API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Usuarios",
+			"item": [
+				{
+					"name": "Crear usuario",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"{{nombre}}\",\n  \"apellido\": \"{{apellido}}\",\n  \"nombreUsuario\": \"{{username}}\",\n  \"contrasenia\": \"{{password}}\",\n  \"rol\": \"{{rol}}\"\n}"
+						},
+						"url": {
+							"raw": "{{\n  base_url\n}}/usuarios",
+							"host": ["{{\n  base_url\n}}"],
+							"path": ["usuarios"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Autenticación",
+			"item": [
+				{
+					"name": "Iniciar sesión",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombreUsuario\": \"{{nombreUsuario}}\",\n  \"contrasenia\": \"{{password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{\n  base_url\n}}/login",
+							"host": ["{{\n  base_url\n}}"],
+							"path": ["login"]
+						}
+					}
+				},
+				{
+					"name": "Renovar token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+						},
+						"url": {
+							"raw": "{{\n  base_url\n}}/refresh",
+							"host": ["{{\n  base_url\n}}"],
+							"path": ["refresh"]
+						}
+					}
+				},
+				{
+					"name": "Cerrar sesión",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+						},
+						"url": {
+							"raw": "{{\n  base_url\n}}/logout",
+							"host": ["{{\n  base_url\n}}"],
+							"path": ["logout"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000/api",
+			"type": "default"
+		},
+		{
+			"key": "nombre",
+			"value": "Ana Prueba",
+			"type": "default"
+		},
+		{
+			"key": "apellido",
+			"value": "Muñoz",
+			"type": "default"
+		},
+		{
+			"key": "username",
+			"value": "ana.munoz",
+			"type": "default"
+		},
+		{
+			"key": "password",
+			"value": "Clave123!",
+			"type": "default"
+		},
+		{
+			"key": "rol",
+			"value": "COMPRADOR",
+			"type": "default"
+		}
+	]
+}
