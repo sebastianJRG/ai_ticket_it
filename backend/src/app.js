@@ -20,6 +20,8 @@ import LogoutRoutes from './routes/logoutRoutes.js';
 import EventoRepository from './repositories/eventoRepository.js';
 import CategoriaRepository from './repositories/categoriaRepository.js';
 import TipoEntradaRepository from './repositories/tipoEntradaRepository.js';
+import CategoriaService from './services/categoriaService.js';
+import CategoriasRoutes from './routes/categoriasRoutes.js';
 
 /**
  * Crea y configura la aplicación Express para el backend.
@@ -55,6 +57,7 @@ export function createApp(repository) {
     usuarioRepository,
     tipoEntradaRepository
   );
+  const categoriaService = new CategoriaService(categoriaRepository);
 
   // Controladores
   const usuarioController = new UsuariosController(usuarioService);
@@ -67,6 +70,9 @@ export function createApp(repository) {
   app.post('/api/eventos',
     authMiddleware,
     eventoController.crear.bind(eventoController));
+
+  // Rutas de categorías - requiere autenticación y rol ORGANIZADOR
+  CategoriasRoutes.init(app, categoriaService, authMiddleware);
 
   // Rutas de eventos - requiere autenticación y rol ORGANIZADOR
   EventoRoutes.init(app, eventoService);

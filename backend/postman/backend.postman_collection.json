@@ -1,136 +1,299 @@
 {
-	"info": {
-		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-		"name": "ai_ticket_it_v2 Backend API",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"item": [
-		{
-			"name": "Usuarios",
-			"item": [
-				{
-					"name": "Crear usuario",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"nombre\": \"{{nombre}}\",\n  \"apellido\": \"{{apellido}}\",\n  \"nombreUsuario\": \"{{username}}\",\n  \"contrasenia\": \"{{password}}\",\n  \"rol\": \"{{rol}}\"\n}"
-						},
-						"url": {
-							"raw": "{{\n  base_url\n}}/usuarios",
-							"host": ["{{\n  base_url\n}}"],
-							"path": ["usuarios"]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Autenticación",
-			"item": [
-				{
-					"name": "Iniciar sesión",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"nombreUsuario\": \"{{nombreUsuario}}\",\n  \"contrasenia\": \"{{password}}\"\n}"
-						},
-						"url": {
-							"raw": "{{\n  base_url\n}}/login",
-							"host": ["{{\n  base_url\n}}"],
-							"path": ["login"]
-						}
-					}
-				},
-				{
-					"name": "Renovar token",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
-						},
-						"url": {
-							"raw": "{{\n  base_url\n}}/refresh",
-							"host": ["{{\n  base_url\n}}"],
-							"path": ["refresh"]
-						}
-					}
-				},
-				{
-					"name": "Cerrar sesión",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
-						},
-						"url": {
-							"raw": "{{\n  base_url\n}}/logout",
-							"host": ["{{\n  base_url\n}}"],
-							"path": ["logout"]
-						}
-					}
-				}
-			]
-		}
-	],
-	"variable": [
-		{
-			"key": "base_url",
-			"value": "http://localhost:3000/api",
-			"type": "default"
-		},
-		{
-			"key": "nombre",
-			"value": "Ana Prueba",
-			"type": "default"
-		},
-		{
-			"key": "apellido",
-			"value": "Muñoz",
-			"type": "default"
-		},
-		{
-			"key": "username",
-			"value": "ana.munoz",
-			"type": "default"
-		},
-		{
-			"key": "password",
-			"value": "Clave123!",
-			"type": "default"
-		},
-		{
-			"key": "rol",
-			"value": "COMPRADOR",
-			"type": "default"
-		}
-	]
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "ai_ticket_it_v2 Backend API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Crear usuario organizador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\": \"{{nombre}}\",\"apellido\": \"{{apellido}}\",\"nombreUsuario\": \"{{username}}\",\"contrasenia\": \"{{password}}\",\"rol\": \"ORGANIZADOR\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/usuarios",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear usuario comprador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\": \"{{nombre}}\",\"apellido\": \"{{apellido}}\",\"nombreUsuario\": \"{{username}}\",\"contrasenia\": \"{{password}}\",\"rol\": \"COMPRADOR\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/usuarios",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear usuario (rol genérico)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\": \"{{nombre}}\",\"apellido\": \"{{apellido}}\",\"nombreUsuario\": \"{{username}}\",\"contrasenia\": \"{{password}}\",\"rol\": \"{{rol}}\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/usuarios",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "Iniciar sesión",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombreUsuario\": \"{{nombreUsuario}}\",\"contrasenia\": \"{{password}}\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "script": {
+              "exec": "// Extraer tokens del cuerpo de respuesta y guardarlos en variables de entorno\\nconst jsonData = pm.response.json();\\nif (jsonData.accessToken) {\\n  pm.variables.set(\"accessToken\", jsonData.accessToken);\\n}\\nif (jsonData.refreshToken) {\\n  pm.variables.set(\"refreshToken\", jsonData.refreshToken);\\n}\\n// Mostrar tokens en la consola para debugging\\nconsole.log(\"Tokens guardados - accessToken:\", pm.variables.get(\"accessToken\") ? \"OK\" : \"FAIL\", \"refreshToken:\", pm.variables.get(\"refreshToken\") ? \"OK\" : \"FAIL\")",
+              "exposure": "examples"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Renovar token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{refreshToken}}\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "refresh"
+              ]
+            },
+            "script": {
+              "exec": "// Extraer nuevos tokens del cuerpo de respuesta y guardarlos\\nconst jsonData = pm.response.json();\\nif (jsonData.accessToken) {\\n  pm.variables.set(\"accessToken\", jsonData.accessToken);\\n}\\nif (jsonData.refreshToken) {\\n  pm.variables.set(\"refreshToken\", jsonData.refreshToken);\\n}\\n// Mostrar tokens en la consola para debugging\\nconsole.log(\"Tokens renovados - accessToken:\", pm.variables.get(\"accessToken\") ? \"OK\" : \"FAIL\", \"refreshToken:\", pm.variables.get(\"refreshToken\") ? \"OK\" : \"FAIL\")",
+              "exposure": "examples"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cerrar sesión",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{refreshToken}}\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "logout"
+              ]
+            },
+            "script": {
+              "exec": "// Después de cerrar sesión, limpiar los tokens\\npm.variables.set(\"accessToken\", \"\");\\npm.variables.set(\"refreshToken\", \"\");\\nconsole.log(\"Sesión cerrada y tokens limpiados\")\\n// Scripts pre-request para categorías y eventos se añaden automáticamente\\n// if (!\\\"{{nombreCategoria}}\\\".includes(\\\"{{}}\\\")) { pm.variables.set(\\\"nombreCategoria\\\", \\\"Categoria \\' + (pm.environment.get(\\\"USER_ROLE\\\") or \\\"ORGANIZADOR\\\") + \\\'\\') ; }\\n// if (!\\\"{{descripcionCategoria}}\\\".includes(\\\"{{}}\\\")) { pm.variables.set(\\\"descripcionCategoria\\\", \\\"Descripción automática para \\' + (pm.environment.get(\\\"USER_ROLE\\\") or \\\"ORGANIZADOR\\\") + \\\'\\') ; }',
+              "exposure": "examples"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Categorías",
+      "item": [
+        {
+          "name": "Crear categoría",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\": \"{{nombreCategoria}}\",\"descripcion\": \"{{descripcionCategoria}}\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/categorias",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categorias"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Eventos",
+      "item": [
+        {
+          "name": "Crear evento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\": \"{{nombreEvento}}\",\"descripcion\": \"{{descripcionEvento}}\",\"categoriaId\": \"{{categoriaId}}\",\"fecha\": \"{{fechaEvento}}\",\"tiposEntrada\": [{\"nombre\": \"Entrada General\",\"descripcion\": \"Entrada general al evento\",\"precio\": 50,\"cupo\": 100}],\"multimedia\": []}"
+            },
+            "url": {
+              "raw": "{{base_url}}/eventos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "eventos"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "environment"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "environment"
+    },
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api",
+      "type": "default"
+    },
+    {
+      "key": "nombre",
+      "value": "Ana Prueba",
+      "type": "default"
+    },
+    {
+      "key": "apellido",
+      "value": "Muñoz",
+      "type": "default"
+    },
+    {
+      "key": "username",
+      "value": "ana.munoz",
+      "type": "default"
+    },
+    {
+      "key": "password",
+      "value": "Clave123!",
+      "type": "default"
+    },
+    {
+      "key": "rol",
+      "value": "COMPRADOR",
+      "type": "default"
+    }
+  ]
 }
