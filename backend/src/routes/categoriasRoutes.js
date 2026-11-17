@@ -1,22 +1,27 @@
-import CategoriaController from '../controllers/categoriaController.js';
+import { Router } from 'express';
 
 /**
  * Rutas para la gestión de categorías.
- * Todas las rutas requieren autenticación previa y rol ORGANIZADOR.
+ * Las rutas requieren autenticación previa mediante el middleware inyectado.
  */
 export default class CategoriasRoutes {
-  /** Monta el router de categorías en la aplicación Express.
+  /**
+   * Monta el router de categorías en la aplicación Express.
    * @param {import('express').Application} app - Aplicación Express
-   * @param {import('../services/categoriaService.js').default} categoriaService - Servicio de categorías
-   * @param {import('express').NextFunction} [authMiddleware] - Middleware de autenticación JWT (opcional, para compatibilidad)
+   * @param {import('../controllers/categoriaController.js').default} categoriaController - Controlador de categorías
+   * @param {import('express').RequestHandler} authMiddleware - Middleware de autenticación JWT
    * @returns {void}
    */
-  static init(app, categoriaService, authMiddleware) {
-    const categoriaController = new CategoriaController(categoriaService);
+  static init(app, categoriaController, authMiddleware) {
+    const router = Router();
 
     // POST /api/categorias - Crear nueva categoría (solo para organizadores autenticados)
-    app.post('/api/categorias',
+    router.post(
+      '/',
       authMiddleware,
-      categoriaController.crear.bind(categoriaController));
+      categoriaController.crear.bind(categoriaController)
+    );
+
+    app.use('/api/categorias', router);
   }
 }

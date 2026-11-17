@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { aUsuarioPublico } from './usuarioPublico.js';
 
 // 1. Esquema base para los Tipos de Entrada (Reemplaza a CrearTipoEntradaDTO)
 const tipoEntradaSchema = z.object({
@@ -87,3 +88,34 @@ export const crearEventoSchema = z.object({
 export const actualizarEventoSchema = crearEventoSchema
 	.omit({ organizadorId: true, categoriaId: true }) // Evita que se pueda transferir el evento a otro organizador por error
 	.partial();
+
+// 4. Esquema para LISTAR/BUSCAR eventos (query params de GET /api/eventos)
+// Todos los parámetros son opcionales; los vacíos se tratan como ausentes.
+export const listarEventosSchema = z.object({
+	q: z
+		.string({ message: 'El parámetro q debe ser un texto.' })
+		.trim()
+		.optional(),
+	categoriaId: z
+		.string({ message: 'El parámetro categoriaId debe ser un texto.' })
+		.trim()
+		.optional(),
+	sortBy: z
+		.enum(['precio', 'fecha', 'puntaje'], {
+			message: 'sortBy debe ser uno de: precio, fecha, puntaje.'
+		})
+		.optional(),
+	order: z
+		.enum(['asc', 'desc'], { message: 'order debe ser asc o desc.' })
+		.optional()
+});
+
+/**
+ * Convierte un evento de dominio en su representación para respuestas HTTP.
+ * Reemplaza al organizador por su versión pública para no filtrar hashes.
+ * @param {import('../models/evento.js').default} evento
+ * @returns {object} Copia del evento con `organizador` público (o null si no tiene)
+ */
+export function aEventoRespuesta(evento) {
+	return { ...evento, organizador: aUsuarioPublico(evento.organizador) };
+}

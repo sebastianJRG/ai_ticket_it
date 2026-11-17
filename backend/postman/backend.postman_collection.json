@@ -250,6 +250,98 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Listar eventos (sin filtros)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/eventos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "eventos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar eventos (q, categoriaId, sortBy, order)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/eventos?q=rock&categoriaId={{categoriaId}}&sortBy=precio&order=asc",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "eventos"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "rock",
+                  "description": "Texto a buscar en nombre o descripción"
+                },
+                {
+                  "key": "categoriaId",
+                  "value": "{{categoriaId}}",
+                  "description": "Filtra por categoría"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "precio",
+                  "description": "precio | fecha | puntaje"
+                },
+                {
+                  "key": "order",
+                  "value": "asc",
+                  "description": "asc | desc (por defecto: precio asc, fecha asc, puntaje desc)"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Compras",
+      "item": [
+        {
+          "name": "Crear compra (COMPRADOR)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"eventoId\": \"{{eventoId}}\",\"tipoEntradaId\": \"{{tipoEntradaId}}\",\"cantidad\": 2}"
+            },
+            "url": {
+              "raw": "{{base_url}}/compras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "compras"
+              ]
+            },
+            "description": "Requiere iniciar sesión con un usuario COMPRADOR. La compra queda PENDIENTE y reserva cupo. 401 sin token, 403 si no es COMPRADOR, 404 si el evento o tipo de entrada no existen, 409 si no hay cupo."
+          },
+          "response": []
         }
       ]
     }
@@ -293,6 +385,16 @@
     {
       "key": "rol",
       "value": "COMPRADOR",
+      "type": "default"
+    },
+    {
+      "key": "eventoId",
+      "value": "1",
+      "type": "default"
+    },
+    {
+      "key": "tipoEntradaId",
+      "value": "1",
       "type": "default"
     }
   ]

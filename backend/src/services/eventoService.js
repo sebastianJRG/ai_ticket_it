@@ -1,4 +1,8 @@
-import { actualizarEventoSchema, crearEventoSchema } from '../dto/evento.js';
+import {
+	actualizarEventoSchema,
+	crearEventoSchema,
+	listarEventosSchema
+} from '../dto/evento.js';
 import Evento from '../models/evento.js';
 import TipoEntrada from '../models/tipoEntrada.js';
 import CategoriaRepository from '../repositories/categoriaRepository.js';
@@ -12,12 +16,14 @@ export default class EventoService {
 	 * @param {CategoriaRepository} categoriaRepository
 	 * @param {UsuarioRepository} usuarioRepository
 	 * @param {TipoEntradaRepository} tipoEntradaRepository
+	 * @param {import('../repositories/reseniaRepository.js').default} [reseniaRepository] Necesario para ordenar por puntaje
 	 */
 	constructor(
 		eventoRepository,
 		categoriaRepository,
 		usuarioRepository,
-		tipoEntradaRepository
+		tipoEntradaRepository,
+		reseniaRepository
 	) {
 		/** @private */
 		this.eventoRepository = eventoRepository;
@@ -27,6 +33,89 @@ export default class EventoService {
 		this.usuarioRepository = usuarioRepository;
 		/** @private */
 		this.tipoEntradaRepository = tipoEntradaRepository;
+		/** @private */
+		this.reseniaRepository = reseniaRepository;
+	}
+
+	/** Busca eventos con búsqueda textual, filtro por categoría y ordenamiento opcional.
+	 *
+	 * Orden por defecto cuando no se indica `order`: precio ascendente, fecha ascendente
+	 * y puntaje descendente. Los eventos sin reseñas siempre quedan al final al ordenar por puntaje.
+	 * @param {object} [query] Parámetros de consulta (típicamente req.query)
+	 * @param {string} [query.q] Texto a buscar en nombre o descripción
+	 * @param {string} [query.categoriaId] ID de categoría por el cual filtrar
+	 * @param {'precio'|'fecha'|'puntaje'} [query.sortBy] Criterio de ordenamiento
+	 * @param {'asc'|'desc'} [query.order] Sentido del ordenamiento
+	 * @returns {Promise<Evento[]>} Eventos que cumplen los criterios (puede ser vacío)
+	 * @throws {Error} Si algún parámetro de consulta es inválido
+	 */
+	async buscarEventos(query = {}) {
+		const resultado = listarEventosSchema.safeParse(query);
+		if (!resultado.success) {
+			const message =
+				resultado.error.issues[0]?.message || 'Error de validación';
+			throw new Error(message);
+		}
+
+		const { q, categoriaId, sortBy, order } = resultado.data;
+		const eventos = await this.eventoRepository.buscarEventos({
+			texto: q,
+			categoriaId
+		});
+
+		if (!sortBy) return eventos;
+
+		if (sortBy === 'puntaje') {
+			const puntajes = await this._puntajesPorEvento();
+			const factor = (order ?? 'desc') === 'asc' ? 1 : -1;
+			return eventos.sort((a, b) => {
+				const pa = puntajes.get(a.id);
+				const pb = puntajes.get(b.id);
+				// Sin reseñas siempre al final, sin importar el sentido
+				if (pa === undefined && pb === undefined) return 0;
+				if (pa === undefined) return 1;
+				if (pb === undefined) return -1;
+				return (pa - pb) * factor;
+			});
+		}
+
+		const factor = (order ?? 'asc') === 'asc' ? 1 : -1;
+		const valor =
+			sortBy === 'precio'
+				? (e) => this._precioDesde(e)
+				: (e) => new Date(e.fecha).getTime();
+		return eventos.sort((a, b) => (valor(a) - valor(b)) * factor);
+	}
+
+	/** Precio mínimo entre los tipos de entrada de un evento.
+	 * @private
+	 * @param {Evento} evento
+	 * @returns {number} Precio más bajo, o Infinity si no tiene tipos de entrada
+	 */
+	_precioDesde(evento) {
+		return Math.min(...evento.tiposEntrada.map((t) => t.precio));
+	}
+
+	/** Calcula el puntaje promedio de las reseñas de cada evento.
+	 * @private
+	 * @returns {Promise<Map<string, number>>} Mapa de ID de evento a promedio; los eventos sin reseñas no aparecen
+	 */
+	async _puntajesPorEvento() {
+		const resenias = this.reseniaRepository
+			? await this.reseniaRepository.obtenerTodos()
+			: [];
+		const acumulado = new Map();
+		for (const r of resenias) {
+			const eventoId = r.evento?.id;
+			if (eventoId === undefined || eventoId === null) continue;
+			const actual = acumulado.get(eventoId) ?? { suma: 0, cantidad: 0 };
+			actual.suma += r.puntuacion;
+			actual.cantidad += 1;
+			acumulado.set(eventoId, actual);
+		}
+		return new Map(
+			[...acumulado].map(([id, { suma, cantidad }]) => [id, suma / cantidad])
+		);
 	}
 
 	/** Obtiene todos los eventos disponibles.

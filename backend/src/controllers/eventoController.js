@@ -1,3 +1,5 @@
+import { aEventoRespuesta } from '../dto/evento.js';
+
 /**
  * Controlador para la creación de eventos.
  * Solo usuarios con rol ORGANIZADOR pueden crear eventos.
@@ -18,6 +20,24 @@ export default class EventoController {
 	constructor(eventoService) {
 		/** @private {import('../services/eventoService.js').default} */
 		this.eventoService = eventoService;
+	}
+
+	/**
+	 * Lista eventos con búsqueda (q), filtro (categoriaId) y ordenamiento (sortBy, order).
+	 * Ruta pública: no requiere autenticación.
+	 * @param {import('express').Request} req - Petición HTTP con los query params
+	 * @param {import('express').Response} res - Respuesta HTTP
+	 * @param {import('express').NextFunction} next - Función de error siguiente
+	 * @returns {Promise<void>}
+	 * @throws {Error} 400 si algún parámetro de consulta es inválido (vía next)
+	 */
+	async listar(req, res, next) {
+		try {
+			const eventos = await this.eventoService.buscarEventos({ ...req.query });
+			return res.status(200).json(eventos.map(aEventoRespuesta));
+		} catch (error) {
+			next(error);
+		}
 	}
 
 	/**
@@ -54,7 +74,7 @@ export default class EventoController {
 			const eventoCreado = await this.eventoService.crearEvento(datosEvento);
 
 			// 4. Responder con el evento creado y estado 201
-			return res.status(201).json(eventoCreado);
+			return res.status(201).json(aEventoRespuesta(eventoCreado));
 		} catch (error) {
 			next(error);
 		}

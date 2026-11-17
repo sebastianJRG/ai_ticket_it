@@ -20,8 +20,15 @@ import LogoutRoutes from './routes/logoutRoutes.js';
 import EventoRepository from './repositories/eventoRepository.js';
 import CategoriaRepository from './repositories/categoriaRepository.js';
 import TipoEntradaRepository from './repositories/tipoEntradaRepository.js';
+import ReseniaRepository from './repositories/reseniaRepository.js';
 import CategoriaService from './services/categoriaService.js';
 import CategoriasRoutes from './routes/categoriasRoutes.js';
+import CategoriaController from './controllers/categoriaController.js';
+import CompraRepository from './repositories/compraRepository.js';
+import CambioEstadoCompraRepository from './repositories/cambioEstadoCompraRepository.js';
+import CompraService from './services/compraService.js';
+import CompraController from './controllers/compraController.js';
+import ComprasRoutes from './routes/comprasRoutes.js';
 
 /**
  * Crea y configura la aplicación Express para el backend.
@@ -48,6 +55,9 @@ export function createApp(repository) {
   const eventoRepository = new EventoRepository();
   const categoriaRepository = new CategoriaRepository();
   const tipoEntradaRepository = new TipoEntradaRepository();
+  const reseniaRepository = new ReseniaRepository();
+  const compraRepository = new CompraRepository();
+  const cambioEstadoCompraRepository = new CambioEstadoCompraRepository();
 
   // Servicios
   const usuarioService = new UsuarioService(usuarioRepository);
@@ -55,27 +65,34 @@ export function createApp(repository) {
     eventoRepository,
     categoriaRepository,
     usuarioRepository,
-    tipoEntradaRepository
+    tipoEntradaRepository,
+    reseniaRepository
   );
   const categoriaService = new CategoriaService(categoriaRepository);
+  const compraService = new CompraService(
+    compraRepository,
+    eventoRepository,
+    usuarioRepository,
+    cambioEstadoCompraRepository
+  );
 
   // Controladores
   const usuarioController = new UsuariosController(usuarioService);
   const eventoController = new EventoController(eventoService);
+  const categoriaController = new CategoriaController(categoriaService);
+  const compraController = new CompraController(compraService);
 
   // Rutas de usuarios
   UsuariosRoutes.init(app, usuarioController);
 
-  // Rutas de eventos - requiere autenticación y rol ORGANIZADOR
-  app.post('/api/eventos',
-    authMiddleware,
-    eventoController.crear.bind(eventoController));
-
   // Rutas de categorías - requiere autenticación y rol ORGANIZADOR
-  CategoriasRoutes.init(app, categoriaService, authMiddleware);
+  CategoriasRoutes.init(app, categoriaController, authMiddleware);
+
+  // Rutas de compras - requiere autenticación y rol COMPRADOR
+  ComprasRoutes.init(app, compraController, authMiddleware);
 
   // Rutas de eventos - requiere autenticación y rol ORGANIZADOR
-  EventoRoutes.init(app, eventoService);
+  EventoRoutes.init(app, eventoController, authMiddleware);
 
   // Servicios y controladores de autenticación
   const loginService = new LoginService(usuarioRepository);

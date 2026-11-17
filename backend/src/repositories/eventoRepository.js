@@ -1,10 +1,19 @@
 import RepositorioEnMemoria from './repositorioEnMemoria.js';
 
+/**
+ * Repositorio en memoria de eventos.
+ * @extends {RepositorioEnMemoria<import('../models/evento.js').default>}
+ */
 export default class EventoRepository extends RepositorioEnMemoria {
 	/**
-	 * Búsqueda específica con filtros de texto, categoría y ordenamiento[cite: 8].
+	 * Busca eventos aplicando filtros de texto y categoría.
+	 * El ordenamiento no es responsabilidad del repositorio: lo resuelve el servicio.
+	 * @param {object} [filtros]
+	 * @param {string} [filtros.texto] - Texto a buscar en nombre o descripción (sin distinguir mayúsculas)
+	 * @param {string} [filtros.categoriaId] - ID de la categoría por la que filtrar
+	 * @returns {Promise<import('../models/evento.js').default[]>} Eventos que cumplen los filtros, en orden de creación
 	 */
-	async buscarEventos({ texto, categoriaId, orden }) {
+	async buscarEventos({ texto, categoriaId } = {}) {
 		let resultados = await this.obtenerTodos();
 
 		if (texto) {
@@ -18,16 +27,6 @@ export default class EventoRepository extends RepositorioEnMemoria {
 
 		if (categoriaId) {
 			resultados = resultados.filter((e) => e.categoria.id === categoriaId);
-		}
-
-		if (orden === 'precio') {
-			resultados.sort((a, b) => {
-				const minA = Math.min(...a.tiposEntrada.map((t) => t.precio));
-				const minB = Math.min(...b.tiposEntrada.map((t) => t.precio));
-				return minA - minB;
-			});
-		} else if (orden === 'fecha') {
-			resultados.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 		}
 
 		return resultados;
