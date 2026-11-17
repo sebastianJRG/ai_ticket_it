@@ -20,6 +20,27 @@ const ESTADOS_QUE_RESERVAN = new Set([
 	EstadoCompra.UTILIZADA
 ]);
 
+/** Milisegundos de un día, para calcular los días restantes hasta un evento. */
+const DIA_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Compra del comprador junto con los días que faltan para su evento.
+ * @typedef {object} CompraConDiasRestantes
+ * @property {Compra} compra - La compra
+ * @property {number|null} diasRestantes - Días (redondeados hacia arriba, mínimo 0) hasta el evento si la compra está CONFIRMADA; null en otro estado
+ */
+
+/**
+ * Cupo de un tipo de entrada de un evento.
+ * @typedef {object} DisponibilidadTipoEntrada
+ * @property {string} tipoEntradaId - ID del tipo de entrada
+ * @property {string} nombre - Nombre del tipo de entrada
+ * @property {number} precio - Precio unitario
+ * @property {number} cupo - Capacidad total del tipo
+ * @property {number} vendidas - Entradas en compras PENDIENTE, CONFIRMADA o UTILIZADA
+ * @property {number} disponibles - cupo − vendidas
+ */
+
 export default class CompraService {
 	/**
 	 * @param {import('../repositories/compraRepository.js').default} compraRepository
@@ -193,7 +214,8 @@ export default class CompraService {
 	 * @param {object} datos
 	 * @param {string} datos.eventoId - ID del evento (viene de la URL)
 	 * @param {string} datos.usuarioId - ID del organizador (viene del token)
-	 * @returns {Promise<Compra[]>} Compras del evento, en cualquier estado (vacío si no hay)
+	 * @returns {Promise<{compras: Compra[], disponibilidad: DisponibilidadTipoEntrada[]}>}
+	 *   Compras del evento en cualquier estado (vacío si no hay) y cupo disponible de cada tipo de entrada
 	 * @throws {ErrorHttp} 400 si el ID de evento es inválido
 	 * @throws {ErrorHttp} 403 si el usuario no es el organizador del evento
 	 * @throws {ErrorHttp} 404 si el evento o el usuario no existen
@@ -225,7 +247,59 @@ export default class CompraService {
 				'Solo el organizador del evento puede ver sus compras.'
 			);
 		}
-		return this.compraRepository.buscarPorEventoId(evento.id);
+		const compras = await this.compraRepository.buscarPorEventoId(evento.id);
+		const disponibilidad = evento.tiposEntrada.map((tipo) => {
+			const vendidas = compras
+				.filter(
+					(c) =>
+						c.tipoEntrada.id === tipo.id && ESTADOS_QUE_RESERVAN.has(c.estado)
+				)
+				.reduce((suma, c) => suma + c.cantidad, 0);
+			return {
+				tipoEntradaId: tipo.id,
+				nombre: tipo.nombre,
+				precio: tipo.precio,
+				cupo: tipo.cupo,
+				vendidas,
+				disponibles: tipo.cupo - vendidas
+			};
+		});
+		return { compras, disponibilidad };
+	}
+
+	/**
+	 * Lista las compras del comprador autenticado, en cualquier estado y en orden de creación,
+	 * con los días que faltan para el evento en las compras CONFIRMADA.
+	 * @param {object} datos
+	 * @param {string} datos.usuarioId - ID del comprador (viene del token)
+	 * @returns {Promise<CompraConDiasRestantes[]>} Compras del comprador (vacío si no hay)
+	 * @throws {ErrorHttp} 403 si el usuario no es COMPRADOR
+	 * @throws {ErrorHttp} 404 si el usuario no existe
+	 */
+	async listarComprasDeComprador({ usuarioId }) {
+		const usuario = await this.usuarioRepository.buscarPorId(usuarioId);
+		if (!usuario) {
+			throw new ErrorHttp(404, `El usuario con ID ${usuarioId} no existe.`);
+		}
+		if (usuario.rol !== COMPRADOR.nombre) {
+			throw new ErrorHttp(403, 'Solo los compradores tienen compras propias.');
+		}
+		const ahora = this.reloj().getTime();
+		const compras = await this.compraRepository.buscarPorCompradorId(
+			usuario.id
+		);
+		return compras.map((compra) => ({
+			compra,
+			diasRestantes:
+				compra.estado === EstadoCompra.CONFIRMADA
+					? Math.max(
+							0,
+							Math.ceil(
+								(new Date(compra.evento.fecha).getTime() - ahora) / DIA_MS
+							)
+						)
+					: null
+		}));
 	}
 
 	/**
@@ -242,7 +316,12 @@ export default class CompraService {
 	 * @returns {Promise<Compra>} La compra actualizada
 	 * @throws {ErrorHttp} 400, 403, 404 o 409 según la regla incumplida
 	 */
-	async _cambiarEstado(compraId, usuarioId, estadoDestino, { accion, puedeActuar }) {
+	async _cambiarEstado(
+		compraId,
+		usuarioId,
+		estadoDestino,
+		{ accion, puedeActuar }
+	) {
 		const resultado = idCompraSchema.safeParse(compraId);
 		if (!resultado.success) {
 			throw new ErrorHttp(
@@ -275,7 +354,12 @@ export default class CompraService {
 			}
 			this._exigirEventoFuturo(compra.evento);
 
-			return this._registrarTransicion(compra, estadoDestino, actor, this.reloj());
+			return this._registrarTransicion(
+				compra,
+				estadoDestino,
+				actor,
+				this.reloj()
+			);
 		});
 	}
 
@@ -293,7 +377,8 @@ export default class CompraService {
 			const compras = await this.compraRepository.obtenerTodos();
 			const vencidas = compras.filter(
 				(c) =>
-					c.estado === EstadoCompra.CONFIRMADA && new Date(c.evento.fecha) <= ahora
+					c.estado === EstadoCompra.CONFIRMADA &&
+					new Date(c.evento.fecha) <= ahora
 			);
 			for (const compra of vencidas) {
 				await this._registrarTransicion(
@@ -358,7 +443,8 @@ export default class CompraService {
 	 */
 	_esOrganizador(actor, compra) {
 		return (
-			actor.rol === ORGANIZADOR.nombre && compra.evento.organizador?.id === actor.id
+			actor.rol === ORGANIZADOR.nombre &&
+			compra.evento.organizador?.id === actor.id
 		);
 	}
 

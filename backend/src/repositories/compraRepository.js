@@ -13,7 +13,20 @@ export default class CompraRepository extends RepositorioEnMemoria {
 	 */
 	async buscarPorCompradorYEvento(compradorId, eventoId) {
 		return this.elementos
-			.filter((c) => c.comprador?.id === compradorId && c.evento?.id === eventoId)
+			.filter(
+				(c) => c.comprador?.id === compradorId && c.evento?.id === eventoId
+			)
+			.map((c) => this._clonar(c));
+	}
+
+	/**
+	 * Obtiene todas las compras de un comprador, en orden de creación.
+	 * @param {string} compradorId - ID del comprador
+	 * @returns {Promise<import('../models/compra.js').default[]>} Compras del comprador (puede ser vacío)
+	 */
+	async buscarPorCompradorId(compradorId) {
+		return this.elementos
+			.filter((c) => c.comprador?.id === compradorId)
 			.map((c) => this._clonar(c));
 	}
 

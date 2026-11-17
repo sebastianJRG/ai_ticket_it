@@ -1,37 +1,71 @@
 {
   "info": {
     "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "name": "ai_ticket_it_v2 Backend API",
+    "name": "ai_ticket_it Backend API",
+    "description": "Colección de la API de Al Ticket It. Ejecutar las carpetas en orden (Collection Runner o newman): cada paso guarda en variables de colección los tokens por rol (`tokenOrganizador`, `tokenComprador`) y los IDs creados (`organizadorId`, `categoriaId`, `eventoId`, `tipoEntradaId`, `compraId`, `compraCancelarId`). Los nombres de usuario se generan únicos en cada corrida, así que puede re-ejecutarse sin reiniciar el servidor.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
+      "name": "Salud",
+      "item": [
+        {
+          "name": "Health check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Público. Comprueba que el servidor responde: `{ status: 'ok', timestamp }`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Usuarios",
       "item": [
         {
-          "name": "Obtener perfil del usuario autenticado",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
+          "name": "Registrar organizador",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"usuarioOrganizador\", 'org.' + Date.now());"
+                ]
               }
-            ],
-            "url": {
-              "raw": "{{base_url}}/usuarios",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "usuarios"
-              ]
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set(\"organizadorId\", pm.response.json().id);"
+                ]
+              }
             }
-          },
-          "response": []
-        },
-        {
-          "name": "Crear usuario organizador",
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -40,10 +74,6 @@
                 "value": "application/json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"nombre\": \"{{nombre}}\",\"apellido\": \"{{apellido}}\",\"nombreUsuario\": \"{{username}}\",\"contrasenia\": \"{{password}}\",\"rol\": \"ORGANIZADOR\"}"
-            },
             "url": {
               "raw": "{{base_url}}/usuarios",
               "host": [
@@ -52,12 +82,42 @@
               "path": [
                 "usuarios"
               ]
+            },
+            "description": "Público. Registra un ORGANIZADOR con un nombre de usuario único (lo genera el pre-request) y guarda `organizadorId`. 400 validación, 409 si el nombre de usuario ya existe.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\": \"{{nombre}}\", \"apellido\": \"{{apellido}}\", \"nombreUsuario\": \"{{usuarioOrganizador}}\", \"contrasenia\": \"{{password}}\", \"rol\": \"ORGANIZADOR\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": []
         },
         {
-          "name": "Crear usuario comprador",
+          "name": "Registrar comprador",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"usuarioComprador\", 'comp.' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -66,10 +126,6 @@
                 "value": "application/json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"nombre\": \"{{nombre}}\",\"apellido\": \"{{apellido}}\",\"nombreUsuario\": \"{{username}}\",\"contrasenia\": \"{{password}}\",\"rol\": \"COMPRADOR\"}"
-            },
             "url": {
               "raw": "{{base_url}}/usuarios",
               "host": [
@@ -78,32 +134,16 @@
               "path": [
                 "usuarios"
               ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Crear usuario (rol genérico)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
+            },
+            "description": "Público. Registra un COMPRADOR con un nombre de usuario único (lo genera el pre-request).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\": \"{{nombre}}\", \"apellido\": \"{{apellido}}\", \"nombreUsuario\": \"{{usuarioComprador}}\", \"contrasenia\": \"{{password}}\", \"rol\": \"COMPRADOR\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
               }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"nombre\": \"{{nombre}}\",\"apellido\": \"{{apellido}}\",\"nombreUsuario\": \"{{username}}\",\"contrasenia\": \"{{password}}\",\"rol\": \"{{rol}}\"}"
-            },
-            "url": {
-              "raw": "{{base_url}}/usuarios",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "usuarios"
-              ]
             }
           },
           "response": []
@@ -114,7 +154,21 @@
       "name": "Autenticación",
       "item": [
         {
-          "name": "Iniciar sesión",
+          "name": "Iniciar sesión (organizador)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set(\"tokenOrganizador\", json.accessToken);",
+                  "pm.collectionVariables.set(\"refreshTokenOrganizador\", json.refreshToken);"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -123,10 +177,6 @@
                 "value": "application/json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"nombreUsuario\": \"{{nombreUsuario}}\",\"contrasenia\": \"{{password}}\"}"
-            },
             "url": {
               "raw": "{{base_url}}/login",
               "host": [
@@ -136,15 +186,35 @@
                 "login"
               ]
             },
-            "script": {
-              "exec": "// Extraer tokens del cuerpo de respuesta y guardarlos en variables de entorno\\nconst jsonData = pm.response.json();\\nif (jsonData.accessToken) {\\n  pm.variables.set(\"accessToken\", jsonData.accessToken);\\n}\\nif (jsonData.refreshToken) {\\n  pm.variables.set(\"refreshToken\", jsonData.refreshToken);\\n}\\n// Mostrar tokens en la consola para debugging\\nconsole.log(\"Tokens guardados - accessToken:\", pm.variables.get(\"accessToken\") ? \"OK\" : \"FAIL\", \"refreshToken:\", pm.variables.get(\"refreshToken\") ? \"OK\" : \"FAIL\")",
-              "exposure": "examples"
+            "description": "Público. Devuelve `{ accessToken, refreshToken, usuario }` y guarda los tokens del organizador. 400 validación, 401 credenciales inválidas.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombreUsuario\": \"{{usuarioOrganizador}}\", \"contrasenia\": \"{{password}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": []
         },
         {
-          "name": "Renovar token",
+          "name": "Iniciar sesión (comprador)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set(\"tokenComprador\", json.accessToken);",
+                  "pm.collectionVariables.set(\"refreshTokenComprador\", json.refreshToken);"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -153,10 +223,52 @@
                 "value": "application/json"
               }
             ],
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "description": "Público. Devuelve `{ accessToken, refreshToken, usuario }` y guarda los tokens del comprador. 400 validación, 401 credenciales inválidas.",
             "body": {
               "mode": "raw",
-              "raw": "{\"refreshToken\": \"{{refreshToken}}\"}"
-            },
+              "raw": "{\"nombreUsuario\": \"{{usuarioComprador}}\", \"contrasenia\": \"{{password}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Renovar token (comprador)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set(\"tokenComprador\", json.accessToken);",
+                  "pm.collectionVariables.set(\"refreshTokenComprador\", json.refreshToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/refresh",
               "host": [
@@ -166,40 +278,86 @@
                 "refresh"
               ]
             },
-            "script": {
-              "exec": "// Extraer nuevos tokens del cuerpo de respuesta y guardarlos\\nconst jsonData = pm.response.json();\\nif (jsonData.accessToken) {\\n  pm.variables.set(\"accessToken\", jsonData.accessToken);\\n}\\nif (jsonData.refreshToken) {\\n  pm.variables.set(\"refreshToken\", jsonData.refreshToken);\\n}\\n// Mostrar tokens en la consola para debugging\\nconsole.log(\"Tokens renovados - accessToken:\", pm.variables.get(\"accessToken\") ? \"OK\" : \"FAIL\", \"refreshToken:\", pm.variables.get(\"refreshToken\") ? \"OK\" : \"FAIL\")",
-              "exposure": "examples"
+            "description": "Público. Emite un nuevo access token y rota el refresh token (el anterior deja de servir). 400 validación, 401 refresh token inválido.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{refreshTokenComprador}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": []
         },
         {
-          "name": "Cerrar sesión",
+          "name": "Perfil del organizador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Rol ORGANIZADOR\", () => pm.expect(pm.response.json().rol).to.eql(\"ORGANIZADOR\"));"
+                ]
+              }
+            }
+          ],
           "request": {
-            "method": "POST",
+            "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json"
+                "key": "Authorization",
+                "value": "Bearer {{tokenOrganizador}}"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"refreshToken\": \"{{refreshToken}}\"}"
-            },
             "url": {
-              "raw": "{{base_url}}/logout",
+              "raw": "{{base_url}}/usuarios",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "logout"
+                "usuarios"
               ]
             },
-            "script": {
-              "exec": "// Después de cerrar sesión, limpiar los tokens\\npm.variables.set(\"accessToken\", \"\");\\npm.variables.set(\"refreshToken\", \"\");\\nconsole.log(\"Sesión cerrada y tokens limpiados\")\\n// Scripts pre-request para categorías y eventos se añaden automáticamente\\n// if (!\\\"{{nombreCategoria}}\\\".includes(\\\"{{}}\\\")) { pm.variables.set(\\\"nombreCategoria\\\", \\\"Categoria \\' + (pm.environment.get(\\\"USER_ROLE\\\") or \\\"ORGANIZADOR\\\") + \\\'\\') ; }\\n// if (!\\\"{{descripcionCategoria}}\\\".includes(\\\"{{}}\\\")) { pm.variables.set(\\\"descripcionCategoria\\\", \\\"Descripción automática para \\' + (pm.environment.get(\\\"USER_ROLE\\\") or \\\"ORGANIZADOR\\\") + \\\'\\') ; }',
-              "exposure": "examples"
+            "description": "Autenticada (COMPRADOR u ORGANIZADOR). Devuelve `{ id, nombre, apellido, nombreUsuario, rol, permissions }` del usuario del token. 401 sin token, 403 otro rol, 404 si el usuario ya no existe."
+          },
+          "response": []
+        },
+        {
+          "name": "Perfil del comprador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Rol COMPRADOR\", () => pm.expect(pm.response.json().rol).to.eql(\"COMPRADOR\"));"
+                ]
+              }
             }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenComprador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            },
+            "description": "Autenticada (COMPRADOR u ORGANIZADOR). Devuelve `{ id, nombre, apellido, nombreUsuario, rol, permissions }` del comprador del token. 401 sin token, 403 otro rol, 404 si el usuario ya no existe."
           },
           "response": []
         }
@@ -209,7 +367,19 @@
       "name": "Categorías",
       "item": [
         {
-          "name": "Crear categoría",
+          "name": "Crear categoría (ORGANIZADOR)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set(\"categoriaId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -219,13 +389,9 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
+                "value": "Bearer {{tokenOrganizador}}"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"nombre\": \"{{nombreCategoria}}\",\"descripcion\": \"{{descripcionCategoria}}\"}"
-            },
             "url": {
               "raw": "{{base_url}}/categorias",
               "host": [
@@ -234,12 +400,33 @@
               "path": [
                 "categorias"
               ]
+            },
+            "description": "Solo ORGANIZADOR. Cuerpo `{ nombre, descripcion }`. Guarda `categoriaId`. 400 validación, 401 sin token, 403 si no es ORGANIZADOR.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\": \"{{nombreCategoria}}\", \"descripcion\": \"{{descripcionCategoria}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": []
         },
         {
           "name": "Listar categorías (público)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
@@ -252,7 +439,7 @@
                 "categorias"
               ]
             },
-            "description": "No requiere autenticación. Devuelve todas las categorías en orden de creación (lista vacía si no hay)."
+            "description": "Público. Todas las categorías en orden de creación (`[]` si no hay)."
           },
           "response": []
         }
@@ -262,25 +449,21 @@
       "name": "Eventos",
       "item": [
         {
-          "name": "Obtener detalle de evento (público)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/eventos/{{evento_id}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "eventos",
-                "{{evento_id}}"
-              ]
+          "name": "Crear evento (ORGANIZADOR)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set(\"eventoId\", json.id);",
+                  "pm.collectionVariables.set(\"tipoEntradaId\", json.tiposEntrada[0].id);"
+                ]
+              }
             }
-          },
-          "response": []
-        },
-        {
-          "name": "Crear evento",
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -290,13 +473,9 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
+                "value": "Bearer {{tokenOrganizador}}"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"nombre\": \"{{nombreEvento}}\",\"descripcion\": \"{{descripcionEvento}}\",\"categoriaId\": \"{{categoriaId}}\",\"fecha\": \"{{fechaEvento}}\",\"tiposEntrada\": [{\"nombre\": \"Entrada General\",\"descripcion\": \"Entrada general al evento\",\"precio\": 50,\"cupo\": 100}],\"multimedia\": []}"
-            },
             "url": {
               "raw": "{{base_url}}/eventos",
               "host": [
@@ -305,12 +484,33 @@
               "path": [
                 "eventos"
               ]
+            },
+            "description": "Solo ORGANIZADOR. Crea un evento con sus tipos de entrada (precio y cupo cada uno). La fecha debe ser futura. Guarda `eventoId` y el `tipoEntradaId` del primer tipo. 400 validación, 401 sin token, 403 si no es ORGANIZADOR.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\": \"{{nombreEvento}}\", \"descripcion\": \"{{descripcionEvento}}\", \"categoriaId\": \"{{categoriaId}}\", \"fecha\": \"{{fechaEvento}}\", \"tiposEntrada\": [{\"nombre\": \"General\", \"descripcion\": \"Acceso general\", \"precio\": 50, \"cupo\": 100}, {\"nombre\": \"VIP\", \"descripcion\": \"Acceso preferencial\", \"precio\": 150, \"cupo\": 20}], \"multimedia\": []}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": []
         },
         {
-          "name": "Listar eventos (sin filtros)",
+          "name": "Listar eventos (público)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
@@ -322,17 +522,29 @@
               "path": [
                 "eventos"
               ]
-            }
+            },
+            "description": "Público. Todos los eventos. Cada uno incluye `puntajeOrganizador` (promedio de reseñas de todos los eventos de su organizador, o `null`)."
           },
           "response": []
         },
         {
           "name": "Buscar eventos (q, categoriaId, sortBy, order)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/eventos?q=rock&categoriaId={{categoriaId}}&sortBy=precio&order=asc",
+              "raw": "{{base_url}}/eventos?q={{nombreEvento}}&categoriaId={{categoriaId}}&sortBy=puntaje&order=desc",
               "host": [
                 "{{base_url}}"
               ],
@@ -342,7 +554,7 @@
               "query": [
                 {
                   "key": "q",
-                  "value": "rock",
+                  "value": "{{nombreEvento}}",
                   "description": "Texto a buscar en nombre o descripción"
                 },
                 {
@@ -352,41 +564,47 @@
                 },
                 {
                   "key": "sortBy",
-                  "value": "precio",
-                  "description": "precio | fecha | puntaje"
+                  "value": "puntaje",
+                  "description": "precio | fecha | puntaje (puntaje del organizador)"
                 },
                 {
                   "key": "order",
-                  "value": "asc",
+                  "value": "desc",
                   "description": "asc | desc (por defecto: precio asc, fecha asc, puntaje desc)"
                 }
               ]
-            }
+            },
+            "description": "Público. Búsqueda textual y por categoría, con orden por precio (el más barato de sus tipos), fecha o puntaje del organizador. Los eventos de organizadores sin reseñas quedan al final al ordenar por puntaje. 400 si algún parámetro es inválido."
           },
           "response": []
         },
         {
-          "name": "Listar compras de un evento (ORGANIZADOR)",
+          "name": "Detalle de evento (público)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
+            "header": [],
             "url": {
-              "raw": "{{base_url}}/eventos/{{eventoId}}/compras",
+              "raw": "{{base_url}}/eventos/{{eventoId}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "eventos",
-                "{{eventoId}}",
-                "compras"
+                "{{eventoId}}"
               ]
             },
-            "description": "Solo el organizador dueño del evento. Devuelve todas las compras del evento, en cualquier estado y en orden de creación (lista vacía si no hay). 400 si el ID es inválido, 401 sin token, 403 si es COMPRADOR u organizador de otro evento, 404 si el evento no existe."
+            "description": "Público. Mismo formato que cada elemento del listado (organizador en versión pública, con `puntajeOrganizador`). 400 ID inválido, 404 si no existe."
           },
           "response": []
         }
@@ -397,6 +615,18 @@
       "item": [
         {
           "name": "Crear compra (COMPRADOR)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set(\"compraId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -406,13 +636,9 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
+                "value": "Bearer {{tokenComprador}}"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"eventoId\": \"{{eventoId}}\",\"tipoEntradaId\": \"{{tipoEntradaId}}\",\"cantidad\": 2}"
-            },
             "url": {
               "raw": "{{base_url}}/compras",
               "host": [
@@ -422,43 +648,39 @@
                 "compras"
               ]
             },
-            "description": "Requiere iniciar sesión con un usuario COMPRADOR. La compra queda PENDIENTE y reserva cupo. 401 sin token, 403 si no es COMPRADOR, 404 si el evento o tipo de entrada no existen, 409 si no hay cupo."
-          },
-          "response": []
-        },
-        {
-          "name": "Cancelar compra (COMPRADOR u ORGANIZADOR)",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
+            "description": "Solo COMPRADOR. La compra queda PENDIENTE y reserva cupo; el total lo calcula el servidor. Guarda `compraId`. 400 validación o evento ya ocurrido, 401 sin token, 403 si no es COMPRADOR, 404 evento o tipo inexistente, 409 cupo insuficiente.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"eventoId\": \"{{eventoId}}\", \"tipoEntradaId\": \"{{tipoEntradaId}}\", \"cantidad\": 2}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
               }
-            ],
-            "url": {
-              "raw": "{{base_url}}/compras/{{compraId}}/cancelacion",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "compras",
-                "{{compraId}}",
-                "cancelacion"
-              ]
-            },
-            "description": "Sin cuerpo. El comprador solo cancela sus compras; el organizador, las de sus eventos. Pasa PENDIENTE o CONFIRMADA a CANCELADA y libera cupo. 400 si el evento ya ocurrió, 401 sin token, 403 si no le corresponde, 404 si la compra no existe, 409 si el estado no lo permite."
+            }
           },
           "response": []
         },
         {
           "name": "Confirmar compra (ORGANIZADOR)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Queda CONFIRMADA\", () => pm.expect(pm.response.json().estado).to.eql(\"CONFIRMADA\"));"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "PATCH",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
+                "value": "Bearer {{tokenOrganizador}}"
               }
             ],
             "url": {
@@ -472,18 +694,339 @@
                 "confirmacion"
               ]
             },
-            "description": "Sin cuerpo. Solo el organizador del evento. Pasa PENDIENTE a CONFIRMADA. 400 si el evento ya ocurrió, 401 sin token, 403 si es COMPRADOR u organizador de otro evento, 404 si la compra no existe, 409 si no está PENDIENTE."
+            "description": "Sin cuerpo. Solo el organizador del evento. PENDIENTE → CONFIRMADA. 400 si el evento ya ocurrió, 401, 403, 404, 409 si no está PENDIENTE."
           },
           "response": []
         },
         {
-          "name": "Reembolsar compra (ORGANIZADOR)",
+          "name": "Mis compras (COMPRADOR)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Las CONFIRMADA traen diasRestantes\", () => {",
+                  "  const confirmada = pm.response.json().find((c) => c.estado === \"CONFIRMADA\");",
+                  "  pm.expect(confirmada.diasRestantes).to.be.a(\"number\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenComprador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/compras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "compras"
+              ]
+            },
+            "description": "Solo COMPRADOR. Sus compras en cualquier estado y en orden de creación. Cada una trae `diasRestantes` (días hasta el evento, redondeado hacia arriba) si está CONFIRMADA; `null` en otro estado. 401 sin token, 403 otro rol."
+          },
+          "response": []
+        },
+        {
+          "name": "Compras del evento (ORGANIZADOR)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae disponibilidad por tipo\", () => {",
+                  "  const { compras, disponibilidad } = pm.response.json();",
+                  "  pm.expect(compras).to.be.an(\"array\");",
+                  "  pm.expect(disponibilidad[0]).to.have.keys(\"tipoEntradaId\", \"nombre\", \"precio\", \"cupo\", \"vendidas\", \"disponibles\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOrganizador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/eventos/{{eventoId}}/compras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "eventos",
+                "{{eventoId}}",
+                "compras"
+              ]
+            },
+            "description": "Solo el organizador dueño del evento. Devuelve `{ compras, disponibilidad }`: todas las compras (cualquier estado, orden de creación) y por cada tipo `{ tipoEntradaId, nombre, precio, cupo, vendidas, disponibles }` (PENDIENTE, CONFIRMADA y UTILIZADA ocupan cupo). 400 ID inválido, 401, 403 (comprador u organizador de otro evento), 404."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear compra a cancelar (COMPRADOR)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set(\"compraCancelarId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenComprador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/compras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "compras"
+              ]
+            },
+            "description": "Segunda compra (PENDIENTE) para probar la cancelación sin afectar a `compraId`. Guarda `compraCancelarId`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"eventoId\": \"{{eventoId}}\", \"tipoEntradaId\": \"{{tipoEntradaId}}\", \"cantidad\": 1}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancelar compra (COMPRADOR)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Queda CANCELADA\", () => pm.expect(pm.response.json().estado).to.eql(\"CANCELADA\"));"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "PATCH",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
+                "value": "Bearer {{tokenComprador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/compras/{{compraCancelarId}}/cancelacion",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "compras",
+                "{{compraCancelarId}}",
+                "cancelacion"
+              ]
+            },
+            "description": "Sin cuerpo. El comprador cancela sus compras y el organizador las de sus eventos. PENDIENTE o CONFIRMADA → CANCELADA (libera cupo), nunca si está UTILIZADA ni si el evento ya ocurrió (400). 401, 403, 404, 409 si el estado no lo permite."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Mensajes",
+      "item": [
+        {
+          "name": "Comprador envía mensaje",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenComprador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/compras/{{compraId}}/mensajes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "compras",
+                "{{compraId}}",
+                "mensajes"
+              ]
+            },
+            "description": "Chat de la compra. Solo el comprador dueño o el organizador del evento, en cualquier momento. El remitente sale del token. Mensaje de 1 a 1000 caracteres. 400 validación, 401, 403 si no participa, 404 si la compra no existe.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"mensaje\": \"{{mensajeComprador}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Organizador responde",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOrganizador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/compras/{{compraId}}/mensajes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "compras",
+                "{{compraId}}",
+                "mensajes"
+              ]
+            },
+            "description": "El organizador del evento responde en el chat de la compra. Mismas reglas que el envío del comprador.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"mensaje\": \"{{mensajeOrganizador}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ver mensajes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae los dos mensajes en orden\", () => pm.expect(pm.response.json().length).to.be.at.least(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenComprador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/compras/{{compraId}}/mensajes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "compras",
+                "{{compraId}}",
+                "mensajes"
+              ]
+            },
+            "description": "Lista el chat de la compra, del más antiguo al más reciente. Solo el comprador dueño o el organizador del evento. 401, 403, 404."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reembolso",
+      "item": [
+        {
+          "name": "Reembolsar compra (ORGANIZADOR)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Queda REEMBOLSADA\", () => pm.expect(pm.response.json().estado).to.eql(\"REEMBOLSADA\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOrganizador}}"
               }
             ],
             "url": {
@@ -497,12 +1040,28 @@
                 "reembolso"
               ]
             },
-            "description": "Sin cuerpo. Solo el organizador del evento. Pasa CONFIRMADA a REEMBOLSADA y libera cupo. 400 si el evento ya ocurrió, 401 sin token, 403 si es COMPRADOR u organizador de otro evento, 404 si la compra no existe, 409 si no está CONFIRMADA."
+            "description": "Sin cuerpo. Solo el organizador del evento. CONFIRMADA → REEMBOLSADA (libera cupo). 400 si el evento ya ocurrió, 401, 403, 404, 409 si no está CONFIRMADA."
           },
           "response": []
-        },
+        }
+      ]
+    },
+    {
+      "name": "Reseñas",
+      "item": [
         {
-          "name": "Enviar mensaje (COMPRADOR u ORGANIZADOR)",
+          "name": "Crear reseña (COMPRADOR)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -512,181 +1071,315 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
+                "value": "Bearer {{tokenComprador}}"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"mensaje\": \"{{mensaje_texto}}\"}"
-            },
             "url": {
-              "raw": "{{base_url}}/compras/{{compraId}}/mensajes",
+              "raw": "{{base_url}}/resenias",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "compras",
-                "{{compraId}}",
-                "mensajes"
+                "resenias"
               ]
             },
-            "description": "Chat de la compra. Solo el comprador dueño o el organizador del evento, en cualquier momento (sin importar el estado de la compra ni la fecha del evento). El remitente sale del token. Mensaje de 1 a 1000 caracteres. 400 validación, 401 sin token, 403 si no participa en la compra, 404 si la compra no existe."
+            "description": "Solo COMPRADOR. Cuerpo `{ eventoId, detalle, puntuacion }` (entero 1–5, detalle hasta 1000 caracteres). Reglas: el evento ya debe haber ocurrido (400), el comprador debe tener una compra UTILIZADA de ese evento (403; pasa a UTILIZADA automáticamente cuando el evento ocurre) y una sola reseña por evento (409). En esta colección el evento es futuro, por eso el test espera 400.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"eventoId\": \"{{eventoId}}\", \"detalle\": \"{{reseniaDetalle}}\", \"puntuacion\": {{reseniaPuntuacion}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },
         {
-          "name": "Ver mensajes (COMPRADOR u ORGANIZADOR)",
+          "name": "Reseñas de un evento (público)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
+            "header": [],
             "url": {
-              "raw": "{{base_url}}/compras/{{compraId}}/mensajes",
+              "raw": "{{base_url}}/resenias/{{eventoId}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "compras",
-                "{{compraId}}",
-                "mensajes"
+                "resenias",
+                "{{eventoId}}"
               ]
             },
-            "description": "Lista el chat de la compra, del más antiguo al más reciente (vacío si no hay). Solo el comprador dueño o el organizador del evento. 401 sin token, 403 si no participa en la compra, 404 si la compra no existe."
+            "description": "Público. Reseñas del evento en orden de creación (`[]` si no hay). 404 si el evento no existe."
+          },
+          "response": []
+        },
+        {
+          "name": "Reseñas de un organizador (público)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{organizadorId}}/resenias",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{organizadorId}}",
+                "resenias"
+              ]
+            },
+            "description": "Público. Reseñas de todos los eventos del organizador, en orden de creación (`[]` si no hay): la experiencia previa con ese organizador. 400 ID inválido, 404 si no existe o no es ORGANIZADOR."
           },
           "response": []
         }
       ]
     },
     {
-      "name": "Reseñas",
+      "name": "Cierre de sesión",
       "item": [
-    {
-      "name": "Crear reseña (COMPRADOR)",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
+        {
+          "name": "Cerrar sesión (comprador)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set(\"tokenComprador\", \"\");",
+                  "pm.collectionVariables.set(\"refreshTokenComprador\", \"\");"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "logout"
+              ]
+            },
+            "description": "Público. Invalida el refresh token del comprador y limpia sus tokens de la colección. 400 validación, 401 refresh token inválido.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{refreshTokenComprador}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\"eventoId\": \"{{eventoId}}\",\"detalle\": \"{{resenia_detalle}}\",\"puntuacion\": {{resenia_puntuacion}}}"
+          "response": []
         },
-        "url": {
-          "raw": "{{base_url}}/resenias",
-          "host": [
-            "{{base_url}}"
+        {
+          "name": "Cerrar sesión (organizador)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set(\"tokenOrganizador\", \"\");",
+                  "pm.collectionVariables.set(\"refreshTokenOrganizador\", \"\");"
+                ]
+              }
+            }
           ],
-          "path": [
-            "resenias"
-          ]
-        },
-        "description": "Requiere iniciar sesión con un usuario COMPRADOR. Solo si el evento ya ocurrió y el comprador tiene una compra CONFIRMADA o UTILIZADA de ese evento; una reseña por evento. 400 validación o evento aún no ocurrido, 401 sin token, 403 si no es COMPRADOR o no tiene compra elegible, 404 si el evento no existe, 409 si ya reseñó."
-      },
-      "response": []
-    },
-    {
-      "name": "Listar reseñas de un evento (público)",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{base_url}}/resenias/{{eventoId}}",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "resenias",
-            "{{eventoId}}"
-          ]
-        },
-        "description": "No requiere autenticación. Devuelve las reseñas del evento en orden de creación (lista vacía si no hay). 404 si el evento no existe."
-      },
-      "response": []
-    }
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "logout"
+              ]
+            },
+            "description": "Público. Invalida el refresh token del organizador y limpia sus tokens de la colección. 400 validación, 401 refresh token inválido.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{refreshTokenOrganizador}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
       ]
     }
   ],
   "variable": [
     {
-      "key": "accessToken",
-      "value": "",
-      "type": "environment"
-    },
-    {
-      "key": "refreshToken",
-      "value": "",
-      "type": "environment"
-    },
-    {
       "key": "base_url",
       "value": "http://localhost:3000/api",
-      "type": "default"
-    },
-    {
-      "key": "mensaje_texto",
-      "value": "Hola, tengo una consulta sobre mi compra",
-      "type": "default"
-    },
-    {
-      "key": "nombre",
-      "value": "Ana Prueba",
-      "type": "default"
-    },
-    {
-      "key": "apellido",
-      "value": "Muñoz",
-      "type": "default"
-    },
-    {
-      "key": "username",
-      "value": "ana.munoz",
-      "type": "default"
+      "type": "string"
     },
     {
       "key": "password",
       "value": "Clave123!",
-      "type": "default"
+      "type": "string"
     },
     {
-      "key": "rol",
-      "value": "COMPRADOR",
-      "type": "default"
+      "key": "nombre",
+      "value": "Ana",
+      "type": "string"
+    },
+    {
+      "key": "apellido",
+      "value": "Muñoz",
+      "type": "string"
+    },
+    {
+      "key": "usuarioOrganizador",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "usuarioComprador",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tokenOrganizador",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tokenComprador",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshTokenOrganizador",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshTokenComprador",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "organizadorId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "categoriaId",
+      "value": "",
+      "type": "string"
     },
     {
       "key": "eventoId",
-      "value": "1",
-      "type": "default"
+      "value": "",
+      "type": "string"
     },
     {
       "key": "tipoEntradaId",
-      "value": "1",
-      "type": "default"
+      "value": "",
+      "type": "string"
     },
     {
       "key": "compraId",
-      "value": "1",
-      "type": "default"
+      "value": "",
+      "type": "string"
     },
     {
-      "key": "resenia_detalle",
+      "key": "compraCancelarId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "nombreCategoria",
+      "value": "Música",
+      "type": "string"
+    },
+    {
+      "key": "descripcionCategoria",
+      "value": "Conciertos y festivales",
+      "type": "string"
+    },
+    {
+      "key": "nombreEvento",
+      "value": "Rock Fest",
+      "type": "string"
+    },
+    {
+      "key": "descripcionEvento",
+      "value": "Festival de rock al aire libre",
+      "type": "string"
+    },
+    {
+      "key": "fechaEvento",
+      "value": "2030-12-31T20:00:00.000Z",
+      "type": "string"
+    },
+    {
+      "key": "mensajeComprador",
+      "value": "Hola, ¿a qué hora abren las puertas?",
+      "type": "string"
+    },
+    {
+      "key": "mensajeOrganizador",
+      "value": "Hola, las puertas abren a las 18:00.",
+      "type": "string"
+    },
+    {
+      "key": "reseniaDetalle",
       "value": "Excelente evento, muy bien organizado",
-      "type": "default"
+      "type": "string"
     },
     {
-      "key": "resenia_puntuacion",
-      "value": 5,
-      "type": "default"
+      "key": "reseniaPuntuacion",
+      "value": "5",
+      "type": "string"
     }
   ]
 }

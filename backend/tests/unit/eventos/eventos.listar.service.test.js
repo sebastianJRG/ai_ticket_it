@@ -30,9 +30,9 @@ describe('EventoService.buscarEventos', () => {
 
 	describe('validación de parámetros', () => {
 		it('rechaza un sortBy inválido', async () => {
-			await expect(servicio.buscarEventos({ sortBy: 'nombre' })).rejects.toThrow(
-				'sortBy debe ser uno de: precio, fecha, puntaje.'
-			);
+			await expect(
+				servicio.buscarEventos({ sortBy: 'nombre' })
+			).rejects.toThrow('sortBy debe ser uno de: precio, fecha, puntaje.');
 		});
 
 		it('rechaza un order inválido', async () => {
@@ -81,7 +81,10 @@ describe('EventoService.buscarEventos', () => {
 			await construirEvento(eventoRepo, { nombre: 'Caro', precios: [300] });
 			await construirEvento(eventoRepo, { nombre: 'Barato', precios: [100] });
 			// Su precio es el mínimo de sus tipos de entrada (150), no el primero
-			await construirEvento(eventoRepo, { nombre: 'Medio', precios: [500, 150] });
+			await construirEvento(eventoRepo, {
+				nombre: 'Medio',
+				precios: [500, 150]
+			});
 		});
 
 		it('es ascendente por defecto', async () => {
@@ -140,27 +143,45 @@ describe('EventoService.buscarEventos', () => {
 		});
 	});
 
-	describe('ordenar por puntaje', () => {
-		let promedio4;
-		let promedio2;
-		let sinResenias;
+	describe('puntaje del organizador', () => {
+		const orgA = { id: 'org-a', nombre: 'A' };
+		const orgB = { id: 'org-b', nombre: 'B' };
+		const orgC = { id: 'org-c', nombre: 'C' };
+		let a1;
 
 		beforeEach(async () => {
-			sinResenias = await construirEvento(eventoRepo, { nombre: 'Sin reseñas' });
-			promedio2 = await construirEvento(eventoRepo, { nombre: 'Promedio 2' });
-			promedio4 = await construirEvento(eventoRepo, { nombre: 'Promedio 4' });
+			await construirEvento(eventoRepo, { nombre: 'C1', organizador: orgC });
+			const b1 = await construirEvento(eventoRepo, {
+				nombre: 'B1',
+				organizador: orgB
+			});
+			a1 = await construirEvento(eventoRepo, {
+				nombre: 'A1',
+				organizador: orgA
+			});
+			// A2 no tiene reseñas propias, pero hereda el puntaje de su organizador
+			await construirEvento(eventoRepo, { nombre: 'A2', organizador: orgA });
 
-			// Promedio 4: (5 + 3) / 2
-			await construirResenia(reseniaRepo, promedio4, 5);
-			await construirResenia(reseniaRepo, promedio4, 3);
-			// Promedio 2: una sola reseña
-			await construirResenia(reseniaRepo, promedio2, 2);
+			// Organizador A: (5 + 3) / 2 = 4
+			await construirResenia(reseniaRepo, a1, 5);
+			await construirResenia(reseniaRepo, a1, 3);
+			// Organizador B: 2
+			await construirResenia(reseniaRepo, b1, 2);
 		});
 
-		it('es descendente por defecto (el mejor valorado primero)', async () => {
+		const puntajes = (eventos) =>
+			Object.fromEntries(eventos.map((e) => [e.nombre, e.puntajeOrganizador]));
+
+		it('incluye en cada evento el promedio de reseñas de su organizador', async () => {
+			const resultado = await servicio.buscarEventos();
+
+			expect(puntajes(resultado)).toEqual({ C1: null, B1: 2, A1: 4, A2: 4 });
+		});
+
+		it('ordena descendente por defecto (el organizador mejor valorado primero)', async () => {
 			const resultado = await servicio.buscarEventos({ sortBy: 'puntaje' });
 
-			expect(nombres(resultado).slice(0, 2)).toEqual(['Promedio 4', 'Promedio 2']);
+			expect(nombres(resultado)).toEqual(['A1', 'A2', 'B1', 'C1']);
 		});
 
 		it('se invierte con order=asc', async () => {
@@ -169,36 +190,37 @@ describe('EventoService.buscarEventos', () => {
 				order: 'asc'
 			});
 
-			expect(nombres(resultado).slice(0, 2)).toEqual(['Promedio 2', 'Promedio 4']);
+			expect(nombres(resultado)).toEqual(['B1', 'A1', 'A2', 'C1']);
 		});
 
 		it.each(['asc', 'desc'])(
-			'deja los eventos sin reseñas al final con order=%s',
+			'deja al final los eventos de organizadores sin reseñas con order=%s',
 			async (order) => {
-				const resultado = await servicio.buscarEventos({ sortBy: 'puntaje', order });
+				await construirEvento(eventoRepo, { nombre: 'C2', organizador: orgC });
 
-				expect(resultado[resultado.length - 1].id).toBe(sinResenias.id);
+				const resultado = await servicio.buscarEventos({
+					sortBy: 'puntaje',
+					order
+				});
+
+				expect(nombres(resultado).slice(-2)).toEqual(['C1', 'C2']);
 			}
 		);
 
-		it('conserva el orden de creación entre eventos sin reseñas', async () => {
-			await construirEvento(eventoRepo, { nombre: 'Sin reseñas 2' });
+		it('no altera las entidades guardadas en el repositorio', async () => {
+			await servicio.buscarEventos();
 
-			const resultado = await servicio.buscarEventos({ sortBy: 'puntaje' });
-
-			expect(nombres(resultado).slice(-2)).toEqual(['Sin reseñas', 'Sin reseñas 2']);
+			const guardado = await eventoRepo.buscarPorId(a1.id);
+			expect(guardado.puntajeOrganizador).toBeUndefined();
 		});
 
-		it('no falla y conserva el orden si no hay repositorio de reseñas', async () => {
+		it('sin repositorio de reseñas: puntaje null y orden de creación', async () => {
 			const sinRepo = new EventoService(eventoRepo, null, null, null);
 
 			const resultado = await sinRepo.buscarEventos({ sortBy: 'puntaje' });
 
-			expect(nombres(resultado)).toEqual([
-				'Sin reseñas',
-				'Promedio 2',
-				'Promedio 4'
-			]);
+			expect(nombres(resultado)).toEqual(['C1', 'B1', 'A1', 'A2']);
+			expect(resultado.every((e) => e.puntajeOrganizador === null)).toBe(true);
 		});
 	});
 

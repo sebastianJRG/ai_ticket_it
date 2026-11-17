@@ -106,6 +106,14 @@ describe('serializadores de respuesta', () => {
 			expect(evento.organizador.contraseniaHash).toBe('hash-secreto-de-contrasenia');
 		});
 
+		it('incluye puntajeOrganizador y lo deja en null si el evento no lo trae', () => {
+			expect(aEventoRespuesta(evento).puntajeOrganizador).toBeNull();
+			expect(
+				aEventoRespuesta({ ...evento, puntajeOrganizador: 4.5 })
+					.puntajeOrganizador
+			).toBe(4.5);
+		});
+
 		it('tolera un evento sin organizador', () => {
 			evento.organizador = undefined;
 

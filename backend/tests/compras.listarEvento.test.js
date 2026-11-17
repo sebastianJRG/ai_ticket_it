@@ -124,7 +124,18 @@ describe('GET /api/eventos/:idEvento/compras', () => {
 		});
 
 		assert.equal(res.status, 200);
-		assert.deepEqual(await res.json(), []);
+		const cuerpo = await res.json();
+		assert.deepEqual(cuerpo.compras, []);
+		assert.deepEqual(cuerpo.disponibilidad, [
+			{
+				tipoEntradaId: evento.tiposEntrada[0].id,
+				nombre: 'General',
+				precio: 100,
+				cupo: 10,
+				vendidas: 0,
+				disponibles: 10
+			}
+		]);
 	});
 
 	it('lista las compras de todos los compradores del evento, en orden', async () => {
@@ -136,7 +147,9 @@ describe('GET /api/eventos/:idEvento/compras', () => {
 		});
 
 		assert.equal(res.status, 200);
-		const compras = await res.json();
+		const { compras, disponibilidad } = await res.json();
+		assert.equal(disponibilidad[0].vendidas, 2);
+		assert.equal(disponibilidad[0].disponibles, 8);
 		assert.deepEqual(
 			compras.map((c) => c.id),
 			[primera.id, segunda.id]

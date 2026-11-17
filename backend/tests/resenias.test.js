@@ -86,6 +86,19 @@ describe('GET /api/resenias/:idEvento', () => {
 	});
 });
 
+describe('GET /api/usuarios/:idOrganizador/resenias', () => {
+	it('es público: responde 200 con una lista vacía sin token', async () => {
+		const res = await api('GET', `/usuarios/${evento.organizador.id}/resenias`);
+
+		assert.equal(res.status, 200);
+		assert.deepEqual(await res.json(), []);
+	});
+
+	it('responde 404 si el organizador no existe', async () => {
+		assert.equal((await api('GET', '/usuarios/999/resenias')).status, 404);
+	});
+});
+
 describe('POST /api/resenias', () => {
 	const cuerpo = () => ({
 		eventoId: evento.id,

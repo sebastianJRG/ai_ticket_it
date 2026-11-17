@@ -71,7 +71,7 @@ describe('CompraService.listarComprasDeEvento', () => {
 	});
 
 	it('devuelve vacío si el evento no tiene compras', async () => {
-		expect(await listar(organizador)).toEqual([]);
+		expect((await listar(organizador)).compras).toEqual([]);
 	});
 
 	it('devuelve las compras de todos los compradores, en cualquier estado y en orden', async () => {
@@ -79,7 +79,7 @@ describe('CompraService.listarComprasDeEvento', () => {
 		const b = await comprarEn(evento, otroComprador, EstadoCompra.CONFIRMADA);
 		const c = await comprarEn(evento, comprador, EstadoCompra.CANCELADA);
 
-		const compras = await listar(organizador);
+		const { compras } = await listar(organizador);
 
 		expect(compras.map((x) => x.id)).toEqual([a.id, b.id, c.id]);
 	});
@@ -88,13 +88,90 @@ describe('CompraService.listarComprasDeEvento', () => {
 		const propia = await comprarEn(evento, comprador);
 		await comprarEn(otroEvento, comprador);
 
-		const compras = await listar(organizador);
+		const { compras } = await listar(organizador);
 
 		expect(compras.map((x) => x.id)).toEqual([propia.id]);
 	});
 
+	describe('disponibilidad por tipo de entrada', () => {
+		let conDosTipos;
+
+		const comprarTipo = (indice, cantidad, estado) =>
+			construirCompra(compraRepo, {
+				comprador,
+				evento: conDosTipos,
+				tipoEntrada: conDosTipos.tiposEntrada[indice],
+				cantidad,
+				estado
+			});
+
+		beforeEach(async () => {
+			conDosTipos = await construirEvento(eventoRepo, {
+				organizador,
+				precios: [100, 250],
+				cupo: 10,
+				prefijoTipos: 'd'
+			});
+		});
+
+		it('informa cupo completo de cada tipo si no hay compras', async () => {
+			const { disponibilidad } = await listar(organizador, conDosTipos.id);
+
+			expect(disponibilidad).toEqual([
+				{
+					tipoEntradaId: 'd1',
+					nombre: 'Tipo 1',
+					precio: 100,
+					cupo: 10,
+					vendidas: 0,
+					disponibles: 10
+				},
+				{
+					tipoEntradaId: 'd2',
+					nombre: 'Tipo 2',
+					precio: 250,
+					cupo: 10,
+					vendidas: 0,
+					disponibles: 10
+				}
+			]);
+		});
+
+		it('descuenta las entradas PENDIENTE, CONFIRMADA y UTILIZADA de su tipo', async () => {
+			await comprarTipo(0, 2, EstadoCompra.PENDIENTE);
+			await comprarTipo(0, 3, EstadoCompra.CONFIRMADA);
+			await comprarTipo(1, 1, EstadoCompra.UTILIZADA);
+
+			const { disponibilidad } = await listar(organizador, conDosTipos.id);
+
+			expect(disponibilidad.map((d) => [d.vendidas, d.disponibles])).toEqual([
+				[5, 5],
+				[1, 9]
+			]);
+		});
+
+		it('no descuenta las compras CANCELADA ni REEMBOLSADA', async () => {
+			await comprarTipo(0, 4, EstadoCompra.CANCELADA);
+			await comprarTipo(0, 2, EstadoCompra.REEMBOLSADA);
+
+			const { disponibilidad } = await listar(organizador, conDosTipos.id);
+
+			expect(disponibilidad[0]).toMatchObject({ vendidas: 0, disponibles: 10 });
+		});
+
+		it('no cuenta compras de otros eventos', async () => {
+			await comprarEn(evento, comprador, EstadoCompra.CONFIRMADA);
+
+			const { disponibilidad } = await listar(organizador, conDosTipos.id);
+
+			expect(disponibilidad[0]).toMatchObject({ vendidas: 0, disponibles: 10 });
+		});
+	});
+
 	it('rechaza con 403 a un organizador que no es dueño del evento', async () => {
-		await expect(listar(otroOrganizador)).rejects.toMatchObject({ status: 403 });
+		await expect(listar(otroOrganizador)).rejects.toMatchObject({
+			status: 403
+		});
 	});
 
 	it('rechaza con 403 a un comprador', async () => {

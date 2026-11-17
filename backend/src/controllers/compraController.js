@@ -5,7 +5,10 @@
  * @module controllers/compraController
  * @license ISC
  */
-import { aCompraRespuesta } from '../dto/compra.js';
+import {
+	aCompraDeCompradorRespuesta,
+	aCompraRespuesta
+} from '../dto/compra.js';
 
 export default class CompraController {
 	/**
@@ -100,17 +103,38 @@ export default class CompraController {
 	 * Lista las compras del evento indicado en la URL (solo su organizador).
 	 * El usuario se toma siempre del token JWT.
 	 * @param {import('express').Request} req - Petición con `req.user` del token y `req.params.idEvento`
-	 * @param {import('express').Response} res - Respuesta HTTP (200 con la lista, posiblemente vacía)
+	 * @param {import('express').Response} res - Respuesta HTTP (200 con `{ compras, disponibilidad }`; `compras` puede ser vacío)
 	 * @param {import('express').NextFunction} next - Recibe los errores del servicio (400, 403, 404)
 	 * @returns {Promise<void>}
 	 */
 	async listarPorEvento(req, res, next) {
 		try {
-			const compras = await this.compraService.listarComprasDeEvento({
-				eventoId: req.params.idEvento,
+			const { compras, disponibilidad } =
+				await this.compraService.listarComprasDeEvento({
+					eventoId: req.params.idEvento,
+					usuarioId: req.user.id
+				});
+			return res
+				.status(200)
+				.json({ compras: compras.map(aCompraRespuesta), disponibilidad });
+		} catch (error) {
+			next(error);
+		}
+	}
+
+	/**
+	 * GET /api/compras — lista las compras del comprador autenticado con sus días restantes.
+	 * @param {import('express').Request} req - `req.user.id` es el comprador
+	 * @param {import('express').Response} res
+	 * @param {import('express').NextFunction} next
+	 * @returns {Promise<void>} Responde 200 con las compras serializadas
+	 */
+	async listarPropias(req, res, next) {
+		try {
+			const compras = await this.compraService.listarComprasDeComprador({
 				usuarioId: req.user.id
 			});
-			return res.status(200).json(compras.map(aCompraRespuesta));
+			return res.status(200).json(compras.map(aCompraDeCompradorRespuesta));
 		} catch (error) {
 			next(error);
 		}

@@ -51,9 +51,9 @@ describe('ReseniaService', () => {
 			...cambios
 		});
 
-	/** Compra del comprador (por defecto CONFIRMADA) para el evento dado. */
+	/** Compra del comprador (por defecto UTILIZADA) para el evento dado. */
 	const comprarEn = (
-		estado = CONFIRMADA,
+		estado = UTILIZADA,
 		{ quien = comprador, en = evento } = {}
 	) =>
 		construirCompra(compraRepo, {
@@ -91,7 +91,7 @@ describe('ReseniaService', () => {
 
 	describe('crearResenia', () => {
 		describe('reseña válida', () => {
-			it.each([CONFIRMADA, UTILIZADA])(
+			it.each([UTILIZADA])(
 				'crea la reseña con una compra %s',
 				async (estado) => {
 					await comprarEn(estado);
@@ -119,6 +119,7 @@ describe('ReseniaService', () => {
 			it('basta una compra elegible aunque haya otras en otros estados', async () => {
 				await comprarEn(CANCELADA);
 				await comprarEn(CONFIRMADA);
+				await comprarEn(UTILIZADA);
 
 				await expect(reseniar()).resolves.toMatchObject({ puntuacion: 4 });
 			});
@@ -129,7 +130,7 @@ describe('ReseniaService', () => {
 					prefijoTipos: 'x'
 				});
 				await comprarEn();
-				await comprarEn(CONFIRMADA, { en: otroEvento });
+				await comprarEn(UTILIZADA, { en: otroEvento });
 
 				await reseniar();
 
@@ -140,7 +141,7 @@ describe('ReseniaService', () => {
 
 			it('permite que dos compradores reseñen el mismo evento', async () => {
 				await comprarEn();
-				await comprarEn(CONFIRMADA, { quien: otroComprador });
+				await comprarEn(UTILIZADA, { quien: otroComprador });
 
 				await reseniar();
 
@@ -216,11 +217,11 @@ describe('ReseniaService', () => {
 				await expect(reseniar()).rejects.toMatchObject({
 					status: 403,
 					message:
-						'Solo puedes reseñar eventos en los que tengas una compra confirmada.'
+						'Solo puedes reseñar eventos en los que tengas una entrada utilizada.'
 				});
 			});
 
-			it.each([PENDIENTE, CANCELADA, REEMBOLSADA])(
+			it.each([PENDIENTE, CONFIRMADA, CANCELADA, REEMBOLSADA])(
 				'rechaza con 403 si la única compra está %s',
 				async (estado) => {
 					await comprarEn(estado);
@@ -272,9 +273,12 @@ describe('ReseniaService', () => {
 		});
 
 		it('la reseña creada influye en el ordenamiento por puntaje de los eventos', async () => {
+			const otroOrganizador = await usuarioRepo.crear(
+				construirUsuario({ rol: 'ORGANIZADOR', nombreUsuario: 'org.dos' })
+			);
 			const eventoB = await construirEvento(eventoRepo, {
 				nombre: 'B',
-				organizador,
+				organizador: otroOrganizador,
 				prefijoTipos: 'x'
 			});
 			const eventoService = new EventoService(
@@ -284,7 +288,7 @@ describe('ReseniaService', () => {
 				new TipoEntradaRepository(),
 				reseniaRepo
 			);
-			await comprarEn(CONFIRMADA, { en: eventoB });
+			await comprarEn(UTILIZADA, { en: eventoB });
 
 			await reseniar({ eventoId: eventoB.id, puntuacion: 5 });
 
@@ -335,6 +339,64 @@ describe('ReseniaService', () => {
 
 		it('rechaza con 400 un ID vacío', async () => {
 			await expect(servicio.listarPorEvento('')).rejects.toMatchObject({
+				status: 400
+			});
+		});
+	});
+
+	describe('listarPorOrganizador', () => {
+		let otroOrganizador;
+		let eventoAnterior;
+		let eventoAjeno;
+
+		beforeEach(async () => {
+			otroOrganizador = await usuarioRepo.crear(
+				construirUsuario({ rol: 'ORGANIZADOR', nombreUsuario: 'org.dos' })
+			);
+			eventoAnterior = await construirEvento(eventoRepo, {
+				nombre: 'Anterior',
+				organizador,
+				prefijoTipos: 'a'
+			});
+			eventoAjeno = await construirEvento(eventoRepo, {
+				nombre: 'Ajeno',
+				organizador: otroOrganizador,
+				prefijoTipos: 'j'
+			});
+		});
+
+		it('devuelve las reseñas de todos los eventos del organizador, en orden de creación', async () => {
+			const r1 = await construirResenia(reseniaRepo, evento, 5, { comprador });
+			await construirResenia(reseniaRepo, eventoAjeno, 1, { comprador });
+			const r2 = await construirResenia(reseniaRepo, eventoAnterior, 3, {
+				comprador: otroComprador
+			});
+
+			const resultado = await servicio.listarPorOrganizador(organizador.id);
+
+			expect(resultado.map((r) => r.id)).toEqual([r1.id, r2.id]);
+		});
+
+		it('devuelve un arreglo vacío si el organizador no tiene reseñas', async () => {
+			await construirResenia(reseniaRepo, eventoAjeno, 4, { comprador });
+
+			expect(await servicio.listarPorOrganizador(organizador.id)).toEqual([]);
+		});
+
+		it('rechaza con 404 un usuario inexistente', async () => {
+			await expect(servicio.listarPorOrganizador('999')).rejects.toMatchObject({
+				status: 404
+			});
+		});
+
+		it('rechaza con 404 si el usuario no es ORGANIZADOR', async () => {
+			await expect(
+				servicio.listarPorOrganizador(comprador.id)
+			).rejects.toMatchObject({ status: 404 });
+		});
+
+		it('rechaza con 400 un ID vacío', async () => {
+			await expect(servicio.listarPorOrganizador('  ')).rejects.toMatchObject({
 				status: 400
 			});
 		});

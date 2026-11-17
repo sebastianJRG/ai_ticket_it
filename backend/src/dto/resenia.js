@@ -15,7 +15,9 @@ const MENSAJE_PUNTUACION = 'La puntuación debe estar entre 1 y 5.';
  */
 export const crearReseniaSchema = z.object({
 	compradorId: z
-		.string({ message: 'El ID del comprador es obligatorio y debe ser un texto.' })
+		.string({
+			message: 'El ID del comprador es obligatorio y debe ser un texto.'
+		})
 		.trim()
 		.min(1, 'El ID del comprador no puede estar vacío.'),
 
@@ -42,6 +44,15 @@ export const idEventoSchema = z
 	.string({ message: 'El ID del evento es obligatorio y debe ser un texto.' })
 	.trim()
 	.min(1, 'El ID del evento no puede estar vacío.');
+
+/**
+ * ID de usuario recibido por URL (por ejemplo, el organizador cuyas reseñas se listan).
+ * @type {import('zod').ZodString}
+ */
+export const idUsuarioSchema = z
+	.string({ message: 'El ID del usuario es obligatorio y debe ser un texto.' })
+	.trim()
+	.min(1, 'El ID del usuario no puede estar vacío.');
 
 /**
  * Convierte una reseña de dominio en su representación para respuestas HTTP.

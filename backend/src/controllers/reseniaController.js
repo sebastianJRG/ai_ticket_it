@@ -54,4 +54,22 @@ export default class ReseniaController {
 			next(error);
 		}
 	}
+
+	/**
+	 * GET /api/usuarios/:idOrganizador/resenias — reseñas de los eventos de un organizador (público).
+	 * @param {import('express').Request} req - Petición con `req.params.idOrganizador`
+	 * @param {import('express').Response} res - 200 con las reseñas (posiblemente vacío)
+	 * @param {import('express').NextFunction} next - Recibe los errores del servicio (400, 404)
+	 * @returns {Promise<void>}
+	 */
+	async listarPorOrganizador(req, res, next) {
+		try {
+			const resenias = await this.reseniaService.listarPorOrganizador(
+				req.params.idOrganizador
+			);
+			return res.status(200).json(resenias.map(aReseniaRespuesta));
+		} catch (error) {
+			next(error);
+		}
+	}
 }

@@ -4,18 +4,19 @@
  * @module services/reseniaService
  * @license ISC
  */
-import { crearReseniaSchema, idEventoSchema } from '../dto/resenia.js';
+import {
+	crearReseniaSchema,
+	idEventoSchema,
+	idUsuarioSchema
+} from '../dto/resenia.js';
 import EstadoCompra from '../models/estadoCompra.js';
 import Resenia from '../models/resenia.js';
-import { COMPRADOR } from '../models/roles.js';
+import { COMPRADOR, ORGANIZADOR } from '../models/roles.js';
 import ErrorHttp from '../utils/errorHttp.js';
 import ExclusionMutua from '../utils/exclusionMutua.js';
 
-/** Estados de compra que habilitan a reseñar el evento. */
-const ESTADOS_QUE_HABILITAN = new Set([
-	EstadoCompra.CONFIRMADA,
-	EstadoCompra.UTILIZADA
-]);
+/** Estados de compra que habilitan a reseñar el evento: solo entradas ya utilizadas. */
+const ESTADOS_QUE_HABILITAN = new Set([EstadoCompra.UTILIZADA]);
 
 export default class ReseniaService {
 	/**
@@ -52,7 +53,7 @@ export default class ReseniaService {
 	/**
 	 * Crea la reseña de un comprador sobre un evento.
 	 * Requiere que el evento ya haya ocurrido, que el comprador tenga una compra
-	 * CONFIRMADA o UTILIZADA de ese evento y que no lo haya reseñado antes.
+	 * UTILIZADA de ese evento y que no lo haya reseñado antes.
 	 * @param {object} datosResenia
 	 * @param {string} datosResenia.compradorId - ID del comprador (viene del token, no del cliente)
 	 * @param {string} datosResenia.eventoId
@@ -60,7 +61,7 @@ export default class ReseniaService {
 	 * @param {number} datosResenia.puntuacion - Entero de 1 a 5
 	 * @returns {Promise<Resenia>} La reseña creada
 	 * @throws {ErrorHttp} 400 si los datos son inválidos o el evento aún no ocurrió
-	 * @throws {ErrorHttp} 403 si el usuario no es COMPRADOR o no tiene una compra elegible del evento
+	 * @throws {ErrorHttp} 403 si el usuario no es COMPRADOR o no tiene una compra UTILIZADA del evento
 	 * @throws {ErrorHttp} 404 si el comprador o el evento no existen
 	 * @throws {ErrorHttp} 409 si el comprador ya reseñó el evento
 	 */
@@ -98,7 +99,7 @@ export default class ReseniaService {
 			if (!compras.some((c) => ESTADOS_QUE_HABILITAN.has(c.estado))) {
 				throw new ErrorHttp(
 					403,
-					'Solo puedes reseñar eventos en los que tengas una compra confirmada.'
+					'Solo puedes reseñar eventos en los que tengas una entrada utilizada.'
 				);
 			}
 			const existente = await this.reseniaRepository.buscarPorCompradorYEvento(
@@ -137,5 +138,30 @@ export default class ReseniaService {
 			throw new ErrorHttp(404, `El evento con ID ${id} no existe.`);
 		}
 		return this.reseniaRepository.buscarPorEventoId(evento.id);
+	}
+
+	/**
+	 * Lista las reseñas de todos los eventos de un organizador, en orden de creación.
+	 * Permite mostrar en cada evento la experiencia previa con ese organizador.
+	 * @param {string} idOrganizador - ID del organizador (viene de la URL)
+	 * @returns {Promise<Resenia[]>} Reseñas de sus eventos (vacío si no tiene)
+	 * @throws {ErrorHttp} 400 si el ID es inválido
+	 * @throws {ErrorHttp} 404 si el usuario no existe o no es ORGANIZADOR
+	 */
+	async listarPorOrganizador(idOrganizador) {
+		const resultado = idUsuarioSchema.safeParse(idOrganizador);
+		if (!resultado.success) {
+			throw new ErrorHttp(
+				400,
+				resultado.error.issues[0]?.message || 'Error de validación'
+			);
+		}
+		const id = resultado.data;
+
+		const organizador = await this.usuarioRepository.buscarPorId(id);
+		if (!organizador || organizador.rol !== ORGANIZADOR.nombre) {
+			throw new ErrorHttp(404, `El organizador con ID ${id} no existe.`);
+		}
+		return this.reseniaRepository.buscarPorOrganizadorId(organizador.id);
 	}
 }

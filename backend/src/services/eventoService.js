@@ -41,14 +41,17 @@ export default class EventoService {
 
 	/** Busca eventos con búsqueda textual, filtro por categoría y ordenamiento opcional.
 	 *
+	 * Cada evento devuelto incluye `puntajeOrganizador`: promedio de las reseñas de todos los
+	 * eventos de su organizador (null si no tiene). `sortBy=puntaje` ordena por ese valor.
 	 * Orden por defecto cuando no se indica `order`: precio ascendente, fecha ascendente
-	 * y puntaje descendente. Los eventos sin reseñas siempre quedan al final al ordenar por puntaje.
+	 * y puntaje descendente. Los eventos de organizadores sin reseñas siempre quedan al final
+	 * al ordenar por puntaje.
 	 * @param {object} [query] Parámetros de consulta (típicamente req.query)
 	 * @param {string} [query.q] Texto a buscar en nombre o descripción
 	 * @param {string} [query.categoriaId] ID de categoría por el cual filtrar
 	 * @param {'precio'|'fecha'|'puntaje'} [query.sortBy] Criterio de ordenamiento
 	 * @param {'asc'|'desc'} [query.order] Sentido del ordenamiento
-	 * @returns {Promise<Evento[]>} Eventos que cumplen los criterios (puede ser vacío)
+	 * @returns {Promise<Array<Evento & {puntajeOrganizador: number|null}>>} Eventos que cumplen los criterios (puede ser vacío)
 	 * @throws {Error} Si algún parámetro de consulta es inválido
 	 */
 	async buscarEventos(query = {}) {
@@ -60,23 +63,24 @@ export default class EventoService {
 		}
 
 		const { q, categoriaId, sortBy, order } = resultado.data;
-		const eventos = await this.eventoRepository.buscarEventos({
+		const encontrados = await this.eventoRepository.buscarEventos({
 			texto: q,
 			categoriaId
 		});
+		const puntajes = await this._puntajesPorOrganizador();
+		const eventos = encontrados.map((e) => this._conPuntaje(e, puntajes));
 
 		if (!sortBy) return eventos;
 
 		if (sortBy === 'puntaje') {
-			const puntajes = await this._puntajesPorEvento();
 			const factor = (order ?? 'desc') === 'asc' ? 1 : -1;
 			return eventos.sort((a, b) => {
-				const pa = puntajes.get(a.id);
-				const pb = puntajes.get(b.id);
+				const pa = a.puntajeOrganizador;
+				const pb = b.puntajeOrganizador;
 				// Sin reseñas siempre al final, sin importar el sentido
-				if (pa === undefined && pb === undefined) return 0;
-				if (pa === undefined) return 1;
-				if (pb === undefined) return -1;
+				if (pa === null && pb === null) return 0;
+				if (pa === null) return 1;
+				if (pb === null) return -1;
 				return (pa - pb) * factor;
 			});
 		}
@@ -98,26 +102,41 @@ export default class EventoService {
 		return Math.min(...evento.tiposEntrada.map((t) => t.precio));
 	}
 
-	/** Calcula el puntaje promedio de las reseñas de cada evento.
+	/** Calcula el puntaje promedio de las reseñas de todos los eventos de cada organizador.
 	 * @private
-	 * @returns {Promise<Map<string, number>>} Mapa de ID de evento a promedio; los eventos sin reseñas no aparecen
+	 * @returns {Promise<Map<string, number>>} Mapa de ID de organizador a promedio; los organizadores sin reseñas no aparecen
 	 */
-	async _puntajesPorEvento() {
+	async _puntajesPorOrganizador() {
 		const resenias = this.reseniaRepository
 			? await this.reseniaRepository.obtenerTodos()
 			: [];
 		const acumulado = new Map();
 		for (const r of resenias) {
-			const eventoId = r.evento?.id;
-			if (eventoId === undefined || eventoId === null) continue;
-			const actual = acumulado.get(eventoId) ?? { suma: 0, cantidad: 0 };
+			const organizadorId = r.evento?.organizador?.id;
+			if (organizadorId === undefined || organizadorId === null) continue;
+			const actual = acumulado.get(organizadorId) ?? { suma: 0, cantidad: 0 };
 			actual.suma += r.puntuacion;
 			actual.cantidad += 1;
-			acumulado.set(eventoId, actual);
+			acumulado.set(organizadorId, actual);
 		}
 		return new Map(
 			[...acumulado].map(([id, { suma, cantidad }]) => [id, suma / cantidad])
 		);
+	}
+
+	/** Agrega al evento el puntaje de su organizador (sin modificar el original).
+	 * @private
+	 * @param {Evento} evento
+	 * @param {Map<string, number>} puntajes - Resultado de `_puntajesPorOrganizador`
+	 * @returns {Evento & {puntajeOrganizador: number|null}} Copia del evento con `puntajeOrganizador`
+	 */
+	_conPuntaje(evento, puntajes) {
+		const copia = Object.assign(
+			Object.create(Object.getPrototypeOf(evento)),
+			evento
+		);
+		copia.puntajeOrganizador = puntajes.get(evento.organizador?.id) ?? null;
+		return copia;
 	}
 
 	/** Obtiene todos los eventos disponibles.
@@ -129,7 +148,7 @@ export default class EventoService {
 
 	/** Obtiene un evento por su ID.
 	 * @param {string} id - ID del evento (texto no vacío)
-	 * @returns {Promise<Evento>}
+	 * @returns {Promise<Evento & {puntajeOrganizador: number|null}>} El evento con el puntaje de su organizador
 	 * @throws {ErrorHttp} 400 si el ID es vacío o no es un texto
 	 * @throws {ErrorHttp} 404 si el evento no existe
 	 */
@@ -145,7 +164,7 @@ export default class EventoService {
 		if (!evento) {
 			throw new ErrorHttp(404, `El evento con ID ${resultado.data} no existe.`);
 		}
-		return evento;
+		return this._conPuntaje(evento, await this._puntajesPorOrganizador());
 	}
 
 	/** Crea un nuevo evento validando los campos y dependencias requeridas (categoría, organizador, tipos de entrada).

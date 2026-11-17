@@ -46,6 +46,29 @@ describe('ReseniaRepository', () => {
 		});
 	});
 
+	describe('buscarPorOrganizadorId', () => {
+		it('devuelve copias de las reseñas de eventos de ese organizador, en orden', async () => {
+			const eventos = new EventoRepository();
+			const propio = await construirEvento(eventos, {
+				organizador: { id: 'org-9' },
+				prefijoTipos: 'p'
+			});
+			const r1 = await construirResenia(repo, propio, 5, { comprador: ana });
+			await construirResenia(repo, eventoA, 2, { comprador: ana });
+			const r2 = await construirResenia(repo, propio, 3, { comprador: beto });
+
+			const resultado = await repo.buscarPorOrganizadorId('org-9');
+
+			expect(resultado.map((r) => r.id)).toEqual([r1.id, r2.id]);
+			resultado[0].puntuacion = 1;
+			expect((await repo.buscarPorId(r1.id)).puntuacion).toBe(5);
+		});
+
+		it('devuelve un arreglo vacío si el organizador no tiene reseñas', async () => {
+			expect(await repo.buscarPorOrganizadorId('org-9')).toEqual([]);
+		});
+	});
+
 	describe('buscarPorCompradorYEvento', () => {
 		it('encuentra la reseña de ese comprador en ese evento', async () => {
 			const esperada = await construirResenia(repo, eventoA, 5, {

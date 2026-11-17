@@ -21,6 +21,7 @@ describe('CompraController.listarPorEvento', () => {
 	let res;
 	let next;
 	let compra;
+	let disponibilidad;
 
 	beforeEach(async () => {
 		const evento = await construirEvento(new EventoRepository(), {
@@ -34,36 +35,53 @@ describe('CompraController.listarPorEvento', () => {
 			cantidad: 2
 		});
 
-		servicio = { listarComprasDeEvento: jest.fn().mockResolvedValue([compra]) };
+		disponibilidad = [
+			{
+				tipoEntradaId: 't1',
+				nombre: 'Tipo 1',
+				precio: 100,
+				cupo: 10,
+				vendidas: 2,
+				disponibles: 8
+			}
+		];
+		servicio = {
+			listarComprasDeEvento: jest
+				.fn()
+				.mockResolvedValue({ compras: [compra], disponibilidad })
+		};
 		controlador = new CompraController(servicio);
 		req = { user: { id: '9', rol: 'ORGANIZADOR' }, params: { idEvento: '1' } };
 		res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
 		next = jest.fn();
 	});
 
-	it('responde 200 con las compras serializadas', async () => {
+	it('responde 200 con las compras serializadas y la disponibilidad por tipo', async () => {
 		await controlador.listarPorEvento(req, res, next);
 
 		expect(res.status).toHaveBeenCalledWith(200);
-		expect(res.json).toHaveBeenCalledWith([
-			{
-				id: compra.id,
-				comprador: { id: '5', nombre: 'Ana', apellido: 'Pérez' },
-				evento: {
-					id: compra.evento.id,
-					nombre: 'Rock Fest',
-					fecha: compra.evento.fecha
-				},
-				tipoEntrada: {
-					id: compra.tipoEntrada.id,
-					nombre: compra.tipoEntrada.nombre,
-					precio: compra.tipoEntrada.precio
-				},
-				cantidad: 2,
-				total: compra.total,
-				estado: compra.estado
-			}
-		]);
+		expect(res.json).toHaveBeenCalledWith({
+			disponibilidad,
+			compras: [
+				{
+					id: compra.id,
+					comprador: { id: '5', nombre: 'Ana', apellido: 'Pérez' },
+					evento: {
+						id: compra.evento.id,
+						nombre: 'Rock Fest',
+						fecha: compra.evento.fecha
+					},
+					tipoEntrada: {
+						id: compra.tipoEntrada.id,
+						nombre: compra.tipoEntrada.nombre,
+						precio: compra.tipoEntrada.precio
+					},
+					cantidad: 2,
+					total: compra.total,
+					estado: compra.estado
+				}
+			]
+		});
 	});
 
 	it('no expone hashes ni datos sensibles del comprador', async () => {
@@ -83,12 +101,15 @@ describe('CompraController.listarPorEvento', () => {
 	});
 
 	it('responde 200 con una lista vacía si no hay compras', async () => {
-		servicio.listarComprasDeEvento.mockResolvedValue([]);
+		servicio.listarComprasDeEvento.mockResolvedValue({
+			compras: [],
+			disponibilidad
+		});
 
 		await controlador.listarPorEvento(req, res, next);
 
 		expect(res.status).toHaveBeenCalledWith(200);
-		expect(res.json).toHaveBeenCalledWith([]);
+		expect(res.json).toHaveBeenCalledWith({ compras: [], disponibilidad });
 	});
 
 	it('propaga el error del servicio con next', async () => {

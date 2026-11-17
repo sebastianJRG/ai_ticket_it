@@ -115,7 +115,9 @@ Rutas que las exponen (todas autenticadas, sin cuerpo, y fallan con 400 si el ev
 
 Otras rutas de compras:
 
-- `GET /api/eventos/:idEvento/compras` — ORGANIZADOR dueño del evento (otro organizador: 403). Lista todas las compras del evento, en cualquier estado y en orden de creación (`[]` si no hay). 400 (ID inválido), 401, 403, 404.
+- `POST /api/compras` — COMPRADOR autenticado. Cuerpo `{ eventoId, tipoEntradaId, cantidad }`. Crea la compra en PENDIENTE; el total lo calcula el servidor. 400 (datos inválidos o evento ya ocurrido), 401, 403, 404, 409 (cupo insuficiente).
+- `GET /api/compras` — COMPRADOR autenticado. Lista sus compras, en cualquier estado y en orden de creación (`[]` si no hay). Cada compra incluye `diasRestantes`: días hasta el evento (redondeado hacia arriba, mínimo 0) si está CONFIRMADA; `null` en otro estado. 401, 403 (otro rol).
+- `GET /api/eventos/:idEvento/compras` — ORGANIZADOR dueño del evento (otro organizador: 403). Devuelve `{ compras, disponibilidad }`: todas las compras del evento en cualquier estado y en orden de creación (`[]` si no hay), y por cada tipo de entrada `{ tipoEntradaId, nombre, precio, cupo, vendidas, disponibles }` (PENDIENTE, CONFIRMADA y UTILIZADA ocupan cupo). 400 (ID inválido), 401, 403, 404.
 
 ### Usuarios (Usuario)
 
@@ -124,7 +126,7 @@ Otras rutas de compras:
 
 ### Eventos (Evento)
 
-- `GET /api/eventos` — público. Lista/busca eventos (query: `q`, `categoriaId`, `sortBy`, `order`).
+- `GET /api/eventos` — público. Lista/busca eventos (query: `q`, `categoriaId`, `sortBy` = `precio` | `fecha` | `puntaje`, `order`). Cada evento incluye `puntajeOrganizador`: promedio de las reseñas de todos los eventos de su organizador (`null` si no tiene). `sortBy=puntaje` ordena por ese valor (descendente por defecto; los organizadores sin reseñas quedan al final).
 - `GET /api/eventos/:idEvento` — público (sin token). Devuelve el detalle del evento con el mismo formato que cada elemento del listado (organizador en versión pública, sin hashes). 400 (ID inválido), 404 (no existe).
 - `POST /api/eventos` — ORGANIZADOR autenticado. Crea un evento.
 
@@ -136,8 +138,9 @@ Otras rutas de compras:
 ### Reseñas (Resenia)
 
 - `POST /api/resenias` — COMPRADOR autenticado. Cuerpo `{ eventoId, detalle, puntuacion }` (puntuación entera 1–5, detalle hasta 1000 caracteres). El comprador sale del token.
-  - Reglas: el evento ya debe haber ocurrido (400), el comprador debe tener una compra CONFIRMADA o UTILIZADA de ese evento (403) y solo puede reseñar una vez cada evento (409).
+  - Reglas: el evento ya debe haber ocurrido (400), el comprador debe tener una compra UTILIZADA de ese evento (403) y solo puede reseñar una vez cada evento (409).
 - `GET /api/resenias/:idEvento` — público (sin token). Lista las reseñas del evento (404 si no existe).
+- `GET /api/usuarios/:idOrganizador/resenias` — público (sin token). Lista las reseñas de todos los eventos del organizador, en orden de creación (`[]` si no hay). 400 (ID inválido), 404 (no existe o no es ORGANIZADOR).
 
 ### Mensajería (Mensaje)
 

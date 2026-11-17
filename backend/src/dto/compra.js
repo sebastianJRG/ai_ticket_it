@@ -5,7 +5,9 @@ import { aUsuarioPublico } from './usuarioPublico.js';
 // Nota: `compradorId` NO lo envía el cliente; el controlador lo toma del token JWT.
 export const crearCompraSchema = z.object({
 	compradorId: z
-		.string({ message: 'El ID del comprador es obligatorio y debe ser un texto.' })
+		.string({
+			message: 'El ID del comprador es obligatorio y debe ser un texto.'
+		})
 		.trim()
 		.min(1, 'El ID del comprador no puede estar vacío.'),
 
@@ -63,4 +65,16 @@ export function aCompraRespuesta(compra) {
 		total: compra.total,
 		estado: compra.estado
 	};
+}
+
+/**
+ * Convierte una compra del comprador en su representación HTTP, agregando los días
+ * que faltan para el evento.
+ * @param {object} item
+ * @param {import('../models/compra.js').default} item.compra - La compra
+ * @param {number|null} item.diasRestantes - Días hasta el evento (solo si está CONFIRMADA)
+ * @returns {ReturnType<typeof aCompraRespuesta> & {diasRestantes: number|null}} Compra serializada con `diasRestantes`
+ */
+export function aCompraDeCompradorRespuesta({ compra, diasRestantes }) {
+	return { ...aCompraRespuesta(compra), diasRestantes };
 }

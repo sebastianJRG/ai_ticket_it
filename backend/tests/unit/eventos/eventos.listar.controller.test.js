@@ -37,7 +37,8 @@ describe('EventoController.listar', () => {
 			{
 				id: '1',
 				nombre: 'Rock Fest',
-				organizador: { id: '9', nombre: 'Ana', apellido: 'Pérez', rol: 'ORGANIZADOR' }
+				organizador: { id: '9', nombre: 'Ana', apellido: 'Pérez', rol: 'ORGANIZADOR' },
+				puntajeOrganizador: null
 			}
 		]);
 		expect(next).not.toHaveBeenCalled();

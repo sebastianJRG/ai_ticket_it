@@ -40,7 +40,8 @@ describe('ReseniaController', () => {
 
 		servicio = {
 			crearResenia: jest.fn().mockResolvedValue(resenia),
-			listarPorEvento: jest.fn().mockResolvedValue([resenia])
+			listarPorEvento: jest.fn().mockResolvedValue([resenia]),
+			listarPorOrganizador: jest.fn().mockResolvedValue([resenia])
 		};
 		controlador = new ReseniaController(servicio);
 		req = {
@@ -136,6 +137,43 @@ describe('ReseniaController', () => {
 			servicio.listarPorEvento.mockRejectedValue(error);
 
 			await controlador.listar(req, res, next);
+
+			expect(next).toHaveBeenCalledWith(error);
+			expect(res.json).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('listarPorOrganizador', () => {
+		beforeEach(() => {
+			req = { params: { idOrganizador: '9' }, body: {} };
+		});
+
+		it('delega en el servicio con el ID de organizador de la URL', async () => {
+			await controlador.listarPorOrganizador(req, res, next);
+
+			expect(servicio.listarPorOrganizador).toHaveBeenCalledWith('9');
+		});
+
+		it('funciona sin usuario autenticado y responde 200 con la lista', async () => {
+			await controlador.listarPorOrganizador(req, res, next);
+
+			expect(res.status).toHaveBeenCalledWith(200);
+			expect(res.json.mock.calls[0][0]).toEqual([respuestaEsperada()]);
+		});
+
+		it('no filtra hashes en la respuesta', async () => {
+			await controlador.listarPorOrganizador(req, res, next);
+
+			expect(JSON.stringify(res.json.mock.calls[0][0])).not.toContain(
+				'hash-secreto'
+			);
+		});
+
+		it('delega el error en next si el servicio rechaza', async () => {
+			const error = new Error('El organizador con ID 9 no existe.');
+			servicio.listarPorOrganizador.mockRejectedValue(error);
+
+			await controlador.listarPorOrganizador(req, res, next);
 
 			expect(next).toHaveBeenCalledWith(error);
 			expect(res.json).not.toHaveBeenCalled();

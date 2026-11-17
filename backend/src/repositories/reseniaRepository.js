@@ -17,6 +17,17 @@ export default class ReseniaRepository extends RepositorioEnMemoria {
 	}
 
 	/**
+	 * Obtiene las reseñas de todos los eventos de un organizador, en orden de creación.
+	 * @param {string} organizadorId - ID del organizador
+	 * @returns {Promise<import('../models/resenia.js').default[]>} Reseñas de sus eventos (puede ser vacío)
+	 */
+	async buscarPorOrganizadorId(organizadorId) {
+		return this.elementos
+			.filter((r) => r.evento?.organizador?.id === organizadorId)
+			.map((r) => this._clonar(r));
+	}
+
+	/**
 	 * Busca la reseña que un comprador dejó sobre un evento.
 	 * @param {string} compradorId - ID del comprador
 	 * @param {string} eventoId - ID del evento

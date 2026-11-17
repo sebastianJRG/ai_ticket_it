@@ -113,9 +113,14 @@ export const listarEventosSchema = z.object({
 /**
  * Convierte un evento de dominio en su representación para respuestas HTTP.
  * Reemplaza al organizador por su versión pública para no filtrar hashes.
- * @param {import('../models/evento.js').default} evento
- * @returns {object} Copia del evento con `organizador` público (o null si no tiene)
+ * @param {import('../models/evento.js').default & {puntajeOrganizador?: number|null}} evento
+ * @returns {object} Copia del evento con `organizador` público (o null si no tiene) y
+ *   `puntajeOrganizador` (promedio de reseñas del organizador, o null)
  */
 export function aEventoRespuesta(evento) {
-	return { ...evento, organizador: aUsuarioPublico(evento.organizador) };
+	return {
+		...evento,
+		organizador: aUsuarioPublico(evento.organizador),
+		puntajeOrganizador: evento.puntajeOrganizador ?? null
+	};
 }

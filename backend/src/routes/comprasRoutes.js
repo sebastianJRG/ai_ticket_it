@@ -25,6 +25,14 @@ export default class ComprasRoutes {
       compraController.crear.bind(compraController)
     );
 
+    // GET /api/compras - Compras del comprador autenticado (con días restantes)
+    router.get(
+      '/',
+      authMiddleware,
+      requerirRol('COMPRADOR'),
+      compraController.listarPropias.bind(compraController)
+    );
+
     // PATCH /api/compras/:idCompra/cancelacion - Cancelar (comprador dueño u organizador del evento)
     router.patch(
       '/:idCompra/cancelacion',

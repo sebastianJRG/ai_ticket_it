@@ -41,7 +41,8 @@ describe('EventoController.obtener', () => {
 				nombre: 'Ana',
 				apellido: 'Pérez',
 				rol: 'ORGANIZADOR'
-			}
+			},
+			puntajeOrganizador: null
 		});
 		expect(next).not.toHaveBeenCalled();
 	});

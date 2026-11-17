@@ -108,7 +108,12 @@ export function createApp(repository) {
   app.locals.compraService = compraService;
 
   // Rutas de usuarios
-  UsuariosRoutes.init(app, usuarioController, authMiddleware);
+  UsuariosRoutes.init(
+    app,
+    usuarioController,
+    authMiddleware,
+    reseniaController
+  );
 
   // Rutas de categorías - crear requiere autenticación y rol ORGANIZADOR; listar es público
   CategoriasRoutes.init(app, categoriaController, authMiddleware);
