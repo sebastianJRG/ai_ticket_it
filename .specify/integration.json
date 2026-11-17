@@ -1,13 +1,15 @@
 {
-	"version": "1.2.6.dev0",
-	"integration_state_schema": 1,
-	"installed_integrations": ["cline"],
-	"integration_settings": {
-		"cline": {
-			"script": "sh",
-			"invoke_separator": "-"
-		}
-	},
-	"integration": "cline",
-	"default_integration": "cline"
+  "version": "1.4.3.dev0",
+  "integration_state_schema": 1,
+  "installed_integrations": [
+    "claude"
+  ],
+  "integration_settings": {
+    "claude": {
+      "script": "sh",
+      "invoke_separator": "-"
+    }
+  },
+  "integration": "claude",
+  "default_integration": "claude"
 }
