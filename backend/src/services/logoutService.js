@@ -1,5 +1,12 @@
+/**
+ * Servicio de cierre de sesión (invalida el refresh token).
+ *
+ * Ownership: equipo backend de Al Ticket It.
+ *
+ * @license ISC
+ */
 import { logoutUsuarioSchema } from '../dto/usuario.js';
-import { verifyContrasenia } from '../utils/hashing.js';
+import { buscarPorRefreshToken } from '../utils/buscarPorRefreshToken.js';
 
 /**
  * Servicio que gestiona el cierre de sesión, invalidando el refresh token actual.
@@ -44,11 +51,10 @@ export default class LogoutService {
 
 		const { refreshToken } = resultado.data;
 
-		const usuarios = await this.usuarioRepository.buscarVarios({});
-		const usuario = usuarios.find((u) => {
-			if (!u.refreshTokenHash) return false;
-			return verifyContrasenia(refreshToken, u.refreshTokenHash);
-		});
+		const usuario = await buscarPorRefreshToken(
+			this.usuarioRepository,
+			refreshToken
+		);
 
 		if (!usuario) {
 			const error = new Error('Refresh token inválido o expirado.');

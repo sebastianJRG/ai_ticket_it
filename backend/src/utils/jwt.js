@@ -1,9 +1,19 @@
+/**
+ * Verificación de JWT y middleware de autenticación.
+ *
+ * Ownership: equipo backend de Al Ticket It.
+ *
+ * @license ISC
+ */
 import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from './configJwt.js';
 
-const JWT_SECRET =
-  process.env.JWT_SECRET || 'clave-generica-cambiar-en-produccion';
-
-/** Verifica un token JWT y retorna los datos decodificados. */
+/**
+ * Verifica un token JWT y retorna los datos decodificados.
+ * @param {string} token Access token JWT.
+ * @returns {{id: string, rol: string, permisos: string[]}} Datos del usuario del token.
+ * @throws {Error} Si el token es inválido o expiró.
+ */
 export function verifyToken(token) {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
@@ -17,7 +27,13 @@ export function verifyToken(token) {
   }
 }
 
-/** Middleware de autenticación JWT. */
+/**
+ * Middleware de autenticación JWT: asigna `req.user` (o `null` si el token es inválido).
+ * @param {import('express').Request} req Petición.
+ * @param {import('express').Response} res Respuesta.
+ * @param {import('express').NextFunction} next Siguiente middleware.
+ * @returns {void}
+ */
 export function authMiddleware(req, res, next) {
   try {
     const authHeader = req.headers.authorization;

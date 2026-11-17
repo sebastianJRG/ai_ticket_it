@@ -1,23 +1,15 @@
+/**
+ * Servicio de inicio de sesión (emite access y refresh token).
+ *
+ * Ownership: equipo backend de Al Ticket It.
+ *
+ * @license ISC
+ */
 import jwt from 'jsonwebtoken';
 import crypto from 'node:crypto';
 import { loginUsuarioSchema } from '../dto/usuario.js';
 import { hashContrasenia, verifyContrasenia } from '../utils/hashing.js';
-
-/**
- * Servicio que gestiona el flujo de inicio de sesión.
- * Emite un access token con duración corta y un refresh token con duración larga.
- *
- * @private
- * @type {string}
- */
-const JWT_SECRET =
-	process.env.JWT_SECRET || 'clave-generica-cambiar-en-produccion';
-
-/**
- * @private
- * @type {string}
- */
-const JWT_ACCESS_EXPIRATION = process.env.JWT_ACCESS_EXPIRATION || '15m';
+import { JWT_SECRET, JWT_ACCESS_EXPIRATION } from '../utils/configJwt.js';
 
 /**
  * @private

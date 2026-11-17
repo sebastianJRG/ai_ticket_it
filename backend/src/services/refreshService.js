@@ -1,23 +1,16 @@
+/**
+ * Servicio de renovación de tokens (rotación del refresh token).
+ *
+ * Ownership: equipo backend de Al Ticket It.
+ *
+ * @license ISC
+ */
 import jwt from 'jsonwebtoken';
 import crypto from 'node:crypto';
 import { refreshUsuarioSchema } from '../dto/usuario.js';
-import { hashContrasenia, verifyContrasenia } from '../utils/hashing.js';
-
-/**
- * Servicio que gestiona la renovación de tokens (rotación de refresh token).
- * Emite un nuevo access token y un nuevo refresh token en cada petición.
- *
- * @private
- * @type {string}
- */
-const JWT_SECRET =
-	process.env.JWT_SECRET || 'clave-generica-cambiar-en-produccion';
-
-/**
- * @private
- * @type {string}
- */
-const JWT_ACCESS_EXPIRATION = process.env.JWT_ACCESS_EXPIRATION || '15m';
+import { hashContrasenia } from '../utils/hashing.js';
+import { buscarPorRefreshToken } from '../utils/buscarPorRefreshToken.js';
+import { JWT_SECRET, JWT_ACCESS_EXPIRATION } from '../utils/configJwt.js';
 
 /**
  * Servicio que gestiona la renovación de tokens.
@@ -62,20 +55,16 @@ export default class RefreshService {
 
 		const { refreshToken } = resultado.data;
 
-		const usuarios = await this.usuarioRepository.buscarVarios({});
-		const usuario = usuarios.find((u) => {
-			if (!u.refreshTokenHash) return false;
-			return verifyContrasenia(refreshToken, u.refreshTokenHash);
-		});
+		const usuario = await buscarPorRefreshToken(
+			this.usuarioRepository,
+			refreshToken
+		);
 
 		if (!usuario) {
-			console.error('[debug] token inválido, ningún usuario encontrado');
 			const error = new Error('Refresh token inválido o expirado.');
 			error.status = 401;
 			throw error;
 		}
-
-		console.error('[debug] token válido, user id=' + usuario.id);
 
 		const accessToken = jwt.sign(
 			{ id: usuario.id, rol: usuario.rol, permisos: usuario.permissions },
