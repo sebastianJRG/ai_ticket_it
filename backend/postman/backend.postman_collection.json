@@ -324,6 +324,31 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Listar compras de un evento (ORGANIZADOR)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/eventos/{{eventoId}}/compras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "eventos",
+                "{{eventoId}}",
+                "compras"
+              ]
+            },
+            "description": "Solo el organizador dueño del evento. Devuelve todas las compras del evento, en cualquier estado y en orden de creación (lista vacía si no hay). 400 si el ID es inválido, 401 sin token, 403 si es COMPRADOR u organizador de otro evento, 404 si el evento no existe."
+          },
+          "response": []
         }
       ]
     },

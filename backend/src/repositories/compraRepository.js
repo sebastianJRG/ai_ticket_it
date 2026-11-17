@@ -16,4 +16,15 @@ export default class CompraRepository extends RepositorioEnMemoria {
 			.filter((c) => c.comprador?.id === compradorId && c.evento?.id === eventoId)
 			.map((c) => this._clonar(c));
 	}
+
+	/**
+	 * Obtiene todas las compras de un evento, en orden de creación.
+	 * @param {string} eventoId - ID del evento
+	 * @returns {Promise<import('../models/compra.js').default[]>} Compras del evento (puede ser vacío)
+	 */
+	async buscarPorEventoId(eventoId) {
+		return this.elementos
+			.filter((c) => c.evento?.id === eventoId)
+			.map((c) => this._clonar(c));
+	}
 }

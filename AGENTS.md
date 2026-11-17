@@ -103,7 +103,7 @@ npx expo install <pkg>  # Install Expo-compatible packages
 
 - PENDIENTE → CONFIRMADA
 - PENDIENTE → CANCELADA (allowed while the event has not occurred)
-- CONFIRMADA → UTILIZADA (terminal)
+- CONFIRMADA → UTILIZADA (terminal). Es automática: una tarea periódica (`INTERVALO_UTILIZADAS_MS`, 60 s por defecto) marca como UTILIZADA toda compra CONFIRMADA cuyo evento ya ocurrió; el historial (`CambioEstadoCompra`) queda con `quien: null` (sistema)
 - CONFIRMADA → CANCELADA (allowed when not UTILIZADA and event not occurred)
 - CONFIRMADA → REEMBOLSADA (terminal)
 
@@ -112,6 +112,10 @@ Rutas que las exponen (todas autenticadas, sin cuerpo, y fallan con 400 si el ev
 - `PATCH /api/compras/:idCompra/cancelacion` — COMPRADOR (solo sus compras) u ORGANIZADOR (solo de sus eventos)
 - `PATCH /api/compras/:idCompra/confirmacion` — ORGANIZADOR del evento
 - `PATCH /api/compras/:idCompra/reembolso` — ORGANIZADOR del evento
+
+Otras rutas de compras:
+
+- `GET /api/eventos/:idEvento/compras` — ORGANIZADOR dueño del evento (otro organizador: 403). Lista todas las compras del evento, en cualquier estado y en orden de creación (`[]` si no hay). 400 (ID inválido), 401, 403, 404.
 
 ### Categorías (Categoria)
 

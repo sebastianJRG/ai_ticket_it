@@ -104,6 +104,9 @@ export function createApp(repository) {
   const reseniaController = new ReseniaController(reseniaService);
   const mensajeController = new MensajeController(mensajeService);
 
+  // Expone el servicio de compras al punto de entrada (index.js) para su tarea periódica
+  app.locals.compraService = compraService;
+
   // Rutas de usuarios
   UsuariosRoutes.init(app, usuarioController);
 
@@ -117,7 +120,7 @@ export function createApp(repository) {
   ReseniasRoutes.init(app, reseniaController, authMiddleware);
 
   // Rutas de eventos - requiere autenticación y rol ORGANIZADOR
-  EventoRoutes.init(app, eventoController, authMiddleware);
+  EventoRoutes.init(app, eventoController, compraController, authMiddleware);
 
   // Servicios y controladores de autenticación
   const loginService = new LoginService(usuarioRepository);

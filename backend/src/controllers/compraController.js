@@ -95,4 +95,24 @@ export default class CompraController {
 			next(error);
 		}
 	}
+
+	/**
+	 * Lista las compras del evento indicado en la URL (solo su organizador).
+	 * El usuario se toma siempre del token JWT.
+	 * @param {import('express').Request} req - Petición con `req.user` del token y `req.params.idEvento`
+	 * @param {import('express').Response} res - Respuesta HTTP (200 con la lista, posiblemente vacía)
+	 * @param {import('express').NextFunction} next - Recibe los errores del servicio (400, 403, 404)
+	 * @returns {Promise<void>}
+	 */
+	async listarPorEvento(req, res, next) {
+		try {
+			const compras = await this.compraService.listarComprasDeEvento({
+				eventoId: req.params.idEvento,
+				usuarioId: req.user.id
+			});
+			return res.status(200).json(compras.map(aCompraRespuesta));
+		} catch (error) {
+			next(error);
+		}
+	}
 }

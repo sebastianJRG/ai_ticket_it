@@ -5,6 +5,7 @@
  * @license ISC
  */
 import { crearCompraSchema, idCompraSchema } from '../dto/compra.js';
+import { idEventoSchema } from '../dto/resenia.js';
 import CambioEstadoCompra from '../models/cambioEstadoCompra.js';
 import Compra from '../models/compra.js';
 import EstadoCompra from '../models/estadoCompra.js';
@@ -187,6 +188,47 @@ export default class CompraService {
 	}
 
 	/**
+	 * Lista todas las compras de un evento, en orden de creación.
+	 * Solo puede consultarlas el organizador dueño del evento.
+	 * @param {object} datos
+	 * @param {string} datos.eventoId - ID del evento (viene de la URL)
+	 * @param {string} datos.usuarioId - ID del organizador (viene del token)
+	 * @returns {Promise<Compra[]>} Compras del evento, en cualquier estado (vacío si no hay)
+	 * @throws {ErrorHttp} 400 si el ID de evento es inválido
+	 * @throws {ErrorHttp} 403 si el usuario no es el organizador del evento
+	 * @throws {ErrorHttp} 404 si el evento o el usuario no existen
+	 */
+	async listarComprasDeEvento({ eventoId, usuarioId }) {
+		const resultado = idEventoSchema.safeParse(eventoId);
+		if (!resultado.success) {
+			throw new ErrorHttp(
+				400,
+				resultado.error.issues[0]?.message || 'Error de validación'
+			);
+		}
+		const id = resultado.data;
+
+		const evento = await this.eventoRepository.buscarPorId(id);
+		if (!evento) {
+			throw new ErrorHttp(404, `El evento con ID ${id} no existe.`);
+		}
+		const actor = await this.usuarioRepository.buscarPorId(usuarioId);
+		if (!actor) {
+			throw new ErrorHttp(404, `El usuario con ID ${usuarioId} no existe.`);
+		}
+		if (
+			actor.rol !== ORGANIZADOR.nombre ||
+			evento.organizador?.id !== actor.id
+		) {
+			throw new ErrorHttp(
+				403,
+				'Solo el organizador del evento puede ver sus compras.'
+			);
+		}
+		return this.compraRepository.buscarPorEventoId(evento.id);
+	}
+
+	/**
 	 * Aplica una transición de estado: valida, cambia el estado, persiste y deja el historial.
 	 * La lectura, la validación y la escritura se hacen en exclusión mutua para que dos
 	 * peticiones simultáneas no apliquen la misma transición dos veces.
@@ -233,13 +275,56 @@ export default class CompraService {
 			}
 			this._exigirEventoFuturo(compra.evento);
 
-			compra.actualizarEstado(estadoDestino);
-			const actualizada = await this.compraRepository.actualizar(compra);
-			await this.cambioEstadoCompraRepository.crear(
-				new CambioEstadoCompra(null, actualizada, estadoDestino, actor, this.reloj())
-			);
-			return actualizada;
+			return this._registrarTransicion(compra, estadoDestino, actor, this.reloj());
 		});
+	}
+
+	/**
+	 * Marca como UTILIZADA toda compra CONFIRMADA cuyo evento ya ocurrió.
+	 * La ejecuta una tarea periódica (no hay actor humano): el cambio queda en el
+	 * historial con `quien: null`, que significa "sistema". Se hace en exclusión
+	 * mutua para no intercalarse con cancelaciones, confirmaciones ni reembolsos, y es
+	 * idempotente: una segunda ejecución no encuentra nada que cambiar.
+	 * @returns {Promise<number>} Cantidad de compras que pasaron a UTILIZADA
+	 */
+	async marcarComprasUtilizadas() {
+		return this.exclusion.ejecutar(async () => {
+			const ahora = this.reloj();
+			const compras = await this.compraRepository.obtenerTodos();
+			const vencidas = compras.filter(
+				(c) =>
+					c.estado === EstadoCompra.CONFIRMADA && new Date(c.evento.fecha) <= ahora
+			);
+			for (const compra of vencidas) {
+				await this._registrarTransicion(
+					compra,
+					EstadoCompra.UTILIZADA,
+					null,
+					ahora
+				);
+			}
+			return vencidas.length;
+		});
+	}
+
+	/**
+	 * Cambia el estado de una compra, la persiste y deja el registro en el historial.
+	 * Debe llamarse dentro de la exclusión mutua y con la transición ya validada por el llamador.
+	 * @private
+	 * @param {Compra} compra - Compra a actualizar
+	 * @param {string} estadoDestino - Valor de `EstadoCompra`
+	 * @param {import('../models/usuario.js').default|null} actor - Quien cambia el estado; null = sistema
+	 * @param {Date} fechaHora - Momento del cambio
+	 * @returns {Promise<Compra>} La compra actualizada
+	 * @throws {Error} Si la transición no está permitida desde el estado actual
+	 */
+	async _registrarTransicion(compra, estadoDestino, actor, fechaHora) {
+		compra.actualizarEstado(estadoDestino);
+		const actualizada = await this.compraRepository.actualizar(compra);
+		await this.cambioEstadoCompraRepository.crear(
+			new CambioEstadoCompra(null, actualizada, estadoDestino, actor, fechaHora)
+		);
+		return actualizada;
 	}
 
 	/**

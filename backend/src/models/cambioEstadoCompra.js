@@ -7,7 +7,7 @@ export default class CambioEstadoCompra {
 	 * @param {string|null} [id=null]
 	 * @param {Compra} compra
 	 * @param {EstadoCompra} estado
-	 * @param {Usuario} quien
+	 * @param {Usuario|null} quien - Quien hizo el cambio; null = sistema (cambio automático)
 	 * @param {Date} [fechaHora=new Date()]
 	 */
 	constructor(id = null, compra, estado, quien, fechaHora = new Date()) {
@@ -20,7 +20,7 @@ export default class CambioEstadoCompra {
 		/** @type {EstadoCompra} */
 		this.estado = estado;
 
-		/** @type {Usuario} */
+		/** @type {Usuario|null} */
 		this.quien = quien;
 
 		/** @type {Date} */
