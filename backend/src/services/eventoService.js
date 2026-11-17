@@ -3,12 +3,14 @@ import {
 	crearEventoSchema,
 	listarEventosSchema
 } from '../dto/evento.js';
+import { idEventoSchema } from '../dto/resenia.js';
 import Evento from '../models/evento.js';
 import TipoEntrada from '../models/tipoEntrada.js';
 import CategoriaRepository from '../repositories/categoriaRepository.js';
 import EventoRepository from '../repositories/eventoRepository.js';
 import TipoEntradaRepository from '../repositories/tipoEntradaRepository.js';
 import UsuarioRepository from '../repositories/usuarioRepository.js';
+import ErrorHttp from '../utils/errorHttp.js';
 
 export default class EventoService {
 	/** Constructor del servicio de eventos.
@@ -126,14 +128,22 @@ export default class EventoService {
 	}
 
 	/** Obtiene un evento por su ID.
-	 * @param {string} id
+	 * @param {string} id - ID del evento (texto no vacío)
 	 * @returns {Promise<Evento>}
-	 * @throws {Error} Si el evento no existe
+	 * @throws {ErrorHttp} 400 si el ID es vacío o no es un texto
+	 * @throws {ErrorHttp} 404 si el evento no existe
 	 */
 	async obtenerPorId(id) {
-		const evento = await this.eventoRepository.buscarPorId(id);
+		const resultado = idEventoSchema.safeParse(id);
+		if (!resultado.success) {
+			throw new ErrorHttp(
+				400,
+				resultado.error.issues[0]?.message || 'Error de validación'
+			);
+		}
+		const evento = await this.eventoRepository.buscarPorId(resultado.data);
 		if (!evento) {
-			throw new Error(`El evento con ID ${id} no existe.`);
+			throw new ErrorHttp(404, `El evento con ID ${resultado.data} no existe.`);
 		}
 		return evento;
 	}

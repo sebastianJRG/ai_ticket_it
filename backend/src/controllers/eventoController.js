@@ -41,6 +41,23 @@ export default class EventoController {
 	}
 
 	/**
+	 * Devuelve el detalle de un evento.
+	 * Ruta pública: no requiere autenticación.
+	 * @param {import('express').Request} req - Petición HTTP con `req.params.idEvento`
+	 * @param {import('express').Response} res - Respuesta HTTP (200 con el evento)
+	 * @param {import('express').NextFunction} next - Recibe los errores del servicio (400, 404)
+	 * @returns {Promise<void>}
+	 */
+	async obtener(req, res, next) {
+		try {
+			const evento = await this.eventoService.obtenerPorId(req.params.idEvento);
+			return res.status(200).json(aEventoRespuesta(evento));
+		} catch (error) {
+			next(error);
+		}
+	}
+
+	/**
 	 * Crea un nuevo evento después de validar autenticación y permisos.
 	 * @param {import('express').Request} req - Petición HTTP
 	 * @param {import('express').Response} res - Respuesta HTTP

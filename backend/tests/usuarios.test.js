@@ -1,5 +1,6 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import jwt from 'jsonwebtoken';
 import { createApp } from '../src/app.js';
 import UsuarioService from '../src/services/usuarioService.js';
 import UsuarioRepository from '../src/repositories/usuarioRepository.js';
@@ -132,6 +133,118 @@ describe('POST /api/usuarios', () => {
 		assert.equal(res.status, 400);
 		const body = await res.json();
 		assert.ok(body.message);
+	});
+});
+
+/**
+ * Registra un usuario, inicia sesión y devuelve su token de acceso.
+ * @param {string} rol - COMPRADOR u ORGANIZADOR
+ * @param {string} nombreUsuario - Nombre de usuario único
+ * @returns {Promise<{token: string, id: string}>}
+ */
+async function registrarYLoguear(rol, nombreUsuario) {
+	const creado = await (
+		await fetch(`${baseUrl}/api/usuarios`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				nombre: 'Perfil',
+				apellido: rol,
+				nombreUsuario,
+				contrasenia: 'Clave123!',
+				rol
+			})
+		})
+	).json();
+	const login = await (
+		await fetch(`${baseUrl}/api/login`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ nombreUsuario, contrasenia: 'Clave123!' })
+		})
+	).json();
+	return { token: login.accessToken, id: creado.id };
+}
+
+describe('GET /api/usuarios', () => {
+	const pedirPerfil = (token) =>
+		fetch(`${baseUrl}/api/usuarios`, {
+			headers: token ? { Authorization: `Bearer ${token}` } : {}
+		});
+
+	it('devuelve el perfil de un COMPRADOR autenticado', async () => {
+		const { token, id } = await registrarYLoguear(
+			'COMPRADOR',
+			'perfil.comprador'
+		);
+
+		const res = await pedirPerfil(token);
+
+		assert.equal(res.status, 200);
+		assert.deepEqual(await res.json(), {
+			id,
+			nombre: 'Perfil',
+			apellido: 'COMPRADOR',
+			nombreUsuario: 'perfil.comprador',
+			rol: 'COMPRADOR',
+			permissions: COMPRADOR_PERMISSIONS
+		});
+	});
+
+	it('devuelve el perfil de un ORGANIZADOR autenticado', async () => {
+		const { token, id } = await registrarYLoguear(
+			'ORGANIZADOR',
+			'perfil.organizador'
+		);
+
+		const res = await pedirPerfil(token);
+
+		assert.equal(res.status, 200);
+		const body = await res.json();
+		assert.equal(body.id, id);
+		assert.equal(body.rol, 'ORGANIZADOR');
+		assert.deepEqual(body.permissions, ORGANIZADOR_PERMISSIONS);
+	});
+
+	it('no expone hashes ni favoritos', async () => {
+		const { token } = await registrarYLoguear('COMPRADOR', 'perfil.sinhash');
+
+		const body = await (await pedirPerfil(token)).json();
+
+		assert.equal(body.contraseniaHash, undefined);
+		assert.equal(body.refreshTokenHash, undefined);
+		assert.equal(body.favoritos, undefined);
+	});
+
+	it('cada usuario ve solo sus propios datos', async () => {
+		const a = await registrarYLoguear('COMPRADOR', 'perfil.a');
+		const b = await registrarYLoguear('COMPRADOR', 'perfil.b');
+
+		assert.equal((await (await pedirPerfil(a.token)).json()).id, a.id);
+		assert.equal((await (await pedirPerfil(b.token)).json()).id, b.id);
+	});
+
+	it('devuelve 401 sin token', async () => {
+		const res = await pedirPerfil();
+
+		assert.equal(res.status, 401);
+	});
+
+	it('devuelve 401 con un token inválido', async () => {
+		const res = await pedirPerfil('token.invalido');
+
+		assert.equal(res.status, 401);
+	});
+
+	it('devuelve 404 si el token es válido pero el usuario no existe', async () => {
+		const token = jwt.sign(
+			{ id: 'no-existe', rol: 'COMPRADOR', permisos: [] },
+			process.env.JWT_SECRET || 'clave-generica-cambiar-en-produccion'
+		);
+
+		const res = await pedirPerfil(token);
+
+		assert.equal(res.status, 404);
 	});
 });
 

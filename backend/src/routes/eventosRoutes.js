@@ -3,7 +3,7 @@ import { requerirRol } from '../utils/autorizacion.js';
 
 /**
  * Rutas para la creación y gestión de eventos.
- * Listar eventos es público; crear y ver las compras de un evento requieren autenticación
+ * Listar y ver el detalle de un evento son públicos; crear y ver las compras de un evento requieren autenticación
  * previa mediante el middleware inyectado.
  */
 export default class EventoRoutes {
@@ -21,6 +21,9 @@ export default class EventoRoutes {
     // GET /api/eventos - Listar/buscar eventos (público)
     // Query: q, categoriaId, sortBy (precio|fecha|puntaje), order (asc|desc)
     router.get('/', eventoController.listar.bind(eventoController));
+
+    // GET /api/eventos/:idEvento - Detalle de un evento (público)
+    router.get('/:idEvento', eventoController.obtener.bind(eventoController));
 
     // POST /api/eventos - Crear evento (solo para organizadores autenticados)
     router.post(

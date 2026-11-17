@@ -108,7 +108,7 @@ export function createApp(repository) {
   app.locals.compraService = compraService;
 
   // Rutas de usuarios
-  UsuariosRoutes.init(app, usuarioController);
+  UsuariosRoutes.init(app, usuarioController, authMiddleware);
 
   // Rutas de categorías - crear requiere autenticación y rol ORGANIZADOR; listar es público
   CategoriasRoutes.init(app, categoriaController, authMiddleware);

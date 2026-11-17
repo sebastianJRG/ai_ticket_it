@@ -1,6 +1,7 @@
 import { actualizarUsuarioSchema, crearUsuarioSchema } from '../dto/usuario.js';
 import { COMPRADOR, ORGANIZADOR } from '../models/roles.js';
 import Usuario from '../models/usuario.js';
+import ErrorHttp from '../utils/errorHttp.js';
 import { hashContrasenia } from '../utils/hashing.js';
 
 /** Mapeo entre roles y permisos del sistema.
@@ -30,6 +31,19 @@ export default class UsuarioService {
 		const usuario = await this.usuarioRepository.buscarPorId(usuarioId);
 		if (!usuario) {
 			throw new Error(`El usuario con ID ${usuarioId} no existe.`);
+		}
+		return usuario;
+	}
+
+	/** Obtiene el perfil del usuario autenticado.
+	 * @param {string} usuarioId - ID del usuario (tomado del token JWT)
+	 * @returns {Promise<import('../models/usuario.js').default>} El usuario encontrado
+	 * @throws {ErrorHttp} 404 si el usuario no existe
+	 */
+	async obtenerPerfil(usuarioId) {
+		const usuario = await this.usuarioRepository.buscarPorId(usuarioId);
+		if (!usuario) {
+			throw new ErrorHttp(404, 'El usuario no existe.');
 		}
 		return usuario;
 	}

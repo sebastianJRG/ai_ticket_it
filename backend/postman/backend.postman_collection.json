@@ -9,6 +9,28 @@
       "name": "Usuarios",
       "item": [
         {
+          "name": "Obtener perfil del usuario autenticado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Crear usuario organizador",
           "request": {
             "method": "POST",
@@ -239,6 +261,24 @@
     {
       "name": "Eventos",
       "item": [
+        {
+          "name": "Obtener detalle de evento (público)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/eventos/{{evento_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "eventos",
+                "{{evento_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
         {
           "name": "Crear evento",
           "request": {

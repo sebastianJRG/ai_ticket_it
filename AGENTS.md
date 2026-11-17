@@ -117,6 +117,17 @@ Otras rutas de compras:
 
 - `GET /api/eventos/:idEvento/compras` — ORGANIZADOR dueño del evento (otro organizador: 403). Lista todas las compras del evento, en cualquier estado y en orden de creación (`[]` si no hay). 400 (ID inválido), 401, 403, 404.
 
+### Usuarios (Usuario)
+
+- `POST /api/usuarios` — público. Registro de un COMPRADOR u ORGANIZADOR.
+- `GET /api/usuarios` — autenticada (COMPRADOR u ORGANIZADOR). Sin cuerpo. Devuelve el perfil del usuario del token: `{ id, nombre, apellido, nombreUsuario, rol, permissions }` (nunca hashes ni favoritos). 401 (sin token o token inválido), 403 (otro rol), 404 (el usuario del token ya no existe).
+
+### Eventos (Evento)
+
+- `GET /api/eventos` — público. Lista/busca eventos (query: `q`, `categoriaId`, `sortBy`, `order`).
+- `GET /api/eventos/:idEvento` — público (sin token). Devuelve el detalle del evento con el mismo formato que cada elemento del listado (organizador en versión pública, sin hashes). 400 (ID inválido), 404 (no existe).
+- `POST /api/eventos` — ORGANIZADOR autenticado. Crea un evento.
+
 ### Categorías (Categoria)
 
 - `POST /api/categorias` — ORGANIZADOR autenticado. Cuerpo `{ nombre, descripcion }`. 201 con la categoría.
