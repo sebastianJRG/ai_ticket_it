@@ -342,7 +342,137 @@
             "description": "Requiere iniciar sesión con un usuario COMPRADOR. La compra queda PENDIENTE y reserva cupo. 401 sin token, 403 si no es COMPRADOR, 404 si el evento o tipo de entrada no existen, 409 si no hay cupo."
           },
           "response": []
+        },
+        {
+          "name": "Cancelar compra (COMPRADOR u ORGANIZADOR)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/compras/{{compraId}}/cancelacion",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "compras",
+                "{{compraId}}",
+                "cancelacion"
+              ]
+            },
+            "description": "Sin cuerpo. El comprador solo cancela sus compras; el organizador, las de sus eventos. Pasa PENDIENTE o CONFIRMADA a CANCELADA y libera cupo. 400 si el evento ya ocurrió, 401 sin token, 403 si no le corresponde, 404 si la compra no existe, 409 si el estado no lo permite."
+          },
+          "response": []
+        },
+        {
+          "name": "Confirmar compra (ORGANIZADOR)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/compras/{{compraId}}/confirmacion",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "compras",
+                "{{compraId}}",
+                "confirmacion"
+              ]
+            },
+            "description": "Sin cuerpo. Solo el organizador del evento. Pasa PENDIENTE a CONFIRMADA. 400 si el evento ya ocurrió, 401 sin token, 403 si es COMPRADOR u organizador de otro evento, 404 si la compra no existe, 409 si no está PENDIENTE."
+          },
+          "response": []
+        },
+        {
+          "name": "Reembolsar compra (ORGANIZADOR)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/compras/{{compraId}}/reembolso",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "compras",
+                "{{compraId}}",
+                "reembolso"
+              ]
+            },
+            "description": "Sin cuerpo. Solo el organizador del evento. Pasa CONFIRMADA a REEMBOLSADA y libera cupo. 400 si el evento ya ocurrió, 401 sin token, 403 si es COMPRADOR u organizador de otro evento, 404 si la compra no existe, 409 si no está CONFIRMADA."
+          },
+          "response": []
         }
+      ]
+    },
+    {
+      "name": "Reseñas",
+      "item": [
+    {
+      "name": "Crear reseña (COMPRADOR)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"eventoId\": \"{{eventoId}}\",\"detalle\": \"{{resenia_detalle}}\",\"puntuacion\": {{resenia_puntuacion}}}"
+        },
+        "url": {
+          "raw": "{{base_url}}/resenias",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "resenias"
+          ]
+        },
+        "description": "Requiere iniciar sesión con un usuario COMPRADOR. Solo si el evento ya ocurrió y el comprador tiene una compra CONFIRMADA o UTILIZADA de ese evento; una reseña por evento. 400 validación o evento aún no ocurrido, 401 sin token, 403 si no es COMPRADOR o no tiene compra elegible, 404 si el evento no existe, 409 si ya reseñó."
+      },
+      "response": []
+    },
+    {
+      "name": "Listar reseñas de un evento (público)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/resenias/{{eventoId}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "resenias",
+            "{{eventoId}}"
+          ]
+        },
+        "description": "No requiere autenticación. Devuelve las reseñas del evento en orden de creación (lista vacía si no hay). 404 si el evento no existe."
+      },
+      "response": []
+    }
       ]
     }
   ],
@@ -395,6 +525,21 @@
     {
       "key": "tipoEntradaId",
       "value": "1",
+      "type": "default"
+    },
+    {
+      "key": "compraId",
+      "value": "1",
+      "type": "default"
+    },
+    {
+      "key": "resenia_detalle",
+      "value": "Excelente evento, muy bien organizado",
+      "type": "default"
+    },
+    {
+      "key": "resenia_puntuacion",
+      "value": 5,
       "type": "default"
     }
   ]

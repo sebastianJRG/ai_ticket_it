@@ -4,6 +4,22 @@ import Mensaje from './mensaje.js';
 import TipoEntrada from './tipoEntrada.js';
 import Usuario from './usuario.js';
 
+/**
+ * Transiciones válidas de `EstadoCompra`. UTILIZADA, CANCELADA y REEMBOLSADA son terminales.
+ * @type {Readonly<Record<string, string[]>>}
+ */
+const TRANSICIONES_PERMITIDAS = Object.freeze({
+	[EstadoCompra.PENDIENTE]: [EstadoCompra.CONFIRMADA, EstadoCompra.CANCELADA],
+	[EstadoCompra.CONFIRMADA]: [
+		EstadoCompra.UTILIZADA,
+		EstadoCompra.CANCELADA,
+		EstadoCompra.REEMBOLSADA
+	],
+	[EstadoCompra.UTILIZADA]: [],
+	[EstadoCompra.CANCELADA]: [],
+	[EstadoCompra.REEMBOLSADA]: []
+});
+
 export default class Compra {
 	/**
 	 * @param {string|null} [id=null]
@@ -51,11 +67,26 @@ export default class Compra {
 	}
 
 	/**
-	 * Actualiza el estado actual de la compra.
+	 * Indica si la compra puede pasar a `nuevoEstado` según las transiciones permitidas.
+	 * @param {EstadoCompra} nuevoEstado
+	 * @returns {boolean} true si la transición desde el estado actual es válida
+	 */
+	puedeTransicionarA(nuevoEstado) {
+		return TRANSICIONES_PERMITIDAS[this.estado]?.includes(nuevoEstado) ?? false;
+	}
+
+	/**
+	 * Actualiza el estado actual de la compra respetando las transiciones permitidas.
 	 * @param {EstadoCompra} nuevoEstado
 	 * @returns {void}
+	 * @throws {Error} Si la transición desde el estado actual no está permitida (el estado no cambia)
 	 */
 	actualizarEstado(nuevoEstado) {
-		//this.estado = nuevoEstado;
+		if (!this.puedeTransicionarA(nuevoEstado)) {
+			throw new Error(
+				`Transición de estado no permitida: ${this.estado} → ${nuevoEstado}.`
+			);
+		}
+		this.estado = nuevoEstado;
 	}
 }

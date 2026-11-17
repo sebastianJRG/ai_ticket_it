@@ -1,11 +1,15 @@
 <!-- SYNC IMPACT REPORT
-Version change: 1.0.0 → 1.1.0
-Modified principles: none (principles added; none renamed)
-Added sections: Architecture & Technology Stack, Development Workflow & Quality Gates, Governance
-Added principles: 6. Mandatory JSDoc Documentation
+Version change: 1.1.0 → 1.2.0
+Modified principles: 4. Domain Entity Integrity (new transition PENDIENTE → CANCELADA; cancellation rule restated)
+Added sections: none
+Added principles: none
 Removed sections: none
 Removed principles: none
-Follow-up TODOs: none (all placeholders resolved) -->
+Rationale: a buyer must be able to cancel a purchase that has not been confirmed yet (frees capacity); needed by PATCH /api/compras/:idCompra/cancelacion.
+Migration/compatibility: backward-compatible (only adds a transition; no existing transition changes).
+Follow-up TODOs: none
+
+Previous: 1.0.0 → 1.1.0 — added principle 6 (Mandatory JSDoc Documentation), Architecture & Technology Stack, Development Workflow & Quality Gates, Governance. -->
 
 # Al Ticket It Constitution
 
@@ -24,7 +28,7 @@ Tests are written before implementation. The TDD cycle is strictly enforced: (1)
 All data is persisted strictly in memory. There is no external database and no file-based persistence. The system resets to a known state between runs. In-memory state MUST be stored in well-defined repository classes that can be swapped for mocked repositories during tests.
 
 ### 4. Domain Entity Integrity (NON-NEGOTIABLE)
-Domain entities (Usuario, Evento, TipoEntrada, Compra, EstadoCompra, Resenia) are protected by strict invariants and state-transition rules. EstadoCompra MUST only follow these transitions: PENDIENTE → CONFIRMADA; CONFIRMADA → UTILIZADA; CONFIRMADA → CANCELADA; CONFIRMADA → REEMBOLSADA. UTILIZADA, CANCELADA, and REEMBOLSADA are terminal. Cancellation is only allowed when EstadoCompra is not UTILIZADA and the event has not yet occurred. Capacity MUST be validated transactionally during purchase: the total reserved quantity MUST NOT exceed the available capacity of a TipoEntrada.
+Domain entities (Usuario, Evento, TipoEntrada, Compra, EstadoCompra, Resenia) are protected by strict invariants and state-transition rules. EstadoCompra MUST only follow these transitions: PENDIENTE → CONFIRMADA; PENDIENTE → CANCELADA; CONFIRMADA → UTILIZADA; CONFIRMADA → CANCELADA; CONFIRMADA → REEMBOLSADA. UTILIZADA, CANCELADA, and REEMBOLSADA are terminal. Cancellation is only allowed from PENDIENTE or CONFIRMADA (never from UTILIZADA) and while the event has not yet occurred. Capacity MUST be validated transactionally during purchase: the total reserved quantity MUST NOT exceed the available capacity of a TipoEntrada.
 
 ### 5. Quality, Observability & Simplicity
 The codebase MUST be observable, simple, and backward-compatible within the same major version. Structured logging (including request IDs, user roles, and purchase state) is required for all service-layer operations. New features MUST start simple and follow YAGNI (you aren't gonna need it). Breaking changes MUST be avoided within a major version; any necessary breaking change MUST be documented with a migration path in the changelog.
@@ -66,4 +70,4 @@ The constitution is the supreme governance document for "Al Ticket It" and super
 
 Amendments MUST be approved by the project maintainer and then applied to `.specify/memory/constitution.md`. The version line MUST be updated using semantic versioning rules. Compliance is reviewed during every code review; violations of non-negotiable (NON-NEGOTIABLE) principles MUST block the change.
 
-**Version**: 1.1.0 | **Ratified**: 2026-11-07 | **Last Amended**: 2026-11-07
+**Version**: 1.2.0 | **Ratified**: 2026-11-07 | **Last Amended**: 2026-11-17

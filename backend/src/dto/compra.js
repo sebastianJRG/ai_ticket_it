@@ -27,6 +27,12 @@ export const crearCompraSchema = z.object({
 		.positive('La cantidad debe ser mayor a 0.') // Mínimo 1 entrada
 });
 
+/** Esquema del ID de compra recibido en la URL (`:idCompra`). */
+export const idCompraSchema = z
+	.string({ message: 'El ID de la compra es obligatorio y debe ser un texto.' })
+	.trim()
+	.min(1, 'El ID de la compra no puede estar vacío.');
+
 /**
  * Convierte una compra de dominio en su representación para respuestas HTTP.
  * Reduce el evento y el tipo de entrada a lo necesario y expone solo datos públicos

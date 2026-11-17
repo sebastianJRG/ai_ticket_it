@@ -105,11 +105,19 @@ export async function construirEvento(
  * @param {import('../../src/repositories/reseniaRepository.js').default} repositorio
  * @param {Evento} evento - Evento ya persistido (debe tener ID)
  * @param {number} puntuacion
+ * @param {object} [opciones]
+ * @param {object} [opciones.comprador={ id: 'comp-1' }] - Autor de la reseña
+ * @param {string} [opciones.detalle='Detalle']
  * @returns {Promise<Resenia>}
  */
-export async function construirResenia(repositorio, evento, puntuacion) {
+export async function construirResenia(
+	repositorio,
+	evento,
+	puntuacion,
+	{ comprador = { id: 'comp-1' }, detalle = 'Detalle' } = {}
+) {
 	return repositorio.crear(
-		new Resenia(null, { id: 'comp-1' }, evento, 'Detalle', puntuacion)
+		new Resenia(null, comprador, evento, detalle, puntuacion)
 	);
 }
 

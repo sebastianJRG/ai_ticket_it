@@ -9,7 +9,7 @@ Key principles to remember:
 - **Domain-Driven & Unidirectional Architecture**: Backend layers (Router → Controller → Service → Repository → Model). Lower layers MUST NOT call higher layers. Dependencies must be injected.
 - **Test-Driven Development**: Tests written before implementation. TDD cycle must be strictly enforced.
 - **In-Memory Persistence**: All data persisted in memory only. No external database. Repositories MUST be swapped for mocked versions during tests.
-- **Domain Entity Integrity**: EstadoCompra transitions: PENDIENTE → CONFIRMADA → {UTILIZADA, CANCELADA, REEMBOLSADA}. Terminal states. Capacity validation must be transactional.
+- **Domain Entity Integrity**: EstadoCompra transitions: PENDIENTE → {CONFIRMADA, CANCELADA}; CONFIRMADA → {UTILIZADA, CANCELADA, REEMBOLSADA}. Terminal states. Capacity validation must be transactional.
 - **Quality, Observability & Simplicity**: Structured logging required. YAGNI. No breaking changes within major version without migration path.
 - **Mandatory JSDoc Documentation**: All exported functions/classes/methods must have JSDoc with @param, @returns, @throws, @template, @property. File-level docstrings must describe purpose, ownership, and license.
 
@@ -102,9 +102,22 @@ npx expo install <pkg>  # Install Expo-compatible packages
 ### State Transitions (Compra/EstadoCompra)
 
 - PENDIENTE → CONFIRMADA
+- PENDIENTE → CANCELADA (allowed while the event has not occurred)
 - CONFIRMADA → UTILIZADA (terminal)
 - CONFIRMADA → CANCELADA (allowed when not UTILIZADA and event not occurred)
 - CONFIRMADA → REEMBOLSADA (terminal)
+
+Rutas que las exponen (todas autenticadas, sin cuerpo, y fallan con 400 si el evento ya ocurrió):
+
+- `PATCH /api/compras/:idCompra/cancelacion` — COMPRADOR (solo sus compras) u ORGANIZADOR (solo de sus eventos)
+- `PATCH /api/compras/:idCompra/confirmacion` — ORGANIZADOR del evento
+- `PATCH /api/compras/:idCompra/reembolso` — ORGANIZADOR del evento
+
+### Reseñas (Resenia)
+
+- `POST /api/resenias` — COMPRADOR autenticado. Cuerpo `{ eventoId, detalle, puntuacion }` (puntuación entera 1–5, detalle hasta 1000 caracteres). El comprador sale del token.
+  - Reglas: el evento ya debe haber ocurrido (400), el comprador debe tener una compra CONFIRMADA o UTILIZADA de ese evento (403) y solo puede reseñar una vez cada evento (409).
+- `GET /api/resenias/:idEvento` — público (sin token). Lista las reseñas del evento (404 si no existe).
 
 ---
 

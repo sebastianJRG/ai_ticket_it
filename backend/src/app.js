@@ -29,6 +29,9 @@ import CambioEstadoCompraRepository from './repositories/cambioEstadoCompraRepos
 import CompraService from './services/compraService.js';
 import CompraController from './controllers/compraController.js';
 import ComprasRoutes from './routes/comprasRoutes.js';
+import ReseniaService from './services/reseniaService.js';
+import ReseniaController from './controllers/reseniaController.js';
+import ReseniasRoutes from './routes/reseniasRoutes.js';
 
 /**
  * Crea y configura la aplicación Express para el backend.
@@ -42,7 +45,7 @@ export function createApp(repository) {
   app.use(
     cors({
       origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-      methods: ['GET', 'POST', 'PUT', 'DELETE'],
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
       allowedHeaders: ['Content-Type', 'Authorization']
     })
   );
@@ -76,11 +79,19 @@ export function createApp(repository) {
     cambioEstadoCompraRepository
   );
 
+  const reseniaService = new ReseniaService(
+    reseniaRepository,
+    eventoRepository,
+    usuarioRepository,
+    compraRepository
+  );
+
   // Controladores
   const usuarioController = new UsuariosController(usuarioService);
   const eventoController = new EventoController(eventoService);
   const categoriaController = new CategoriaController(categoriaService);
   const compraController = new CompraController(compraService);
+  const reseniaController = new ReseniaController(reseniaService);
 
   // Rutas de usuarios
   UsuariosRoutes.init(app, usuarioController);
@@ -88,8 +99,11 @@ export function createApp(repository) {
   // Rutas de categorías - requiere autenticación y rol ORGANIZADOR
   CategoriasRoutes.init(app, categoriaController, authMiddleware);
 
-  // Rutas de compras - requiere autenticación y rol COMPRADOR
+  // Rutas de compras - requiere autenticación; el rol depende de cada ruta
   ComprasRoutes.init(app, compraController, authMiddleware);
+
+  // Rutas de reseñas - crear requiere rol COMPRADOR; listar es público
+  ReseniasRoutes.init(app, reseniaController, authMiddleware);
 
   // Rutas de eventos - requiere autenticación y rol ORGANIZADOR
   EventoRoutes.init(app, eventoController, authMiddleware);
