@@ -32,6 +32,9 @@ import ComprasRoutes from './routes/comprasRoutes.js';
 import ReseniaService from './services/reseniaService.js';
 import ReseniaController from './controllers/reseniaController.js';
 import ReseniasRoutes from './routes/reseniasRoutes.js';
+import MensajeRepository from './repositories/mensajeRepository.js';
+import MensajeService from './services/mensajeService.js';
+import MensajeController from './controllers/mensajeController.js';
 
 /**
  * Crea y configura la aplicación Express para el backend.
@@ -61,6 +64,7 @@ export function createApp(repository) {
   const reseniaRepository = new ReseniaRepository();
   const compraRepository = new CompraRepository();
   const cambioEstadoCompraRepository = new CambioEstadoCompraRepository();
+  const mensajeRepository = new MensajeRepository();
 
   // Servicios
   const usuarioService = new UsuarioService(usuarioRepository);
@@ -86,21 +90,28 @@ export function createApp(repository) {
     compraRepository
   );
 
+  const mensajeService = new MensajeService(
+    mensajeRepository,
+    compraRepository,
+    usuarioRepository
+  );
+
   // Controladores
   const usuarioController = new UsuariosController(usuarioService);
   const eventoController = new EventoController(eventoService);
   const categoriaController = new CategoriaController(categoriaService);
   const compraController = new CompraController(compraService);
   const reseniaController = new ReseniaController(reseniaService);
+  const mensajeController = new MensajeController(mensajeService);
 
   // Rutas de usuarios
   UsuariosRoutes.init(app, usuarioController);
 
-  // Rutas de categorías - requiere autenticación y rol ORGANIZADOR
+  // Rutas de categorías - crear requiere autenticación y rol ORGANIZADOR; listar es público
   CategoriasRoutes.init(app, categoriaController, authMiddleware);
 
   // Rutas de compras - requiere autenticación; el rol depende de cada ruta
-  ComprasRoutes.init(app, compraController, authMiddleware);
+  ComprasRoutes.init(app, compraController, mensajeController, authMiddleware);
 
   // Rutas de reseñas - crear requiere rol COMPRADOR; listar es público
   ReseniasRoutes.init(app, reseniaController, authMiddleware);

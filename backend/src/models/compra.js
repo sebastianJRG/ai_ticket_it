@@ -1,6 +1,5 @@
 import EstadoCompra from './estadoCompra.js';
 import Evento from './evento.js';
-import Mensaje from './mensaje.js';
 import TipoEntrada from './tipoEntrada.js';
 import Usuario from './usuario.js';
 
@@ -29,7 +28,6 @@ export default class Compra {
 	 * @param {number} cantidad
 	 * @param {number} total
 	 * @param {EstadoCompra} [estado=EstadoCompra.PENDIENTE]
-	 * @param {Mensaje[]} [mensajes=[]]
 	 */
 	constructor(
 		id = null,
@@ -38,8 +36,7 @@ export default class Compra {
 		tipoEntrada,
 		cantidad,
 		total,
-		estado = EstadoCompra.PENDIENTE,
-		mensajes = []
+		estado = EstadoCompra.PENDIENTE
 	) {
 		/** @type {string|null} */
 		this.id = id;
@@ -61,9 +58,6 @@ export default class Compra {
 
 		/** @type {EstadoCompra} */
 		this.estado = estado;
-
-		/** @type {Mensaje[]} */
-		this.mensajes = mensajes;
 	}
 
 	/**

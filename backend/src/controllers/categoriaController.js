@@ -64,4 +64,21 @@ export default class CategoriaController {
 			next(error);
 		}
 	}
+
+	/**
+	 * Lista todas las categorías, en orden de creación. Ruta pública: no requiere
+	 * autenticación ni rol.
+	 * @param {import('express').Request} req - Petición HTTP (no se usa)
+	 * @param {import('express').Response} res - Respuesta HTTP (200 con la lista, posiblemente vacía)
+	 * @param {import('express').NextFunction} next - Recibe los errores inesperados del servicio
+	 * @returns {Promise<void>}
+	 */
+	async listar(req, res, next) {
+		try {
+			const categorias = await this.categoriaService.obtenerTodas();
+			return res.status(200).json(categorias);
+		} catch (error) {
+			next(error);
+		}
+	}
 }

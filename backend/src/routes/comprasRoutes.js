@@ -10,10 +10,11 @@ export default class ComprasRoutes {
    * Monta el router de compras en la aplicación Express.
    * @param {import('express').Application} app - Aplicación Express
    * @param {import('../controllers/compraController.js').default} compraController - Controlador de compras
+   * @param {import('../controllers/mensajeController.js').default} mensajeController - Controlador de mensajes
    * @param {import('express').RequestHandler} authMiddleware - Middleware de autenticación JWT
    * @returns {void}
    */
-  static init(app, compraController, authMiddleware) {
+  static init(app, compraController, mensajeController, authMiddleware) {
     const router = Router();
 
     // POST /api/compras - Crear compra (solo compradores autenticados)
@@ -46,6 +47,22 @@ export default class ComprasRoutes {
       authMiddleware,
       requerirRol('ORGANIZADOR'),
       compraController.reembolsar.bind(compraController)
+    );
+
+    // POST /api/compras/:idCompra/mensajes - Enviar mensaje (comprador dueño u organizador del evento)
+    router.post(
+      '/:idCompra/mensajes',
+      authMiddleware,
+      requerirRol('COMPRADOR', 'ORGANIZADOR'),
+      mensajeController.crear.bind(mensajeController)
+    );
+
+    // GET /api/compras/:idCompra/mensajes - Ver mensajes (comprador dueño u organizador del evento)
+    router.get(
+      '/:idCompra/mensajes',
+      authMiddleware,
+      requerirRol('COMPRADOR', 'ORGANIZADOR'),
+      mensajeController.listar.bind(mensajeController)
     );
 
     app.use('/api/compras', router);

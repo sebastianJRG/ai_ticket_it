@@ -215,6 +215,24 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Listar categorías (público)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categorias",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categorias"
+              ]
+            },
+            "description": "No requiere autenticación. Devuelve todas las categorías en orden de creación (lista vacía si no hay)."
+          },
+          "response": []
         }
       ]
     },
@@ -417,6 +435,64 @@
             "description": "Sin cuerpo. Solo el organizador del evento. Pasa CONFIRMADA a REEMBOLSADA y libera cupo. 400 si el evento ya ocurrió, 401 sin token, 403 si es COMPRADOR u organizador de otro evento, 404 si la compra no existe, 409 si no está CONFIRMADA."
           },
           "response": []
+        },
+        {
+          "name": "Enviar mensaje (COMPRADOR u ORGANIZADOR)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"mensaje\": \"{{mensaje_texto}}\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/compras/{{compraId}}/mensajes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "compras",
+                "{{compraId}}",
+                "mensajes"
+              ]
+            },
+            "description": "Chat de la compra. Solo el comprador dueño o el organizador del evento, en cualquier momento (sin importar el estado de la compra ni la fecha del evento). El remitente sale del token. Mensaje de 1 a 1000 caracteres. 400 validación, 401 sin token, 403 si no participa en la compra, 404 si la compra no existe."
+          },
+          "response": []
+        },
+        {
+          "name": "Ver mensajes (COMPRADOR u ORGANIZADOR)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/compras/{{compraId}}/mensajes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "compras",
+                "{{compraId}}",
+                "mensajes"
+              ]
+            },
+            "description": "Lista el chat de la compra, del más antiguo al más reciente (vacío si no hay). Solo el comprador dueño o el organizador del evento. 401 sin token, 403 si no participa en la compra, 404 si la compra no existe."
+          },
+          "response": []
         }
       ]
     },
@@ -490,6 +566,11 @@
     {
       "key": "base_url",
       "value": "http://localhost:3000/api",
+      "type": "default"
+    },
+    {
+      "key": "mensaje_texto",
+      "value": "Hola, tengo una consulta sobre mi compra",
       "type": "default"
     },
     {

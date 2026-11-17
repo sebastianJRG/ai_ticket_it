@@ -60,3 +60,75 @@ describe('CategoriaController.crear', () => {
 		});
 	});
 });
+
+describe('CategoriaController.listar', () => {
+	let servicio;
+	let controlador;
+	let res;
+	let estado;
+	let cuerpo;
+	let errorRecibido;
+	const next = (error) => {
+		errorRecibido = error;
+	};
+
+	beforeEach(() => {
+		estado = undefined;
+		cuerpo = undefined;
+		errorRecibido = undefined;
+		servicio = new CategoriaService(new CategoriaRepository());
+		controlador = new CategoriaController(servicio);
+		res = {
+			status(codigo) {
+				estado = codigo;
+				return this;
+			},
+			json(datos) {
+				cuerpo = datos;
+			}
+		};
+	});
+
+	it('responde 200 con las categorías del servicio', async () => {
+		await servicio.crearCategoria({ nombre: 'Música', descripcion: 'Conciertos' });
+		await servicio.crearCategoria({ nombre: 'Teatro', descripcion: 'Obras' });
+
+		await controlador.listar({}, res, next);
+
+		assert.equal(estado, 200);
+		assert.deepEqual(
+			cuerpo.map(({ id, nombre, descripcion }) => ({ id, nombre, descripcion })),
+			[
+				{ id: '1', nombre: 'Música', descripcion: 'Conciertos' },
+				{ id: '2', nombre: 'Teatro', descripcion: 'Obras' }
+			]
+		);
+		assert.equal(errorRecibido, undefined);
+	});
+
+	it('responde 200 con una lista vacía si no hay categorías', async () => {
+		await controlador.listar({}, res, next);
+
+		assert.equal(estado, 200);
+		assert.deepEqual(cuerpo, []);
+	});
+
+	it('no necesita usuario autenticado', async () => {
+		await controlador.listar({ user: undefined }, res, next);
+
+		assert.equal(estado, 200);
+		assert.equal(errorRecibido, undefined);
+	});
+
+	it('propaga el error del servicio con next', async () => {
+		const error = new Error('falló');
+		servicio.obtenerTodas = async () => {
+			throw error;
+		};
+
+		await controlador.listar({}, res, next);
+
+		assert.equal(errorRecibido, error);
+		assert.equal(cuerpo, undefined);
+	});
+});

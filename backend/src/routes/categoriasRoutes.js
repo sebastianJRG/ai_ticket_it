@@ -2,7 +2,7 @@ import { Router } from 'express';
 
 /**
  * Rutas para la gestión de categorías.
- * Las rutas requieren autenticación previa mediante el middleware inyectado.
+ * Crear requiere autenticación previa mediante el middleware inyectado; listar es público.
  */
 export default class CategoriasRoutes {
   /**
@@ -21,6 +21,9 @@ export default class CategoriasRoutes {
       authMiddleware,
       categoriaController.crear.bind(categoriaController)
     );
+
+    // GET /api/categorias - Listar categorías (público, sin autenticación)
+    router.get('/', categoriaController.listar.bind(categoriaController));
 
     app.use('/api/categorias', router);
   }

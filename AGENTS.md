@@ -113,11 +113,24 @@ Rutas que las exponen (todas autenticadas, sin cuerpo, y fallan con 400 si el ev
 - `PATCH /api/compras/:idCompra/confirmacion` — ORGANIZADOR del evento
 - `PATCH /api/compras/:idCompra/reembolso` — ORGANIZADOR del evento
 
+### Categorías (Categoria)
+
+- `POST /api/categorias` — ORGANIZADOR autenticado. Cuerpo `{ nombre, descripcion }`. 201 con la categoría.
+- `GET /api/categorias` — público (sin token). Lista todas las categorías en orden de creación (`[]` si no hay).
+
 ### Reseñas (Resenia)
 
 - `POST /api/resenias` — COMPRADOR autenticado. Cuerpo `{ eventoId, detalle, puntuacion }` (puntuación entera 1–5, detalle hasta 1000 caracteres). El comprador sale del token.
   - Reglas: el evento ya debe haber ocurrido (400), el comprador debe tener una compra CONFIRMADA o UTILIZADA de ese evento (403) y solo puede reseñar una vez cada evento (409).
 - `GET /api/resenias/:idEvento` — público (sin token). Lista las reseñas del evento (404 si no existe).
+
+### Mensajería (Mensaje)
+
+Chat interno por compra entre el COMPRADOR dueño y el ORGANIZADOR del evento. Ambos pueden escribir primero y en cualquier momento (sin importar el estado de la compra ni la fecha del evento). El remitente sale del token.
+
+- `POST /api/compras/:idCompra/mensajes` — autenticada (COMPRADOR u ORGANIZADOR). Cuerpo `{ mensaje }` (1–1000 caracteres). 201 con el mensaje.
+- `GET /api/compras/:idCompra/mensajes` — autenticada (COMPRADOR u ORGANIZADOR). Lista el chat del más antiguo al más reciente.
+  - Errores: 400 (ID o texto inválido), 401 (sin token), 403 (no es el comprador ni el organizador de esa compra), 404 (la compra no existe).
 
 ---
 
