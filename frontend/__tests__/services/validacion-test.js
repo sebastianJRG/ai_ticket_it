@@ -8,6 +8,12 @@ describe('validarContrasenia', () => {
 	it('acepta una contraseña que cumple todo', () => {
 		expect(validarContrasenia('Abcdef1!')).toBeNull();
 	});
+	it.each(['Helaman5_12', 'Mi-clave2025'])(
+		'acepta guion bajo y guion medio como especiales: %s',
+		(valor) => {
+			expect(validarContrasenia(valor)).toBeNull();
+		}
+	);
 	it.each([
 		['Ab1!', /8 caracteres/],
 		['abcdefg1!', /mayúscula/],

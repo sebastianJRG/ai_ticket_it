@@ -24,7 +24,7 @@ export function validarNombreUsuario(valor) {
 }
 
 /**
- * Valida la contraseña: 8–32, mayúscula, minúscula, número y especial (!@#$%^&*).
+ * Valida la contraseña: 8–32, mayúscula, minúscula, número y especial (!@#$%^&*_-).
  * @param {string} valor Contraseña ingresada.
  * @returns {string|null} Mensaje que explica cómo resolverlo, o null si es válida.
  */
@@ -34,7 +34,7 @@ export function validarContrasenia(valor) {
 	if (!/[A-Z]/.test(valor)) return 'Agregá al menos una letra mayúscula.';
 	if (!/[a-z]/.test(valor)) return 'Agregá al menos una letra minúscula.';
 	if (!/[0-9]/.test(valor)) return 'Agregá al menos un número.';
-	if (!/[!@#$%^&*]/.test(valor))
-		return 'Agregá un carácter especial (!@#$%^&*).';
+	if (!/[!@#$%^&*_-]/.test(valor))
+		return 'Agregá un carácter especial (!@#$%^&*_-).';
 	return null;
 }

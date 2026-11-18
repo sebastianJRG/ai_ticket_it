@@ -21,7 +21,6 @@ import {
 	validarTexto
 } from '../services/validacion';
 import { Button } from '../components/Button';
-import { Checkbox } from '../components/Checkbox';
 import { RoleSelector } from '../components/RoleSelector';
 import { TextField } from '../components/TextField';
 import { TextLink } from '../components/TextLink';
@@ -41,7 +40,6 @@ export default function Registro() {
 		nombreUsuario: '',
 		contrasenia: ''
 	});
-	const [terminos, setTerminos] = useState(false);
 	const [errores, setErrores] = useState({});
 	const [cargando, setCargando] = useState(false);
 
@@ -59,7 +57,6 @@ export default function Registro() {
 		const e = Object.fromEntries(
 			Object.keys(validar).map((k) => [k, validar[k](campos[k])])
 		);
-		if (!terminos) e.terminos = 'Aceptá los términos para crear tu cuenta.';
 		if (Object.values(e).some(Boolean)) {
 			setErrores(e);
 			return;
@@ -138,14 +135,8 @@ export default function Registro() {
 					onChangeText={cambiar('contrasenia')}
 					onBlur={alPerderFoco('contrasenia')}
 					autoComplete="new-password"
-					helper="8 a 32 caracteres, con mayúscula, minúscula, número y un especial (!@#$%^&*)."
+					helper="8 a 32 caracteres, con mayúscula, minúscula, número y un especial (!@#$%^&*_-)."
 					error={errores.contrasenia ?? undefined}
-				/>
-				<Checkbox
-					checked={terminos}
-					onChange={setTerminos}
-					label="Acepto los términos y condiciones"
-					error={errores.terminos}
 				/>
 				<Button size="lg" loading={cargando} onPress={enviar}>
 					Crear cuenta

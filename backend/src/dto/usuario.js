@@ -39,8 +39,8 @@ export const crearUsuarioSchema = z.object({
 		.regex(/[a-z]/, 'La contraseña debe contener al menos una letra minúscula.')
 		.regex(/[0-9]/, 'La contraseña debe contener al menos un número.')
 		.regex(
-			/[!@#$%^&*]/,
-			'La contraseña debe contener al menos un carácter especial (ej: !@#$%^&*).'
+			/[!@#$%^&*_-]/,
+			'La contraseña debe contener al menos un carácter especial (ej: !@#$%^&*_-).'
 		),
 
 	rol: z.string().refine((val) => rolesPermitidos.includes(val), {
@@ -75,8 +75,8 @@ export const actualizarUsuarioSchema = z.object({
 		.regex(/[a-z]/, 'La contraseña debe contener al menos una letra minúscula.')
 		.regex(/[0-9]/, 'La contraseña debe contener al menos un número.')
 		.regex(
-			/[!@#$%^&*]/,
-			'La contraseña debe contener al menos un carácter especial (ej: !@#$%^&*).'
+			/[!@#$%^&*_-]/,
+			'La contraseña debe contener al menos un carácter especial (ej: !@#$%^&*_-).'
 		)
 		.optional()
 });

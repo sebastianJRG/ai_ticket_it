@@ -44,7 +44,6 @@ describe('Registro', () => {
 		mockIniciar.mockResolvedValue({ rol: 'COMPRADOR' });
 		await montar();
 		await llenar();
-		await fireEvent.press(screen.getByRole('checkbox'));
 		await fireEvent.press(screen.getByRole('button', { name: 'Crear cuenta' }));
 		await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/'));
 		expect(authService.registrar).toHaveBeenCalledWith({
@@ -66,26 +65,24 @@ describe('Registro', () => {
 		await montar();
 		await fireEvent.press(screen.getByRole('radio', { name: /organizar/ }));
 		await llenar();
-		await fireEvent.press(screen.getByRole('checkbox'));
 		await fireEvent.press(screen.getByRole('button', { name: 'Crear cuenta' }));
 		await waitFor(() => expect(authService.registrar).toHaveBeenCalled());
 		expect(authService.registrar.mock.calls[0][0].rol).toBe('ORGANIZADOR');
 	});
 
-	it('sin términos marca el error del checkbox y no envía', async () => {
+	it('no muestra checkbox de términos y registra sin marcar nada', async () => {
+		authService.registrar.mockResolvedValue({ id: '1' });
+		mockIniciar.mockResolvedValue({ rol: 'COMPRADOR' });
 		await montar();
+		expect(screen.queryByRole('checkbox')).toBeNull();
 		await llenar();
 		await fireEvent.press(screen.getByRole('button', { name: 'Crear cuenta' }));
-		expect(
-			screen.getByText('Aceptá los términos para crear tu cuenta.')
-		).toBeTruthy();
-		expect(authService.registrar).not.toHaveBeenCalled();
+		await waitFor(() => expect(authService.registrar).toHaveBeenCalled());
 	});
 
 	it('valida la contraseña con un mensaje que explica cómo resolverla', async () => {
 		await montar();
 		await llenar('abc');
-		await fireEvent.press(screen.getByRole('checkbox'));
 		await fireEvent.press(screen.getByRole('button', { name: 'Crear cuenta' }));
 		expect(screen.getByText('Usá al menos 8 caracteres.')).toBeTruthy();
 		expect(authService.registrar).not.toHaveBeenCalled();
@@ -97,7 +94,6 @@ describe('Registro', () => {
 		);
 		await montar();
 		await llenar();
-		await fireEvent.press(screen.getByRole('checkbox'));
 		await fireEvent.press(screen.getByRole('button', { name: 'Crear cuenta' }));
 		expect(
 			await screen.findByText('El nombre de usuario ya está en uso.')

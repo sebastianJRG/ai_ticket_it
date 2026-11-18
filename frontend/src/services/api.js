@@ -4,9 +4,17 @@
  * @license MIT
  */
 
+import { Platform } from 'react-native';
+
+/**
+ * Host por defecto: el emulador de Android no alcanza el `localhost` del PC y
+ * usa `10.0.2.2`; en el resto de plataformas basta `localhost`.
+ */
+const HOST_POR_DEFECTO = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+
 /** URL base del backend; en el celular debe ser la IP LAN del PC (ver .env.example). */
 export const API_URL =
-	process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+	process.env.EXPO_PUBLIC_API_URL || `http://${HOST_POR_DEFECTO}:3000`;
 
 /** Error de la API: `status` 0 significa que no hubo conexión. */
 export class ApiError extends Error {
