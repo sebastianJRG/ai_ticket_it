@@ -1,14 +1,15 @@
 <!-- SYNC IMPACT REPORT
-Version change: 1.1.0 → 1.2.0
-Modified principles: 4. Domain Entity Integrity (new transition PENDIENTE → CANCELADA; cancellation rule restated)
-Added sections: none
+Version change: 1.2.0 → 1.3.0
+Modified principles: none
+Added sections: Use Cases (CU-01 … CU-12)
 Added principles: none
 Removed sections: none
 Removed principles: none
-Rationale: a buyer must be able to cancel a purchase that has not been confirmed yet (frees capacity); needed by PATCH /api/compras/:idCompra/cancelacion.
-Migration/compatibility: backward-compatible (only adds a transition; no existing transition changes).
+Rationale: the Development Workflow requires acceptance criteria derived from the use cases, but the use cases were not recorded; they are now the traceable functional requirements for specs and the frontend.
+Migration/compatibility: backward-compatible (only adds a section; the backend already fulfills all use cases).
 Follow-up TODOs: none
 
+Previous: 1.1.0 → 1.2.0 — new transition PENDIENTE → CANCELADA in principle 4 (needed by PATCH /api/compras/:idCompra/cancelacion).
 Previous: 1.0.0 → 1.1.0 — added principle 6 (Mandatory JSDoc Documentation), Architecture & Technology Stack, Development Workflow & Quality Gates, Governance. -->
 
 # Al Ticket It Constitution
@@ -47,6 +48,39 @@ The technology stack is fixed and non-negotiable:
 - Persistence: strictly in-memory; no third-party database packages.
 - Testing: Jest as the test runner for both backend and frontend.
 
+## Use Cases
+
+<!-- Requisitos funcionales vigentes. El backend ya los cumple; el frontend debe implementarlos. -->
+
+Los siguientes casos de uso son los requisitos funcionales vigentes de la aplicación. Toda spec o feature MUST trazar sus criterios de aceptación a uno o más de estos casos de uso.
+
+### Compras (comprador)
+
+- **CU-01**: Como comprador, quiero poder visualizar mis compras, diferenciando con claridad el estado en el que se encuentran y cuántos días faltan para el evento en caso de estar en estado confirmada.
+- **CU-07**: Como comprador, quiero poder cancelar una compra para obtener el reembolso en caso de no poder asistir al evento.
+- **CU-12**: Como comprador, quiero poder realizar una compra sobre un Evento seleccionando uno de los tipos de entrada disponibles y la cantidad deseada, sin superar el cupo disponible.
+
+### Eventos (organizador)
+
+- **CU-02**: Como organizador, quiero poder visualizar las compras asociadas a un Evento en particular, diferenciando con claridad el estado en el que se encuentran y cuántas entradas quedan disponibles de cada tipo.
+- **CU-04**: Como organizador, quiero poder crear un Evento ofreciendo distintos tipos de entrada, cada uno con su precio y cupo, permitiendo adaptarse a diferentes públicos y presupuestos.
+- **CU-08**: Como organizador, quiero que los compradores puedan cancelar una compra siempre que la misma no se encuentre en estado utilizada y el evento aún no se haya realizado.
+
+### Búsqueda y exploración (comprador)
+
+- **CU-03**: Como comprador, quiero poder buscar Eventos de forma específica mediante una búsqueda textual o explorarlos por categorías.
+- **CU-11**: Como comprador, al buscar Eventos, quiero poder ordenarlos por precio, fecha del evento y puntaje del organizador.
+
+### Mensajería
+
+- **CU-05**: Como comprador, quiero poder enviar mensajes en cualquier momento relacionados a una compra mediante un chat dentro de la misma.
+- **CU-06**: Como organizador, quiero poder responder mensajes en cualquier momento relacionados a una compra mediante un chat dentro de la misma.
+
+### Reseñas
+
+- **CU-09**: Como organizador, quiero que una vez utilizada una entrada el comprador pueda puntuar el Evento de forma numérica y dejar un comentario escrito.
+- **CU-10**: Como comprador, quiero que las reseñas de eventos anteriores se visualicen en los Eventos de cada organizador para conocer experiencias previas antes de comprar.
+
 ## Development Workflow & Quality Gates
 
 <!-- TDD, review, quality gates -->
@@ -70,4 +104,4 @@ The constitution is the supreme governance document for "Al Ticket It" and super
 
 Amendments MUST be approved by the project maintainer and then applied to `.specify/memory/constitution.md`. The version line MUST be updated using semantic versioning rules. Compliance is reviewed during every code review; violations of non-negotiable (NON-NEGOTIABLE) principles MUST block the change.
 
-**Version**: 1.2.0 | **Ratified**: 2026-11-07 | **Last Amended**: 2026-11-17
+**Version**: 1.3.0 | **Ratified**: 2026-11-07 | **Last Amended**: 2026-11-17

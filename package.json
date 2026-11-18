@@ -12,7 +12,8 @@
 		"lint:fix": "eslint . --fix",
 		"dev:backend": "npm run dev --workspace=backend",
 		"dev:frontend": "npm run start --workspace=frontend",
-		"test:backend": "npm run test --workspace=backend"
+		"test:backend": "npm run test --workspace=backend",
+		"test:frontend": "npm run test --workspace=frontend"
 	},
 	"devDependencies": {
 		"eslint": "^10.14.0",
