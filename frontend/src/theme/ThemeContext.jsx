@@ -7,28 +7,25 @@ import React, { createContext, useContext, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import { getTheme, darkTheme } from './theme';
 
-/** Theme activo (colores, tipografías, espaciados, etc.). */
-export type Theme = typeof darkTheme;
+/**
+ * Theme activo (colores, tipografías, espaciados, etc.).
+ * @typedef {typeof darkTheme} Theme
+ */
 
 /** Contexto interno; usar {@link useTheme} para leerlo. */
-const ThemeContext = createContext<Theme>(darkTheme);
+const ThemeContext = createContext(darkTheme);
 
 /**
  * Provee el theme según el esquema de color del sistema (dark por defecto).
- * @param props.scheme Fuerza un esquema ('dark' | 'light'); si se omite usa el del sistema.
- * @param props.children Árbol de la aplicación.
+ * @param {Object} props Propiedades.
+ * @param {'dark'|'light'} [props.scheme] Fuerza un esquema; si se omite usa el del sistema.
+ * @param {import('react').ReactNode} props.children Árbol de la aplicación.
  * @returns Proveedor de theme.
  */
-export function ThemeProvider({
-	scheme,
-	children
-}: {
-	scheme?: 'dark' | 'light';
-	children: React.ReactNode;
-}) {
+export function ThemeProvider({ scheme, children }) {
 	const system = useColorScheme();
 	const theme = useMemo(
-		() => getTheme(scheme ?? system ?? 'dark') as Theme,
+		() => getTheme(scheme ?? system ?? 'dark'),
 		[scheme, system]
 	);
 	return (
@@ -38,8 +35,8 @@ export function ThemeProvider({
 
 /**
  * Devuelve el theme activo.
- * @returns Theme actual.
+ * @returns {Theme} Theme actual.
  */
-export function useTheme(): Theme {
+export function useTheme() {
 	return useContext(ThemeContext);
 }

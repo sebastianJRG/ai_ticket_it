@@ -9,7 +9,7 @@ export default [
 	{
 		files: ['**/*.js', '**/*.jsx'],
 		rules: {
-			'no-unused-vars': 'warn',
+			'no-unused-vars': ['warn', { varsIgnorePattern: '^React$' }],
 			'no-undef': 'error'
 		}
 	},
@@ -26,9 +26,19 @@ export default [
 	{
 		files: ['frontend/**/*.js', 'frontend/**/*.jsx'],
 		languageOptions: {
+			parserOptions: { ecmaFeatures: { jsx: true } },
 			globals: {
 				...globals.browser,
 				...globals.react
+			}
+		}
+	},
+	// Tests del frontend (Jest)
+	{
+		files: ['frontend/__tests__/**/*.js', 'frontend/__tests__/**/*.jsx'],
+		languageOptions: {
+			globals: {
+				...globals.jest
 			}
 		}
 	},

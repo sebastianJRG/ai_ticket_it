@@ -82,7 +82,7 @@ npx expo install <pkg>  # Install Expo-compatible packages
 ### Navigation (Frontend)
 
 - All routes live in `frontend/src/app/` via Expo Router
-- `_layout.tsx` files define navigators
+- `_layout.jsx` files define navigators
 - Non-route code (components, hooks, utils) goes outside `src/app/`
 
 ### Authentication & Security

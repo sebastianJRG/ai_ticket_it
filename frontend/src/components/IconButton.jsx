@@ -8,21 +8,16 @@ import { Pressable } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { Icon } from './Icon';
 
-/** Props de {@link IconButton}. */
-export interface IconButtonProps {
-	/** Nombre del ícono Lucide. */
-	icon: string;
-	/** Texto accesible (obligatorio). */
-	label: string;
-	/** Estilo: plain (header), filled (flota sobre bg), onImage (sobre foto). */
-	variant?: 'plain' | 'filled' | 'onImage';
-	/** Color del ícono (por defecto según variante). */
-	color?: string;
-	/** Deshabilitado. */
-	disabled?: boolean;
-	/** Handler de presión. */
-	onPress?: () => void;
-}
+/**
+ * Props de {@link IconButton}.
+ * @typedef {Object} IconButtonProps
+ * @property {string} icon Nombre del ícono Lucide.
+ * @property {string} label Texto accesible (obligatorio).
+ * @property {'plain' | 'filled' | 'onImage'} [variant] Estilo: plain (header), filled (flota sobre bg), onImage (sobre foto).
+ * @property {string} [color] Color del ícono (por defecto según variante).
+ * @property {boolean} [disabled] Deshabilitado.
+ * @property {function(): void} [onPress] Handler de presión.
+ */
 
 /**
  * Botón de ícono con área táctil mínima de 44x44.
@@ -36,7 +31,7 @@ export function IconButton({
 	color,
 	disabled,
 	onPress
-}: IconButtonProps) {
+}) {
 	const t = useTheme();
 	const bg = {
 		plain: 'transparent',

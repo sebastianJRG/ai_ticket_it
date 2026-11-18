@@ -9,33 +9,25 @@ import { useTheme } from '../theme/ThemeContext';
 import { formatDaysLeft } from '../theme/format';
 import { Icon } from './Icon';
 
-/** Props de {@link StatusBadge}. */
-export interface StatusBadgeProps {
-	/** Estado de la compra (PENDIENTE, CONFIRMADA, UTILIZADA, CANCELADA, REEMBOLSADA). */
-	status: string;
-	/** Días hasta el evento; solo se muestra en CONFIRMADA. */
-	daysLeft?: number | null;
-	/** `sm` usa el texto corto (listas del organizador). */
-	size?: 'sm' | 'md';
-}
+/**
+ * Props de {@link StatusBadge}.
+ * @typedef {Object} StatusBadgeProps
+ * @property {string} status Estado de la compra (PENDIENTE, CONFIRMADA, UTILIZADA, CANCELADA, REEMBOLSADA).
+ * @property {number | null} [daysLeft] Días hasta el evento; solo se muestra en CONFIRMADA.
+ * @property {'sm' | 'md'} [size] `sm` usa el texto corto (listas del organizador).
+ */
 
 /**
  * Muestra el estado de una compra sin depender solo del color.
  * @param props Ver {@link StatusBadgeProps}.
  * @returns Badge, o null si el estado es desconocido.
  */
-export function StatusBadge({
-	status,
-	daysLeft,
-	size = 'md'
-}: StatusBadgeProps) {
+export function StatusBadge({ status, daysLeft, size = 'md' }) {
 	const t = useTheme();
-	const s = (
-		t.purchaseStatus as Record<string, (typeof t.purchaseStatus)['PENDIENTE']>
-	)[status];
+	const s = t.purchaseStatus[status];
 	if (!s) return null;
-	const fg = t.colors[s.fg as keyof typeof t.colors];
-	const bg = t.colors[s.bg as keyof typeof t.colors];
+	const fg = t.colors[s.fg];
+	const bg = t.colors[s.bg];
 	const name = size === 'sm' ? s.short : s.label;
 	const withDays = status === 'CONFIRMADA' && daysLeft != null;
 	const days = withDays ? formatDaysLeft(daysLeft).toLowerCase() : '';

@@ -46,7 +46,7 @@ describe('Button', () => {
 			['sm', 36],
 			['md', 44],
 			['lg', 52]
-		] as const) {
+		]) {
 			const { unmount } = await setup({ size });
 			expect(screen.getByRole('button')).toHaveStyle({ height: h });
 			await unmount();

@@ -7,23 +7,17 @@ import React from 'react';
 import { ActivityIndicator, Pressable, Text } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 
-/** Props de {@link Button}. */
-export interface ButtonProps {
-	/** Variante visual. `destructive` solo dentro de un Modal de confirmación. */
-	variant?: 'primary' | 'secondary' | 'ghost' | 'destructive';
-	/** Tamaño: sm 36, md 44, lg 52. */
-	size?: 'sm' | 'md' | 'lg';
-	/** Deshabilitado: sin handler y atenuado. */
-	disabled?: boolean;
-	/** Cargando: spinner, ocupado para lectores y sin handler. */
-	loading?: boolean;
-	/** Handler de presión. */
-	onPress?: () => void;
-	/** Etiqueta de accesibilidad si difiere del texto. */
-	accessibilityLabel?: string;
-	/** Contenido (texto). */
-	children: React.ReactNode;
-}
+/**
+ * Props de {@link Button}.
+ * @typedef {Object} ButtonProps
+ * @property {'primary' | 'secondary' | 'ghost' | 'destructive'} [variant] Variante visual. `destructive` solo dentro de un Modal de confirmación.
+ * @property {'sm' | 'md' | 'lg'} [size] Tamaño: sm 36, md 44, lg 52.
+ * @property {boolean} [disabled] Deshabilitado: sin handler y atenuado.
+ * @property {boolean} [loading] Cargando: spinner, ocupado para lectores y sin handler.
+ * @property {function(): void} [onPress] Handler de presión.
+ * @property {string} [accessibilityLabel] Etiqueta de accesibilidad si difiere del texto.
+ * @property {import("react").ReactNode} children Contenido (texto).
+ */
 
 /**
  * Botón con estados default/pressed/disabled/loading.
@@ -38,7 +32,7 @@ export function Button({
 	onPress,
 	accessibilityLabel,
 	children
-}: ButtonProps) {
+}) {
 	const t = useTheme();
 	const h = {
 		sm: t.sizes.buttonSm,

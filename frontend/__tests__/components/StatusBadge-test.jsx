@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react-native';
 import { StatusBadge } from '../../src/components/StatusBadge';
 import { ThemeProvider } from '../../src/theme/ThemeContext';
 
-const setup = async (props: { status: string; daysLeft?: number | null }) =>
+const setup = async (props) =>
 	render(
 		<ThemeProvider scheme="dark">
 			<StatusBadge {...props} />
