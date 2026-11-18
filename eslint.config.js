@@ -29,7 +29,10 @@ export default [
 			parserOptions: { ecmaFeatures: { jsx: true } },
 			globals: {
 				...globals.browser,
-				...globals.react
+				...globals.react,
+				// process.env.EXPO_PUBLIC_* y global en tests
+				process: 'readonly',
+				global: 'writable'
 			}
 		}
 	},
