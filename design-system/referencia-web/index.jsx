@@ -52,9 +52,10 @@ export function IconButton({ icon, label, variant = 'plain', active, badge, size
 }
 
 /* ═══════════════ Inputs ═══════════════ */
-export function TextField({ label, value, placeholder, helper, error, prefix, suffix, multiline, disabled, focused, required, maxLength, onChangeText, keyboardType }) {
+export function TextField({ label, value, placeholder, helper, error, prefix, suffix, multiline, disabled, focused, required, maxLength, onChangeText, keyboardType, secureTextEntry, autoComplete }) {
   const [v, setV] = useState(value ?? '');
   const [f, setF] = useState(false);
+  const [show, setShow] = useState(false);
   const Tag = multiline ? 'textarea' : 'input';
   return (
     <label className="at-field">
@@ -62,9 +63,10 @@ export function TextField({ label, value, placeholder, helper, error, prefix, su
       <span className={cx('at-field-box', (focused || f) && 'is-focused', error && 'is-error', disabled && 'is-disabled', multiline && 'is-multiline')}>
         {prefix ? <span className="at-field-affix">{prefix}</span> : null}
         <Tag className="at-field-input" value={v} placeholder={placeholder} disabled={disabled} maxLength={maxLength} rows={multiline ? 4 : undefined}
-          inputMode={keyboardType === 'numeric' ? 'numeric' : undefined} aria-invalid={!!error || undefined}
+          inputMode={keyboardType === 'numeric' ? 'numeric' : keyboardType === 'email-address' ? 'email' : undefined} type={secureTextEntry && !show ? 'password' : undefined} autoComplete={autoComplete} aria-invalid={!!error || undefined}
           onFocus={() => setF(true)} onBlur={() => setF(false)} onChange={e => { setV(e.target.value); onChangeText && onChangeText(e.target.value); }} />
         {suffix ? <span className="at-field-affix">{suffix}</span> : null}
+        {secureTextEntry ? <span style={{ marginRight: -12 }} onClick={e => { e.preventDefault(); setShow(!show); }}><IconButton icon={show ? 'eyeOff' : 'eye'} label={show ? 'Ocultar contraseña' : 'Mostrar contraseña'} size={20} /></span> : null}
       </span>
       {(error || helper || maxLength) ? (
         <span className={cx('at-field-help', error && 'is-error')}>
@@ -138,6 +140,40 @@ export function QuantityStepper({ value: valueProp = 0, min = 0, max = 10, onCha
         <button type="button" className="at-stepper-btn is-plus" aria-label="Agregar una" disabled={atMax} onClick={() => set(value + 1)}><Icon name="plus" size={20} /></button>
       </div>
       {showHint ? <span className={cx('at-stepper-hint', atMax && 'is-max')}>{atMax ? `Máximo ${max}` : `Hasta ${max}`}</span> : null}
+    </div>
+  );
+}
+
+export function Checkbox({ checked: c0 = false, label, error, disabled, onChange }) {
+  const [c, setC] = useState(c0);
+  return (
+    <div className="at-field">
+      <button type="button" role="checkbox" aria-checked={c} disabled={disabled} className={cx('at-check', c && 'is-on', error && 'is-error')} onClick={() => { setC(!c); onChange && onChange(!c); }}>
+        <span className="at-check-box">{c ? <Icon name="check" size={16} strokeWidth={3} /> : null}</span>
+        <span className="at-check-label">{label}</span>
+      </button>
+      {error ? <span className="at-field-help is-error"><Icon name="alert" size={16} /><span>{error}</span></span> : null}
+    </div>
+  );
+}
+
+export function ChoiceCard({ icon, title, description, selected, onPress }) {
+  return (
+    <button type="button" role="radio" aria-checked={!!selected} className={cx('at-choice', selected && 'is-on')} onClick={onPress}>
+      <span className="at-choice-icon"><Icon name={icon} size={22} /></span>
+      <span className="at-choice-text"><span className="at-t-title-sm">{title}</span>{description ? <span className="at-t-body-sm at-muted">{description}</span> : null}</span>
+      <span className={cx('at-radio', selected && 'is-on')} />
+    </button>
+  );
+}
+
+export function RoleSelector({ value: v0 = 'buyer', onChange }) {
+  const [v, setV] = useState(v0);
+  const pick = k => { setV(k); onChange && onChange(k); };
+  return (
+    <div role="radiogroup" aria-label="¿Cómo vas a usar AI Ticket It?" className="at-stack" style={{ gap: 8 }}>
+      <ChoiceCard icon="ticket" title="Quiero comprar entradas" description="Explorá, comprá y seguí tus compras." selected={v === 'buyer'} onPress={() => pick('buyer')} />
+      <ChoiceCard icon="calendar" title="Quiero organizar eventos" description="Publicá eventos y vendé entradas." selected={v === 'organizer'} onPress={() => pick('organizer')} />
     </div>
   );
 }
@@ -295,7 +331,7 @@ export function BottomNav({ items = NAV_BUYER, active, dots = [], homeIndicator 
 
 export function StatusBar({ time = '21:04', light }) {
   return (
-    <div className="at-statusbar" aria-hidden="true" style={light ? { color: 'var(--text-on-image)', position: 'absolute', left: 0, right: 0, zIndex: 3 } : null}>
+    <div className="at-statusbar" aria-hidden="true" style={light ? { color: 'var(--text-on-image)', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 3 } : null}>
       <span>{time}</span>
       <span className="at-statusbar-icons"><i style={{ width: 17, height: 11 }} /><i style={{ width: 15, height: 11, borderRadius: 6 }} /><i style={{ width: 25, height: 12, borderRadius: 3.5 }} /></span>
     </div>

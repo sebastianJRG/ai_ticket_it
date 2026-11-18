@@ -8,3 +8,4 @@ Campo de texto con label arriba, helper/error abajo, prefijo/sufijo y versión m
 - Precios: `prefix="$"`, `keyboardType="numeric"` y formato de miles al perder foco (32.000). Cupos: `suffix="u."`.
 - Multilínea con `maxLength` muestra contador `48/600`.
 - Alto 52, texto 16 (evita el zoom de iOS en web y es legible con Dynamic Type).
+- Contraseñas: `secureTextEntry` agrega el botón mostrar/ocultar (ojo) con su `accessibilityLabel`. Nombre de usuario: `autoCapitalize="none"`, `autoCorrect={false}`, `autoComplete="username"` (el backend identifica por `nombreUsuario`, no hay email).

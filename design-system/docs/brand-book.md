@@ -91,4 +91,4 @@ Los badges usan el color sobre su `-bg` (≥ 4.5:1 en ambos temas). Los íconos 
 
 ## Roles
 
-Comprador y organizador usan la misma app y el mismo sistema; cambia la bottom nav (ver *BottomNav*) y el contenido. El organizador ve números (disponibilidad, compras por estado) con la misma tipografía tabular; el comprador ve emoción (imágenes, cuenta regresiva).
+Comprador y organizador usan la misma app y el mismo sistema. El rol se elige al crear la cuenta (`RoleSelector`) y es único (el backend asigna un solo rol por usuario); explorar eventos no requiere cuenta, la sesión se pide al comprar, guardar favoritos o publicar. Cambia la bottom nav (ver *BottomNav*) y el contenido. El organizador ve números (disponibilidad, compras por estado) con la misma tipografía tabular; el comprador ve emoción (imágenes, cuenta regresiva).

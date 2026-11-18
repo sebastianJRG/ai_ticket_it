@@ -407,3 +407,23 @@ input, textarea { font: inherit; color: inherit; }
 .at-divider { height: 1px; background: var(--border); margin: var(--space-4) 0; }
 .at-kv { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); padding: 6px 0; }
 .at-secure { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--success); }
+
+/* ── Checkbox & ChoiceCard ────────────────────────────────── */
+.at-check { display: flex; align-items: flex-start; gap: var(--space-3); min-height: var(--touch-min); padding: 10px 0; text-align: left; width: 100%; }
+.at-check-box { width: 24px; height: 24px; border-radius: var(--radius-xs); box-shadow: inset 0 0 0 2px var(--border-strong); display: inline-flex; align-items: center; justify-content: center; flex: none; color: var(--on-primary); transition: background-color var(--duration-fast); }
+.at-check.is-on .at-check-box { background: var(--primary); box-shadow: none; }
+.at-check.is-error .at-check-box { box-shadow: inset 0 0 0 2px var(--error); }
+.at-check:disabled { opacity: var(--opacity-disabled); }
+.at-check-label { font-size: 15px; line-height: 22px; color: var(--text-muted); padding-top: 1px; }
+.at-check-label a, .at-link { color: var(--primary-text); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+.at-check:focus-visible, .at-choice:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.at-choice { display: flex; align-items: center; gap: var(--space-3); width: 100%; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--border-strong); text-align: left; transition: box-shadow var(--duration-fast); }
+.at-choice.is-on { box-shadow: inset 0 0 0 2px var(--primary-text); background: var(--primary-soft); }
+.at-choice-icon { width: 44px; height: 44px; border-radius: var(--radius-md); background: var(--surface-raised); display: inline-flex; align-items: center; justify-content: center; flex: none; color: var(--text); }
+.at-choice.is-on .at-choice-icon { background: var(--primary); color: var(--on-primary); }
+.at-choice-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.at-auth-hero { position: relative; height: 300px; flex: none; overflow: hidden; }
+.at-auth-hero::after { content: ''; position: absolute; inset: 30% 0 0 0; background: linear-gradient(to bottom, transparent, var(--bg)); }
+.at-auth-brand { position: absolute; left: var(--space-4); bottom: var(--space-4); z-index: 1; }
+.at-auth-or { display: flex; align-items: center; gap: var(--space-3); color: var(--text-subtle); font-size: 13px; font-weight: 600; }
+.at-auth-or::before, .at-auth-or::after { content: ''; flex: 1; height: 1px; background: var(--border); }

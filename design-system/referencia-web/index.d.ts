@@ -3,7 +3,7 @@ import type * as React from 'react';
 /** Estados de compra del dominio (CambioEstadoCompra.estado). */
 export type PurchaseStatus = 'PENDIENTE' | 'CONFIRMADA' | 'UTILIZADA' | 'CANCELADA' | 'REEMBOLSADA';
 export type CategoryKey = 'todo' | 'recitales' | 'teatro' | 'festivales' | 'conferencias' | 'deportes';
-export type IconName = 'search' | 'heart' | 'calendar' | 'mapPin' | 'star' | 'clock' | 'hourglass' | 'checkCircle' | 'xCircle' | 'check' | 'checks' | 'ticket' | 'ticketCheck' | 'undo' | 'chevronLeft' | 'chevronRight' | 'chevronDown' | 'plus' | 'minus' | 'home' | 'compass' | 'user' | 'message' | 'send' | 'sliders' | 'sort' | 'bell' | 'x' | 'alert' | 'info' | 'image' | 'trash' | 'upload' | 'music' | 'theater' | 'festival' | 'mic' | 'trophy' | 'grid' | 'lock' | 'card' | 'edit' | 'more' | 'qr' | 'share' | 'barChart' | 'sparkle';
+export type IconName = 'search' | 'heart' | 'calendar' | 'mapPin' | 'star' | 'clock' | 'hourglass' | 'checkCircle' | 'xCircle' | 'check' | 'checks' | 'ticket' | 'ticketCheck' | 'undo' | 'chevronLeft' | 'chevronRight' | 'chevronDown' | 'plus' | 'minus' | 'home' | 'compass' | 'user' | 'message' | 'send' | 'sliders' | 'sort' | 'bell' | 'x' | 'alert' | 'info' | 'image' | 'trash' | 'upload' | 'music' | 'theater' | 'festival' | 'mic' | 'trophy' | 'grid' | 'lock' | 'card' | 'edit' | 'more' | 'qr' | 'share' | 'barChart' | 'sparkle' | 'eye' | 'eyeOff' | 'mail';
 
 export interface IconProps { name: IconName; size?: 16 | 20 | 24 | number; color?: string; fill?: string; strokeWidth?: number; title?: string }
 export declare function Icon(props: IconProps): React.ReactElement;
@@ -31,7 +31,7 @@ export declare function Button(props: ButtonProps): React.ReactElement;
 export interface IconButtonProps { icon: IconName; /** Obligatorio: es el accessibilityLabel. */ label: string; variant?: 'plain' | 'filled' | 'onImage'; active?: boolean; badge?: string | number; size?: number; onPress?: () => void }
 export declare function IconButton(props: IconButtonProps): React.ReactElement;
 
-export interface TextFieldProps { label?: string; value?: string; placeholder?: string; helper?: string; error?: string; prefix?: React.ReactNode; suffix?: React.ReactNode; multiline?: boolean; disabled?: boolean; focused?: boolean; /** Sin required el label muestra "(opcional)". */ required?: boolean; maxLength?: number; keyboardType?: 'default' | 'numeric' | 'email-address'; onChangeText?: (v: string) => void }
+export interface TextFieldProps { label?: string; value?: string; placeholder?: string; helper?: string; error?: string; prefix?: React.ReactNode; suffix?: React.ReactNode; multiline?: boolean; disabled?: boolean; focused?: boolean; /** Sin required el label muestra "(opcional)". */ required?: boolean; maxLength?: number; keyboardType?: 'default' | 'numeric' | 'email-address'; /** Contraseña con botón mostrar/ocultar. */ secureTextEntry?: boolean; autoComplete?: string; onChangeText?: (v: string) => void }
 export declare function TextField(props: TextFieldProps): React.ReactElement;
 
 export interface SearchBarProps { value?: string; placeholder?: string; focused?: boolean; filterCount?: number; showFilter?: boolean; onFilterPress?: () => void }
@@ -43,6 +43,12 @@ export declare function Select(props: SelectProps): React.ReactElement;
 
 export interface QuantityStepperProps { value?: number; min?: number; /** min(cupo restante, máximo por compra). "+" se deshabilita al llegar. */ max: number; showHint?: boolean; label?: string; onChange?: (v: number) => void }
 export declare function QuantityStepper(props: QuantityStepperProps): React.ReactElement;
+
+export interface CheckboxProps { checked?: boolean; label: React.ReactNode; error?: string; disabled?: boolean; onChange?: (v: boolean) => void }
+export declare function Checkbox(props: CheckboxProps): React.ReactElement;
+export interface ChoiceCardProps { icon: IconName; title: string; description?: string; selected?: boolean; onPress?: () => void }
+export declare function ChoiceCard(props: ChoiceCardProps): React.ReactElement;
+export declare function RoleSelector(props: { value?: 'buyer' | 'organizer'; onChange?: (v: 'buyer' | 'organizer') => void }): React.ReactElement;
 
 export interface ChipProps { label: string; icon?: IconName; selected?: boolean; variant?: 'category' | 'filter'; removable?: boolean; count?: number; onPress?: () => void }
 export declare function Chip(props: ChipProps): React.ReactElement;
