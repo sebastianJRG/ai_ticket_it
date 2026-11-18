@@ -20,6 +20,7 @@ import {
 	Manrope_800ExtraBold
 } from '@expo-google-fonts/manrope';
 import { ThemeProvider, useTheme } from '../theme/ThemeContext';
+import { AuthProvider } from '../auth/AuthContext';
 
 function Navigator() {
 	const t = useTheme();
@@ -54,7 +55,9 @@ export default function RootLayout() {
 	return (
 		<SafeAreaProvider>
 			<ThemeProvider>
-				<Navigator />
+				<AuthProvider>
+					<Navigator />
+				</AuthProvider>
 			</ThemeProvider>
 		</SafeAreaProvider>
 	);

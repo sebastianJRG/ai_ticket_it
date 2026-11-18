@@ -23,13 +23,7 @@ import { Icon } from './Icon';
  * @param props Ver {@link ChoiceCardProps}.
  * @returns Elemento Pressable con rol radio.
  */
-export function ChoiceCard({
-	icon,
-	title,
-	description,
-	selected,
-	onPress
-}) {
+export function ChoiceCard({ icon, title, description, selected, onPress }) {
 	const t = useTheme();
 	const c = t.colors;
 	return (

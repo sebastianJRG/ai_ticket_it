@@ -25,10 +25,7 @@ import { ChoiceCard } from './ChoiceCard';
  * @param props Ver {@link RoleSelectorProps}.
  * @returns Vista con rol radiogroup.
  */
-export function RoleSelector({
-	value = 'COMPRADOR',
-	onChange
-}) {
+export function RoleSelector({ value = 'COMPRADOR', onChange }) {
 	const t = useTheme();
 	const [rol, setRol] = useState(value);
 	const pick = (r) => {

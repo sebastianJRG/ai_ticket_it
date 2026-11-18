@@ -20,7 +20,10 @@ describe('TextField', () => {
 	it('emite onChangeText', async () => {
 		const onChangeText = jest.fn();
 		await setup({ onChangeText });
-		await fireEvent.changeText(screen.getByLabelText('Nombre de usuario'), 'ana');
+		await fireEvent.changeText(
+			screen.getByLabelText('Nombre de usuario'),
+			'ana'
+		);
 		expect(onChangeText).toHaveBeenCalledWith('ana');
 	});
 
@@ -33,9 +36,15 @@ describe('TextField', () => {
 		await setup({ label: 'Contraseña', secureTextEntry: true });
 		const input = screen.getByLabelText('Contraseña');
 		expect(input.props.secureTextEntry).toBe(true);
-		await fireEvent.press(screen.getByRole('button', { name: 'Mostrar contraseña' }));
-		expect(screen.getByLabelText('Contraseña').props.secureTextEntry).toBe(false);
-		expect(screen.getByRole('button', { name: 'Ocultar contraseña' })).toBeTruthy();
+		await fireEvent.press(
+			screen.getByRole('button', { name: 'Mostrar contraseña' })
+		);
+		expect(screen.getByLabelText('Contraseña').props.secureTextEntry).toBe(
+			false
+		);
+		expect(
+			screen.getByRole('button', { name: 'Ocultar contraseña' })
+		).toBeTruthy();
 	});
 
 	it('muestra contador con maxLength en multilínea', async () => {

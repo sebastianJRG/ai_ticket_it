@@ -4,8 +4,7 @@ import { ChoiceCard } from '../../src/components/ChoiceCard';
 import { RoleSelector } from '../../src/components/RoleSelector';
 import { ThemeProvider } from '../../src/theme/ThemeContext';
 
-const wrap = (ui) =>
-	render(<ThemeProvider scheme="dark">{ui}</ThemeProvider>);
+const wrap = (ui) => render(<ThemeProvider scheme="dark">{ui}</ThemeProvider>);
 
 describe('ChoiceCard', () => {
 	it('expone rol radio y estado seleccionado', async () => {
@@ -15,7 +14,9 @@ describe('ChoiceCard', () => {
 
 	it('llama a onPress', async () => {
 		const onPress = jest.fn();
-		await wrap(<ChoiceCard icon="Ticket" title="Quiero comprar" onPress={onPress} />);
+		await wrap(
+			<ChoiceCard icon="Ticket" title="Quiero comprar" onPress={onPress} />
+		);
 		await fireEvent.press(screen.getByRole('radio'));
 		expect(onPress).toHaveBeenCalledTimes(1);
 	});
