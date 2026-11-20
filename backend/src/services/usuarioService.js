@@ -1,3 +1,4 @@
+import { idEventoSchema } from '../dto/resenia.js';
 import { actualizarUsuarioSchema, crearUsuarioSchema } from '../dto/usuario.js';
 import { COMPRADOR, ORGANIZADOR } from '../models/roles.js';
 import Usuario from '../models/usuario.js';
@@ -16,10 +17,64 @@ const permisosPorRol = {
 export default class UsuarioService {
 	/** Crea una instancia de UsuarioService.
 	 * @param {import('../repositories/usuarioRepository.js').default} usuarioRepository Repositorio de usuarios
+	 * @param {import('../repositories/eventoRepository.js').default} [eventoRepository] Repositorio de eventos (necesario para agregar favoritos)
+	 * @param {{info: (linea: string) => void}} [logger=console] Destino de los logs estructurados (JSON)
 	 */
-	constructor(usuarioRepository) {
+	constructor(usuarioRepository, eventoRepository, logger = console) {
 		/** @private {import('../repositories/usuarioRepository.js').default} */
 		this.usuarioRepository = usuarioRepository;
+		/** @private {import('../repositories/eventoRepository.js').default|undefined} */
+		this.eventoRepository = eventoRepository;
+		/** @private {{info: (linea: string) => void}} */
+		this.logger = logger;
+	}
+
+	/** Valida el ID de un evento recibido por URL.
+	 * @private
+	 * @param {unknown} id - ID a validar
+	 * @returns {string} ID sin espacios alrededor
+	 * @throws {ErrorHttp} 400 si no es un texto o queda vacío
+	 */
+	_validarIdEvento(id) {
+		const resultado = idEventoSchema.safeParse(id);
+		if (!resultado.success) {
+			throw new ErrorHttp(
+				400,
+				resultado.error.issues[0]?.message || 'Error de validación'
+			);
+		}
+		return resultado.data;
+	}
+
+	/** Busca un usuario o falla con 404.
+	 * @private
+	 * @param {string} usuarioId - ID del usuario (tomado del token JWT)
+	 * @returns {Promise<import('../models/usuario.js').default>} Usuario encontrado
+	 * @throws {ErrorHttp} 404 si el usuario no existe
+	 */
+	async _usuarioOFallar(usuarioId) {
+		const usuario = await this.usuarioRepository.buscarPorId(usuarioId);
+		if (!usuario) {
+			throw new ErrorHttp(404, 'El usuario no existe.');
+		}
+		return usuario;
+	}
+
+	/** Escribe una línea de log estructurado (JSON).
+	 * @private
+	 * @param {string} evento - Nombre de la operación registrada
+	 * @param {{requestId?: string}} contexto - Datos de la petición
+	 * @param {object} datos - Campos propios de la operación
+	 * @returns {void}
+	 */
+	_log(evento, contexto, datos) {
+		this.logger.info(
+			JSON.stringify({
+				evento,
+				requestId: contexto.requestId ?? null,
+				...datos
+			})
+		);
 	}
 
 	/** Obtiene un usuario por su ID.
@@ -159,49 +214,87 @@ export default class UsuarioService {
 		return await this.usuarioRepository.actualizar(usuario);
 	}
 
-	/** Agrega un evento a los favoritos del usuario.
-	 * @param {string} usuarioId - ID del usuario
+	/** Agrega un evento a los favoritos del usuario de forma idempotente.
+	 * Si ya era favorito no se duplica ni cambia de posición. Se permite un evento que ya ocurrió.
+	 * @param {string} usuarioId - ID del usuario (tomado del token JWT)
 	 * @param {string} eventoId - ID del evento a agregar
-	 * @returns {Promise<import('../models/usuario.js').default>} El usuario actualizado
+	 * @param {{requestId?: string}} [contexto={}] - Datos de la petición para el log
+	 * @returns {Promise<string[]>} IDs de los favoritos, en orden de agregado
+	 * @throws {ErrorHttp} 400 si el ID del evento es vacío o no es un texto
+	 * @throws {ErrorHttp} 404 si el usuario o el evento no existen
 	 */
-	async agregarAFavoritos(usuarioId, eventoId) {
-		const usuario = await this.usuarioRepository.buscarPorId(usuarioId);
-		if (!usuario) {
-			throw new Error(`El usuario con ID ${usuarioId} no existe.`);
-		}
-
-		// Buscar el evento por ID (asumimos que los eventos tienen propiedad id)
-		const evento = { id: eventoId };
-		const idx = usuario.favoritos.findIndex((f) => f.id === eventoId);
-		if (idx >= 0) {
-			usuario.favoritos.splice(idx, 1);
-		} else {
-			usuario.favoritos.push(evento);
-		}
-
-		return await this.usuarioRepository.actualizar(usuario);
-	}
-
-	/** Remueve un evento de los favoritos del usuario.
-	 * @param {string} usuarioId - ID del usuario
-	 * @param {string} eventoId - ID del evento a remover
-	 * @returns {Promise<import('../models/usuario.js').default>} El usuario actualizado
-	 */
-	async removerDeFavoritos(usuarioId, eventoId) {
-		const usuario = await this.usuarioRepository.buscarPorId(usuarioId);
-		if (!usuario) {
-			throw new Error(`El usuario con ID ${usuarioId} no existe.`);
-		}
-
-		const idx = usuario.favoritos.findIndex((f) => f.id === eventoId);
-		if (idx >= 0) {
-			usuario.favoritos.splice(idx, 1);
-		} else {
+	async agregarAFavoritos(usuarioId, eventoId, contexto = {}) {
+		const id = this._validarIdEvento(eventoId);
+		const usuario = await this._usuarioOFallar(usuarioId);
+		if (!this.eventoRepository) {
 			throw new Error(
-				`El evento con ID ${eventoId} no está en los favoritos del usuario.`
+				'UsuarioService requiere un eventoRepository para agregar favoritos.'
 			);
 		}
+		const evento = await this.eventoRepository.buscarPorId(id);
+		if (!evento) {
+			throw new ErrorHttp(404, `El evento con ID ${id} no existe.`);
+		}
 
-		return await this.usuarioRepository.actualizar(usuario);
+		// Arreglo nuevo: el clon del repositorio es superficial y comparte el original
+		if (!usuario.favoritos.some((f) => f.id === id)) {
+			usuario.favoritos = [...usuario.favoritos, { id }];
+			await this.usuarioRepository.actualizar(usuario);
+		}
+
+		this._log('favorito_agregado', contexto, {
+			usuarioId: usuario.id,
+			rol: usuario.rol,
+			eventoId: id,
+			cantidad: usuario.favoritos.length
+		});
+		return usuario.favoritos.map((f) => f.id);
+	}
+
+	/** Lista los IDs de los eventos favoritos del usuario.
+	 * @param {string} usuarioId - ID del usuario (tomado del token JWT)
+	 * @param {{requestId?: string}} [contexto={}] - Datos de la petición para el log
+	 * @returns {Promise<string[]>} IDs de los favoritos, en orden de agregado (`[]` si no hay)
+	 * @throws {ErrorHttp} 404 si el usuario no existe
+	 */
+	async listarFavoritos(usuarioId, contexto = {}) {
+		const usuario = await this._usuarioOFallar(usuarioId);
+		const ids = usuario.favoritos.map((f) => f.id);
+
+		this._log('favoritos_listados', contexto, {
+			usuarioId: usuario.id,
+			rol: usuario.rol,
+			cantidad: ids.length
+		});
+		return ids;
+	}
+
+	/** Quita un evento de los favoritos del usuario de forma idempotente.
+	 * Si no era favorito (o el evento no existe) la lista queda igual y no hay error.
+	 * @param {string} usuarioId - ID del usuario (tomado del token JWT)
+	 * @param {string} eventoId - ID del evento a quitar
+	 * @param {{requestId?: string}} [contexto={}] - Datos de la petición para el log
+	 * @returns {Promise<string[]>} IDs de los favoritos restantes, en orden de agregado
+	 * @throws {ErrorHttp} 400 si el ID del evento es vacío o no es un texto
+	 * @throws {ErrorHttp} 404 si el usuario no existe
+	 */
+	async removerDeFavoritos(usuarioId, eventoId, contexto = {}) {
+		const id = this._validarIdEvento(eventoId);
+		const usuario = await this._usuarioOFallar(usuarioId);
+
+		// Arreglo nuevo: el clon del repositorio es superficial y comparte el original
+		const restantes = usuario.favoritos.filter((f) => f.id !== id);
+		if (restantes.length !== usuario.favoritos.length) {
+			usuario.favoritos = restantes;
+			await this.usuarioRepository.actualizar(usuario);
+		}
+
+		this._log('favorito_quitado', contexto, {
+			usuarioId: usuario.id,
+			rol: usuario.rol,
+			eventoId: id,
+			cantidad: restantes.length
+		});
+		return restantes.map((f) => f.id);
 	}
 }

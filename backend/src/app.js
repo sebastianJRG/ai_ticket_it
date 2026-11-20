@@ -35,6 +35,8 @@ import ReseniasRoutes from './routes/reseniasRoutes.js';
 import MensajeRepository from './repositories/mensajeRepository.js';
 import MensajeService from './services/mensajeService.js';
 import MensajeController from './controllers/mensajeController.js';
+import FavoritoController from './controllers/favoritoController.js';
+import { asignarRequestId } from './utils/requestId.js';
 
 /**
  * Crea y configura la aplicación Express para el backend.
@@ -56,6 +58,9 @@ export function createApp(repository) {
   // Middleware para parsear JSON en el cuerpo de las peticiones
   app.use(express.json());
 
+  // ID de petición (req.id) para correlacionar los logs estructurados
+  app.use(asignarRequestId);
+
   // Repositorios - se crean en memoria si no se proveen
   const usuarioRepository = repository || new UsuarioRepository();
   const eventoRepository = new EventoRepository();
@@ -67,7 +72,10 @@ export function createApp(repository) {
   const mensajeRepository = new MensajeRepository();
 
   // Servicios
-  const usuarioService = new UsuarioService(usuarioRepository);
+  const usuarioService = new UsuarioService(
+    usuarioRepository,
+    eventoRepository
+  );
   const eventoService = new EventoService(
     eventoRepository,
     categoriaRepository,
@@ -103,6 +111,10 @@ export function createApp(repository) {
   const compraController = new CompraController(compraService);
   const reseniaController = new ReseniaController(reseniaService);
   const mensajeController = new MensajeController(mensajeService);
+  const favoritoController = new FavoritoController(
+    usuarioService,
+    eventoService
+  );
 
   // Expone el servicio de compras al punto de entrada (index.js) para su tarea periódica
   app.locals.compraService = compraService;
@@ -112,7 +124,8 @@ export function createApp(repository) {
     app,
     usuarioController,
     authMiddleware,
-    reseniaController
+    reseniaController,
+    favoritoController
   );
 
   // Rutas de categorías - crear requiere autenticación y rol ORGANIZADOR; listar es público

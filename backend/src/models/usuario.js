@@ -1,5 +1,3 @@
-import Evento from './evento.js';
-
 /**
  * Representa a un usuario con rol y permisos asignados.
  * Extiende el modelo base con campos de autenticación y autorización.
@@ -10,7 +8,7 @@ export default class Usuario {
 	/** @param {string} apellido */
 	/** @param {string} rol */
 	/** @param {string[]} [permissions=[]] */
-	/** @param {Evento[]} [favoritos=[]] */
+	/** @param {Array<{id: string}>} [favoritos=[]] - Referencias a eventos favoritos, en orden de agregado */
 	/** @param {string} nombreUsuario */
 	/** @param {string} contraseniaHash */
 	/** @param {string|null} [refreshTokenHash=null] */
@@ -42,7 +40,7 @@ export default class Usuario {
 		/** @type {string[]} - Permisos en nomenclatura verbo:recurso */
 		this.permissions = permissions;
 
-		/** @type {Evento[]} */
+		/** @type {Array<{id: string}>} - Referencias mínimas a eventos favoritos (sin duplicados, en orden de agregado) */
 		this.favoritos = favoritos;
 
 		/** @type {string} */

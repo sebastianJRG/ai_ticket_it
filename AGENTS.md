@@ -124,6 +124,20 @@ Otras rutas de compras:
 - `POST /api/usuarios` — público. Registro de un COMPRADOR u ORGANIZADOR.
 - `GET /api/usuarios` — autenticada (COMPRADOR u ORGANIZADOR). Sin cuerpo. Devuelve el perfil del usuario del token: `{ id, nombre, apellido, nombreUsuario, rol, permissions }` (nunca hashes ni favoritos). 401 (sin token o token inválido), 403 (otro rol), 404 (el usuario del token ya no existe).
 
+#### Favoritos del comprador
+
+Solo COMPRADOR autenticado (el usuario sale del token), sin cuerpo. Las tres responden **200 con la lista de favoritos** en orden de agregado (`[]` si no hay), con el mismo formato que cada elemento de `GET /api/eventos` (organizador público, `puntajeOrganizador`). Los eventos que ya no existan se omiten. Contrato: `specs/002-backend-favoritos/contracts/favoritos.md`.
+
+- `GET /api/usuarios/favoritos` — lista los favoritos. 401, 403 (otro rol), 404 (el usuario del token ya no existe).
+- `PUT /api/usuarios/favoritos/:idEvento` — agrega el evento (idempotente: no duplica ni cambia su posición; se permite un evento que ya ocurrió). 400 (ID vacío), 401, 403, 404 (usuario o evento inexistente).
+- `DELETE /api/usuarios/favoritos/:idEvento` — quita el evento (idempotente: si no estaba, 200 con la lista sin cambios; no verifica que el evento exista). 400 (ID vacío), 401, 403, 404 (usuario inexistente).
+
+### Observabilidad (ID de petición)
+
+- El middleware `asignarRequestId` (`backend/src/utils/requestId.js`) asigna `req.id`: usa el header `X-Request-Id` si es válido (1–128 caracteres de `[A-Za-z0-9_-]`) o genera un UUID.
+- Los controladores pasan `{ requestId: req.id }` a los servicios, que emiten logs JSON con `requestId` mediante un `logger` inyectable (por defecto `console`).
+- Eventos de log de favoritos: `favorito_agregado`, `favorito_quitado`, `favoritos_listados` y `eventos_resueltos`.
+
 ### Eventos (Evento)
 
 - `GET /api/eventos` — público. Lista/busca eventos (query: `q`, `categoriaId`, `sortBy` = `precio` | `fecha` | `puntaje`, `order`). Cada evento incluye `puntajeOrganizador`: promedio de las reseñas de todos los eventos de su organizador (`null` si no tiene). `sortBy=puntaje` ordena por ese valor (descendente por defecto; los organizadores sin reseñas quedan al final).

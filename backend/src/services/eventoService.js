@@ -19,14 +19,18 @@ export default class EventoService {
 	 * @param {UsuarioRepository} usuarioRepository
 	 * @param {TipoEntradaRepository} tipoEntradaRepository
 	 * @param {import('../repositories/reseniaRepository.js').default} [reseniaRepository] Necesario para ordenar por puntaje
+	 * @param {{info: (linea: string) => void}} [logger=console] Destino de los logs estructurados (JSON)
 	 */
 	constructor(
 		eventoRepository,
 		categoriaRepository,
 		usuarioRepository,
 		tipoEntradaRepository,
-		reseniaRepository
+		reseniaRepository,
+		logger = console
 	) {
+		/** @private */
+		this.logger = logger;
 		/** @private */
 		this.eventoRepository = eventoRepository;
 		/** @private */
@@ -165,6 +169,32 @@ export default class EventoService {
 			throw new ErrorHttp(404, `El evento con ID ${resultado.data} no existe.`);
 		}
 		return this._conPuntaje(evento, await this._puntajesPorOrganizador());
+	}
+
+	/** Resuelve una lista de IDs a eventos (por ejemplo, los favoritos de un comprador).
+	 * Respeta el orden recibido y omite los IDs que ya no corresponden a un evento.
+	 * @param {string[]} ids - IDs de eventos, en el orden deseado
+	 * @param {{requestId?: string}} [contexto={}] - Datos de la petición para el log
+	 * @returns {Promise<Array<Evento & {puntajeOrganizador: number|null}>>} Eventos encontrados, con el puntaje de su organizador
+	 */
+	async obtenerPorIds(ids, contexto = {}) {
+		const encontrados = [];
+		for (const id of ids) {
+			const evento = await this.eventoRepository.buscarPorId(id);
+			if (evento) encontrados.push(evento);
+		}
+		const puntajes =
+			encontrados.length > 0 ? await this._puntajesPorOrganizador() : new Map();
+
+		this.logger.info(
+			JSON.stringify({
+				evento: 'eventos_resueltos',
+				requestId: contexto.requestId ?? null,
+				solicitados: ids.length,
+				encontrados: encontrados.length
+			})
+		);
+		return encontrados.map((e) => this._conPuntaje(e, puntajes));
 	}
 
 	/** Crea un nuevo evento validando los campos y dependencias requeridas (categoría, organizador, tipos de entrada).

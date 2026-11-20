@@ -611,6 +611,638 @@
       ]
     },
     {
+      "name": "Favoritos",
+      "description": "Favoritos del COMPRADOR (`/api/usuarios/favoritos`). Requiere haber corrido Usuarios, Autenticación, Categorías y Eventos (usa `tokenComprador`, `tokenOrganizador` y `eventoId`). Contrato: `specs/002-backend-favoritos/contracts/favoritos.md`.",
+      "item": [
+        {
+          "name": "Agregar favorito (COMPRADOR)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"La lista contiene el evento\", () => {",
+                  "  const ids = pm.response.json().map((e) => e.id);",
+                  "  pm.expect(ids).to.include(pm.collectionVariables.get(\"eventoId\"));",
+                  "});",
+                  "pm.test(\"Organizador público, sin hashes\", () => {",
+                  "  const [evento] = pm.response.json();",
+                  "  pm.expect(evento.organizador).to.not.have.property(\"contraseniaHash\");",
+                  "  pm.expect(evento).to.have.property(\"puntajeOrganizador\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenComprador}}"
+              },
+              {
+                "key": "X-Request-Id",
+                "value": "{{favoritoRequestId}}",
+                "description": "Opcional: 1–128 caracteres de [A-Za-z0-9_-]. Aparece como requestId en los logs del servidor; si falta o no es válido, el servidor genera un UUID."
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios",
+                "favoritos",
+                "{{eventoId}}"
+              ]
+            },
+            "description": "Solo COMPRADOR. Agrega el evento a sus favoritos de forma idempotente (no duplica ni cambia su posición; se permite un evento que ya ocurrió). Sin cuerpo. Devuelve 200 con la lista actualizada, en el mismo formato que `GET /api/eventos`. 400 ID vacío, 401 sin token, 403 otro rol, 404 usuario o evento inexistente."
+          },
+          "response": [
+            {
+              "name": "Agregado (200)",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{tokenComprador}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "usuarios",
+                    "favoritos",
+                    "{{eventoId}}"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": \"1\",\n    \"nombre\": \"Concierto de prueba\",\n    \"descripcion\": \"Evento de prueba\",\n    \"categoria\": {\n      \"id\": \"1\",\n      \"nombre\": \"Música\",\n      \"descripcion\": \"Conciertos\"\n    },\n    \"fecha\": \"2100-01-01T20:00:00.000Z\",\n    \"tiposEntrada\": [\n      {\n        \"id\": \"1\",\n        \"nombre\": \"General\",\n        \"descripcion\": \"Campo\",\n        \"precio\": 100,\n        \"cupo\": 50\n      }\n    ],\n    \"multimedia\": [],\n    \"organizador\": {\n      \"id\": \"1\",\n      \"nombre\": \"Nombre\",\n      \"apellido\": \"Apellido\",\n      \"rol\": \"ORGANIZADOR\"\n    },\n    \"puntajeOrganizador\": null\n  }\n]"
+            },
+            {
+              "name": "Sin token (401)",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{tokenComprador}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "usuarios",
+                    "favoritos",
+                    "{{eventoId}}"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"message\": \"No autorizado - token JWT inválido o ausente\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Agregar favorito otra vez (idempotente)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"El evento aparece una sola vez\", () => {",
+                  "  const eventoId = pm.collectionVariables.get(\"eventoId\");",
+                  "  const repetidos = pm.response.json().filter((e) => e.id === eventoId);",
+                  "  pm.expect(repetidos).to.have.lengthOf(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenComprador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios",
+                "favoritos",
+                "{{eventoId}}"
+              ]
+            },
+            "description": "Repite el PUT anterior: la lista no cambia (operación idempotente)."
+          },
+          "response": [
+            {
+              "name": "Sin duplicar (200)",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{tokenComprador}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "usuarios",
+                    "favoritos",
+                    "{{eventoId}}"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": \"1\",\n    \"nombre\": \"Concierto de prueba\",\n    \"descripcion\": \"Evento de prueba\",\n    \"categoria\": {\n      \"id\": \"1\",\n      \"nombre\": \"Música\",\n      \"descripcion\": \"Conciertos\"\n    },\n    \"fecha\": \"2100-01-01T20:00:00.000Z\",\n    \"tiposEntrada\": [\n      {\n        \"id\": \"1\",\n        \"nombre\": \"General\",\n        \"descripcion\": \"Campo\",\n        \"precio\": 100,\n        \"cupo\": 50\n      }\n    ],\n    \"multimedia\": [],\n    \"organizador\": {\n      \"id\": \"1\",\n      \"nombre\": \"Nombre\",\n      \"apellido\": \"Apellido\",\n      \"rol\": \"ORGANIZADOR\"\n    },\n    \"puntajeOrganizador\": null\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Agregar favorito inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Trae mensaje de error\", () => pm.expect(pm.response.json().message).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenComprador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios/favoritos/{{favoritoEventoInexistenteId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios",
+                "favoritos",
+                "{{favoritoEventoInexistenteId}}"
+              ]
+            },
+            "description": "Un ID que no corresponde a ningún evento se rechaza con 404."
+          },
+          "response": [
+            {
+              "name": "Evento inexistente (404)",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{tokenComprador}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/usuarios/favoritos/{{favoritoEventoInexistenteId}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "usuarios",
+                    "favoritos",
+                    "{{favoritoEventoInexistenteId}}"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"message\": \"El evento con ID 999999 no existe.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Mis favoritos (COMPRADOR)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Incluye el evento agregado\", () => {",
+                  "  const ids = pm.response.json().map((e) => e.id);",
+                  "  pm.expect(ids).to.include(pm.collectionVariables.get(\"eventoId\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenComprador}}"
+              },
+              {
+                "key": "X-Request-Id",
+                "value": "{{favoritoRequestId}}",
+                "description": "Opcional: 1–128 caracteres de [A-Za-z0-9_-]. Aparece como requestId en los logs del servidor; si falta o no es válido, el servidor genera un UUID."
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios/favoritos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios",
+                "favoritos"
+              ]
+            },
+            "description": "Solo COMPRADOR. Lista sus favoritos en orden de agregado (`[]` si no hay), con el mismo formato que `GET /api/eventos`; los eventos que ya no existan se omiten. 401 sin token, 403 otro rol, 404 usuario inexistente."
+          },
+          "response": [
+            {
+              "name": "Lista (200)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{tokenComprador}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/usuarios/favoritos",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "usuarios",
+                    "favoritos"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": \"1\",\n    \"nombre\": \"Concierto de prueba\",\n    \"descripcion\": \"Evento de prueba\",\n    \"categoria\": {\n      \"id\": \"1\",\n      \"nombre\": \"Música\",\n      \"descripcion\": \"Conciertos\"\n    },\n    \"fecha\": \"2100-01-01T20:00:00.000Z\",\n    \"tiposEntrada\": [\n      {\n        \"id\": \"1\",\n        \"nombre\": \"General\",\n        \"descripcion\": \"Campo\",\n        \"precio\": 100,\n        \"cupo\": 50\n      }\n    ],\n    \"multimedia\": [],\n    \"organizador\": {\n      \"id\": \"1\",\n      \"nombre\": \"Nombre\",\n      \"apellido\": \"Apellido\",\n      \"rol\": \"ORGANIZADOR\"\n    },\n    \"puntajeOrganizador\": null\n  }\n]"
+            },
+            {
+              "name": "Sin favoritos (200)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{tokenComprador}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/usuarios/favoritos",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "usuarios",
+                    "favoritos"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "[]"
+            }
+          ]
+        },
+        {
+          "name": "Favoritos como ORGANIZADOR (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOrganizador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios/favoritos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios",
+                "favoritos"
+              ]
+            },
+            "description": "Las rutas de favoritos son solo para COMPRADOR."
+          },
+          "response": [
+            {
+              "name": "Rol no permitido (403)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{tokenOrganizador}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/usuarios/favoritos",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "usuarios",
+                    "favoritos"
+                  ]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"message\": \"Permisos denegados: se requiere el rol COMPRADOR\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Quitar favorito (COMPRADOR)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"La lista ya no contiene el evento\", () => {",
+                  "  const ids = pm.response.json().map((e) => e.id);",
+                  "  pm.expect(ids).to.not.include(pm.collectionVariables.get(\"eventoId\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenComprador}}"
+              },
+              {
+                "key": "X-Request-Id",
+                "value": "{{favoritoRequestId}}",
+                "description": "Opcional: 1–128 caracteres de [A-Za-z0-9_-]. Aparece como requestId en los logs del servidor; si falta o no es válido, el servidor genera un UUID."
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios",
+                "favoritos",
+                "{{eventoId}}"
+              ]
+            },
+            "description": "Solo COMPRADOR. Quita el evento de favoritos de forma idempotente (si no estaba, 200 con la lista sin cambios; no verifica que el evento exista). Sin cuerpo. Devuelve 200 con la lista actualizada. 400 ID vacío, 401 sin token, 403 otro rol, 404 usuario inexistente."
+          },
+          "response": [
+            {
+              "name": "Quitado (200)",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{tokenComprador}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "usuarios",
+                    "favoritos",
+                    "{{eventoId}}"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "[]"
+            },
+            {
+              "name": "Rol no permitido (403)",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{tokenOrganizador}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "usuarios",
+                    "favoritos",
+                    "{{eventoId}}"
+                  ]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"message\": \"Permisos denegados: se requiere el rol COMPRADOR\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Quitar favorito otra vez (idempotente)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Lista sin el evento\", () => {",
+                  "  const ids = pm.response.json().map((e) => e.id);",
+                  "  pm.expect(ids).to.not.include(pm.collectionVariables.get(\"eventoId\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenComprador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios",
+                "favoritos",
+                "{{eventoId}}"
+              ]
+            },
+            "description": "Repite el DELETE: responde 200 sin error y con la lista igual."
+          },
+          "response": [
+            {
+              "name": "Sin cambios (200)",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{tokenComprador}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "usuarios",
+                    "favoritos",
+                    "{{eventoId}}"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "[]"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Compras",
       "item": [
         {
@@ -1380,6 +2012,16 @@
       "key": "reseniaPuntuacion",
       "value": "5",
       "type": "string"
+    },
+    {
+      "key": "favoritoEventoInexistenteId",
+      "value": "999999",
+      "type": "default"
+    },
+    {
+      "key": "favoritoRequestId",
+      "value": "postman-favoritos",
+      "type": "default"
     }
   ]
 }

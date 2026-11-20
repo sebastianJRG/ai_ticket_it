@@ -10,7 +10,9 @@
 
 ## Contexto
 
-El diseño del comprador incluye una pestaña **Favoritos** y un corazón en cada tarjeta de evento. El modelo `Usuario` ya guarda favoritos y el servicio tiene métodos para agregar/quitar, pero no hay rutas que lo expongan ni se valida que el evento exista. El usuario decidió agregar estas rutas al backend (excepción explícita a "no modificar el backend"). No está trazado a un CU de la constitución: es una mejora de exploración que complementa CU-03.
+El diseño del comprador incluye una pestaña **Favoritos** y un corazón en cada tarjeta de evento. El modelo `Usuario` ya guarda favoritos y el servicio tiene métodos para agregar/quitar, pero no hay rutas que lo expongan ni se valida que el evento exista. El usuario decidió agregar estas rutas al backend (excepción explícita a "no modificar el backend").
+
+**Trazabilidad**: traza a **CU-03** ("Como comprador, quiero poder buscar Eventos de forma específica mediante una búsqueda textual o explorarlos por categorías"). Los favoritos son parte de la exploración: el comprador guarda los eventos que encontró al buscar o explorar para volver a ellos sin repetir la búsqueda. Todos los escenarios de aceptación (US1–US3) derivan de CU-03.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -71,7 +73,7 @@ Un comprador con sesión marca un evento como favorito para encontrarlo después
 - **FR-004**: Agregar y quitar MUST devolver la lista actualizada de favoritos.
 - **FR-005**: El sistema MUST rechazar con 404 un evento inexistente al agregar, con 400 un ID inválido, con 401 sin sesión y con 403 si el rol no es COMPRADOR.
 - **FR-006**: Los eventos devueltos MUST tener el mismo formato público que el listado de eventos (sin datos sensibles del organizador).
-- **FR-007**: La nueva funcionalidad MUST respetar la arquitectura en capas e inyección de dependencias de la constitución, con logging estructurado y JSDoc.
+- **FR-007**: La nueva funcionalidad MUST respetar la arquitectura en capas e inyección de dependencias de la constitución, con logging estructurado (incluido el ID de petición y el rol del usuario) en cada operación de servicio, y JSDoc.
 - **FR-008**: Las rutas existentes (`GET /api/usuarios`, `GET /api/usuarios/:idOrganizador/resenias`, `POST /api/usuarios`) MUST seguir funcionando igual.
 - **FR-009**: Las pruebas MUST escribirse y aprobarse antes de implementar (TDD) y la suite completa del backend MUST seguir verde.
 - **FR-010**: La documentación de rutas (AGENTS.md) MUST actualizarse.
