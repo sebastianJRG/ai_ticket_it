@@ -5,6 +5,7 @@
 	"dependencies": {
 		"@expo-google-fonts/bricolage-grotesque": "^0.4.1",
 		"@expo-google-fonts/manrope": "^0.4.3",
+		"axios": "^1.21.1",
 		"expo": "~58.0.23",
 		"expo-constants": "~58.0.16",
 		"expo-font": "~58.0.12",
@@ -44,6 +45,10 @@
 		],
 		"moduleNameMapper": {
 			"^lucide-react-native$": "<rootDir>/../node_modules/lucide-react-native/dist/cjs/lucide-react-native.js"
-		}
+		},
+		"testPathIgnorePatterns": [
+			"/node_modules/",
+			"/__tests__/helpers/"
+		]
 	}
 }

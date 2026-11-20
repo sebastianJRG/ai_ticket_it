@@ -9,23 +9,33 @@ import React, {
 	useContext,
 	useEffect,
 	useMemo,
+	useRef,
 	useState
 } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import * as authService from '../services/authService';
+import { configurarSesion } from '../services/api';
 
 const CLAVE = 'sesion';
 const AuthContext = createContext(null);
 
 /**
- * Provee la sesión a toda la app y la restaura al abrir.
+ * Provee la sesión a toda la app, la restaura al abrir y se registra como
+ * proveedor de sesión del cliente HTTP (renovación automática de tokens).
  * @param {Object} props Propiedades.
  * @param {import('react').ReactNode} props.children Árbol de la aplicación.
  * @returns {JSX.Element} Proveedor de sesión.
  */
 export function AuthProvider({ children }) {
-	const [sesion, setSesion] = useState(null);
+	const [sesion, setSesionEstado] = useState(null);
 	const [cargando, setCargando] = useState(true);
+	// Copia sincrónica de la sesión para que el cliente HTTP lea siempre la vigente.
+	const sesionRef = useRef(null);
+
+	const setSesion = useCallback((nueva) => {
+		sesionRef.current = nueva;
+		setSesionEstado(nueva);
+	}, []);
 
 	useEffect(() => {
 		let vivo = true;
@@ -38,12 +48,36 @@ export function AuthProvider({ children }) {
 		return () => {
 			vivo = false;
 		};
-	}, []);
+	}, [setSesion]);
 
-	const guardar = useCallback(async (nueva) => {
-		setSesion(nueva);
-		await SecureStore.setItemAsync(CLAVE, JSON.stringify(nueva));
-	}, []);
+	const guardar = useCallback(
+		async (nueva) => {
+			setSesion(nueva);
+			await SecureStore.setItemAsync(CLAVE, JSON.stringify(nueva));
+		},
+		[setSesion]
+	);
+
+	useEffect(() => {
+		configurarSesion({
+			obtenerTokens: () => {
+				const actual = sesionRef.current;
+				return actual
+					? {
+							accessToken: actual.accessToken,
+							refreshToken: actual.refreshToken
+						}
+					: null;
+			},
+			guardarTokens: guardar,
+			// El refresh ya es inválido: se cierra solo la sesión local, sin logout.
+			alExpirar: async () => {
+				setSesion(null);
+				await SecureStore.deleteItemAsync(CLAVE);
+			}
+		});
+		return () => configurarSesion(null);
+	}, [guardar, setSesion]);
 
 	const iniciarSesion = useCallback(
 		async (credenciales) => {
@@ -61,7 +95,7 @@ export function AuthProvider({ children }) {
 		await SecureStore.deleteItemAsync(CLAVE);
 		if (refreshToken)
 			await authService.cerrarSesion(refreshToken).catch(() => {});
-	}, [sesion]);
+	}, [sesion, setSesion]);
 
 	const valor = useMemo(
 		() => ({
