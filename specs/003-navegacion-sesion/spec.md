@@ -16,7 +16,7 @@ Hoy la app tiene login, registro y una pantalla inicial provisoria. Esta feature
 
 ### User Story 1 - Entrar a la sección de mi rol (Priority: P1)
 
-Al abrir la app con sesión, el comprador ve su navegación (Explorar, Buscar, Favoritos, Compras, Perfil) y el organizador la suya (Mis eventos, Crear, Mensajes, Perfil). Al iniciar sesión o registrarse se lo lleva a su sección (comprador → Explorar; organizador → Crear evento, según el diseño de registro).
+Al abrir la app con sesión, el comprador ve su navegación (Explorar, Buscar, Favoritos, Compras, Perfil) y el organizador la suya (Mis eventos, Crear, Mensajes, Perfil). Al iniciar sesión o registrarse se lo lleva a su sección: el comprador a Explorar; el organizador que inicia sesión a Mis eventos y el que recién se registra a Crear evento (según el diseño de registro, porque todavía no tiene eventos).
 
 **Why this priority**: Sin esto no se puede llegar a ninguna pantalla nueva.
 
@@ -110,5 +110,6 @@ Las pantallas usan el mismo encabezado, barra inferior, estados vacíos, esquele
 
 - Las pantallas de las pestañas se crean vacías (placeholders) y las completan 004–008.
 - El "volver a la acción" se limita a volver a la pantalla de origen (no se re-ejecuta la acción automáticamente).
+- Esta feature protege pestañas y rutas (Favoritos, Compras, Perfil y el área de organizador) y entrega el mecanismo de login con retorno. Las acciones dentro de una pantalla (comprar en el detalle, guardar un favorito desde una card) las protegen 004 y 005 con ese mismo mecanismo; acá no hay pantallas con esas acciones.
 - La ubicación mostrada en Explorar (diseño) queda fuera de alcance: el backend no tiene ubicación.
 - Solo se usa navegación de Expo Router (restricción de la constitución).

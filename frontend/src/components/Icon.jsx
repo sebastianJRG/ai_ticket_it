@@ -13,6 +13,7 @@ import * as Lucide from 'lucide-react-native';
  * @property {number} [size] Tamaño en px (16 badges, 20 botones, 24 navegación).
  * @property {string} [color] Color del trazo.
  * @property {number} [strokeWidth] Grosor del trazo.
+ * @property {string} [fill] Relleno (p. ej. el corazón activo); `none` por defecto.
  */
 
 /**
@@ -20,7 +21,13 @@ import * as Lucide from 'lucide-react-native';
  * @param props Ver {@link IconProps}.
  * @returns El ícono, o null si el nombre no existe.
  */
-export function Icon({ name, size = 20, color, strokeWidth = 2 }) {
+export function Icon({
+	name,
+	size = 20,
+	color,
+	strokeWidth = 2,
+	fill = 'none'
+}) {
 	const Cmp = Lucide[name];
 	if (!Cmp) return null;
 	return (
@@ -28,6 +35,7 @@ export function Icon({ name, size = 20, color, strokeWidth = 2 }) {
 			size={size}
 			color={color}
 			strokeWidth={strokeWidth}
+			fill={fill}
 			accessible={false}
 			importantForAccessibility="no"
 		/>

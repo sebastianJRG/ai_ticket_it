@@ -84,6 +84,14 @@ npx expo install <pkg>  # Install Expo-compatible packages
 - All routes live in `frontend/src/app/` via Expo Router
 - `_layout.jsx` files define navigators
 - Non-route code (components, hooks, utils) goes outside `src/app/`
+- Áreas (feature 003, `specs/003-navegacion-sesion/contracts/navegacion.md`):
+  - `(auth)/` → `/login`, `/registro` (con sesión al entrar, redirige al destino del rol).
+  - `(comprador)/` (Tabs) → `/explorar`, `/buscar` (públicas), `/favoritos`, `/compras`, `/perfil` (requieren sesión de COMPRADOR).
+  - `organizador/` (Tabs) → `/organizador/eventos`, `/organizador/crear`, `/organizador/mensajes`, `/organizador/perfil` (requieren sesión de ORGANIZADOR).
+  - `/evento/[idEvento]` → detalle público, apilado sobre las pestañas. `/` redirige a la ruta inicial (visitante y comprador → `/explorar`; organizador → `/organizador/eventos`).
+- Las reglas de acceso viven **solo** en `frontend/src/navegacion/reglas.js` (`decidirAcceso`, `rutaInicial`, `hrefLogin`, `destinoTrasLogin`, `destinoTrasRegistro`). Toda ruta nueva se registra ahí con su prueba en `frontend/__tests__/navegacion/reglas-test.js`.
+- Para pedir sesión desde una acción: `router.push(hrefLogin(rutaActual))`. Login lee `volverA` y vuelve ahí solo si el rol lo permite (rutas internas; se ignoran URLs externas).
+- Componentes compartidos: `AppHeader`, `BottomNav`, `EmptyState`, `Skeleton`, `Toast` (con `useToast()` de `src/feedback/ToastContext.jsx`) y `Modal`, en `frontend/src/components/`.
 
 ### Authentication & Security
 

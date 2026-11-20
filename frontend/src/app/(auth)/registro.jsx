@@ -11,19 +11,20 @@ import {
 	Text,
 	View
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useTheme } from '../theme/ThemeContext';
-import { useAuth } from '../auth/AuthContext';
-import * as authService from '../services/authService';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTheme } from '../../theme/ThemeContext';
+import { useAuth } from '../../auth/AuthContext';
+import * as authService from '../../services/authService';
 import {
 	validarContrasenia,
 	validarNombreUsuario,
 	validarTexto
-} from '../services/validacion';
-import { Button } from '../components/Button';
-import { RoleSelector } from '../components/RoleSelector';
-import { TextField } from '../components/TextField';
-import { TextLink } from '../components/TextLink';
+} from '../../services/validacion';
+import { Button } from '../../components/Button';
+import { RoleSelector } from '../../components/RoleSelector';
+import { TextField } from '../../components/TextField';
+import { TextLink } from '../../components/TextLink';
+import { destinoTrasRegistro } from '../../navegacion/reglas';
 
 /**
  * Pantalla de alta de cuenta; al terminar inicia sesión y entra a la app.
@@ -32,6 +33,7 @@ import { TextLink } from '../components/TextLink';
 export default function Registro() {
 	const t = useTheme();
 	const router = useRouter();
+	const { volverA } = useLocalSearchParams();
 	const { iniciarSesion } = useAuth();
 	const [rol, setRol] = useState('COMPRADOR');
 	const [campos, setCampos] = useState({
@@ -72,11 +74,12 @@ export default function Registro() {
 				rol
 			};
 			await authService.registrar(datos);
-			await iniciarSesion({
+			// El destino sale del usuario autenticado, no del rol del formulario.
+			const usuario = await iniciarSesion({
 				nombreUsuario: datos.nombreUsuario,
 				contrasenia: datos.contrasenia
 			});
-			router.replace('/');
+			router.replace(destinoTrasRegistro(usuario, volverA));
 		} catch (err) {
 			setErrores({ general: err.message });
 		} finally {
@@ -152,7 +155,13 @@ export default function Registro() {
 					<Text style={[t.typography.body, { color: t.colors.textMuted }]}>
 						¿Ya tenés cuenta?
 					</Text>
-					<TextLink onPress={() => router.replace('/login')}>
+					<TextLink
+						onPress={() =>
+							router.replace(
+								volverA ? { pathname: '/login', params: { volverA } } : '/login'
+							)
+						}
+					>
 						Iniciá sesión
 					</TextLink>
 				</View>

@@ -1,9 +1,11 @@
 /**
- * @file Layout raíz: carga de fuentes, safe areas, theme y navegación.
+ * @file Layout raíz: carga de fuentes, safe areas, theme, sesión y Stack raíz.
+ *   Mientras se restaura la sesión muestra `PantallaCarga` y no monta rutas
+ *   (specs/003-navegacion-sesion/research.md R5).
  * @owner Equipo Al Ticket It — frontend
  * @license MIT
  */
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
@@ -20,21 +22,54 @@ import {
 	Manrope_800ExtraBold
 } from '@expo-google-fonts/manrope';
 import { ThemeProvider, useTheme } from '../theme/ThemeContext';
-import { AuthProvider } from '../auth/AuthContext';
+import { AuthProvider, useAuth } from '../auth/AuthContext';
+import { PantallaCarga } from '../components/PantallaCarga';
+import { ToastProvider, useToast } from '../feedback/ToastContext';
 
+/**
+ * Stack raíz; no se monta hasta conocer la sesión para que ninguna guardia
+ * decida con datos incompletos.
+ * @returns {JSX.Element} Pantalla de carga o navegador.
+ */
 function Navigator() {
 	const t = useTheme();
+	const { cargando } = useAuth();
 	return (
 		<>
 			<StatusBar style={t.dark ? 'light' : 'dark'} />
-			<Stack
-				screenOptions={{
-					headerShown: false,
-					contentStyle: { backgroundColor: t.colors.bg }
-				}}
-			/>
+			{cargando ? (
+				<PantallaCarga />
+			) : (
+				<Stack
+					screenOptions={{
+						headerShown: false,
+						contentStyle: { backgroundColor: t.colors.bg }
+					}}
+				/>
+			)}
 		</>
 	);
+}
+
+/**
+ * `AuthProvider` con el aviso de sesión expirada (FR-006); vive bajo
+ * `ToastProvider` para poder mostrar el toast.
+ * @param {Object} props Propiedades.
+ * @param {import('react').ReactNode} props.children Árbol de la aplicación.
+ * @returns {JSX.Element} Proveedor de sesión.
+ */
+function SesionConAviso({ children }) {
+	const { mostrar } = useToast();
+	const avisarExpiracion = useCallback(
+		() =>
+			mostrar({
+				tono: 'warning',
+				titulo: 'Tu sesión expiró',
+				mensaje: 'Iniciá sesión de nuevo para continuar.'
+			}),
+		[mostrar]
+	);
+	return <AuthProvider alExpirar={avisarExpiracion}>{children}</AuthProvider>;
 }
 
 /**
@@ -55,9 +90,11 @@ export default function RootLayout() {
 	return (
 		<SafeAreaProvider>
 			<ThemeProvider>
-				<AuthProvider>
-					<Navigator />
-				</AuthProvider>
+				<ToastProvider>
+					<SesionConAviso>
+						<Navigator />
+					</SesionConAviso>
+				</ToastProvider>
 			</ThemeProvider>
 		</SafeAreaProvider>
 	);

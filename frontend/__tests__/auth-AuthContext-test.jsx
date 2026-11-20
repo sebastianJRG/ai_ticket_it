@@ -164,6 +164,32 @@ describe('AuthContext como proveedor de sesión', () => {
 		expect(proveedor().obtenerTokens()).toBeNull();
 	});
 
+	it('alExpirar avisa a la UI una vez, después de limpiar la sesión (FR-006)', async () => {
+		SecureStore.getItemAsync.mockResolvedValue(JSON.stringify(GUARDADA));
+		let borradoAlAvisar = null;
+		const aviso = jest.fn(() => {
+			borradoAlAvisar = SecureStore.deleteItemAsync.mock.calls.length > 0;
+		});
+		render(
+			<AuthProvider alExpirar={aviso}>
+				<Sonda />
+			</AuthProvider>
+		);
+		await waitFor(() => expect(screen.getByText('ana')).toBeTruthy());
+		await act(() => proveedor().alExpirar());
+		expect(aviso).toHaveBeenCalledTimes(1);
+		expect(borradoAlAvisar).toBe(true);
+		expect(screen.getByText('anonimo')).toBeTruthy();
+	});
+
+	it('alExpirar sin la prop de aviso no falla', async () => {
+		SecureStore.getItemAsync.mockResolvedValue(JSON.stringify(GUARDADA));
+		montar();
+		await waitFor(() => expect(screen.getByText('ana')).toBeTruthy());
+		await act(() => proveedor().alExpirar());
+		expect(screen.getByText('anonimo')).toBeTruthy();
+	});
+
 	it('quita el proveedor al desmontar', async () => {
 		SecureStore.getItemAsync.mockResolvedValue(null);
 		const { unmount } = await montar();

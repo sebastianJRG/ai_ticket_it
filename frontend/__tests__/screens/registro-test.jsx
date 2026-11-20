@@ -5,15 +5,17 @@ import {
 	screen,
 	waitFor
 } from '@testing-library/react-native';
-import Registro from '../../src/app/registro';
+import Registro from '../../src/app/(auth)/registro';
 import { ThemeProvider } from '../../src/theme/ThemeContext';
 import { ApiError } from '../../src/services/api';
 import * as authService from '../../src/services/authService';
 
 const mockReplace = jest.fn();
 const mockIniciar = jest.fn();
+let mockParams = {};
 jest.mock('expo-router', () => ({
-	useRouter: () => ({ replace: mockReplace, push: jest.fn() })
+	useRouter: () => ({ replace: mockReplace, push: jest.fn() }),
+	useLocalSearchParams: () => mockParams
 }));
 jest.mock('../../src/auth/AuthContext', () => ({
 	useAuth: () => ({ iniciarSesion: mockIniciar })
@@ -37,7 +39,10 @@ const llenar = async (contrasenia = 'Abcdef1!') => {
 };
 
 describe('Registro', () => {
-	beforeEach(() => jest.clearAllMocks());
+	beforeEach(() => {
+		jest.clearAllMocks();
+		mockParams = {};
+	});
 
 	it('registra un COMPRADOR por defecto, inicia sesión y entra', async () => {
 		authService.registrar.mockResolvedValue({ id: '1' });
@@ -45,7 +50,7 @@ describe('Registro', () => {
 		await montar();
 		await llenar();
 		await fireEvent.press(screen.getByRole('button', { name: 'Crear cuenta' }));
-		await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/'));
+		await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/explorar'));
 		expect(authService.registrar).toHaveBeenCalledWith({
 			nombre: 'Ana',
 			apellido: 'Paz',
@@ -68,6 +73,9 @@ describe('Registro', () => {
 		await fireEvent.press(screen.getByRole('button', { name: 'Crear cuenta' }));
 		await waitFor(() => expect(authService.registrar).toHaveBeenCalled());
 		expect(authService.registrar.mock.calls[0][0].rol).toBe('ORGANIZADOR');
+		await waitFor(() =>
+			expect(mockReplace).toHaveBeenCalledWith('/organizador/crear')
+		);
 	});
 
 	it('no muestra checkbox de términos y registra sin marcar nada', async () => {
@@ -99,5 +107,48 @@ describe('Registro', () => {
 			await screen.findByText('El nombre de usuario ya está en uso.')
 		).toBeTruthy();
 		expect(mockReplace).not.toHaveBeenCalled();
+	});
+
+	describe('con volverA (US2)', () => {
+		it('un COMPRADOR vuelve a la pantalla de origen', async () => {
+			mockParams = { volverA: '/favoritos' };
+			authService.registrar.mockResolvedValue({ id: '1' });
+			mockIniciar.mockResolvedValue({ rol: 'COMPRADOR' });
+			await montar();
+			await llenar();
+			await fireEvent.press(
+				screen.getByRole('button', { name: 'Crear cuenta' })
+			);
+			await waitFor(() =>
+				expect(mockReplace).toHaveBeenCalledWith('/favoritos')
+			);
+		});
+
+		it('un ORGANIZADOR ignora un volverA de comprador y va a Crear evento', async () => {
+			mockParams = { volverA: '/favoritos' };
+			authService.registrar.mockResolvedValue({ id: '1' });
+			mockIniciar.mockResolvedValue({ rol: 'ORGANIZADOR' });
+			await montar();
+			await fireEvent.press(screen.getByRole('radio', { name: /organizar/ }));
+			await llenar();
+			await fireEvent.press(
+				screen.getByRole('button', { name: 'Crear cuenta' })
+			);
+			await waitFor(() =>
+				expect(mockReplace).toHaveBeenCalledWith('/organizador/crear')
+			);
+		});
+
+		it('conserva volverA al volver a iniciar sesión', async () => {
+			mockParams = { volverA: '/favoritos' };
+			await montar();
+			await fireEvent.press(
+				screen.getByRole('link', { name: 'Iniciá sesión' })
+			);
+			expect(mockReplace).toHaveBeenCalledWith({
+				pathname: '/login',
+				params: { volverA: '/favoritos' }
+			});
+		});
 	});
 });

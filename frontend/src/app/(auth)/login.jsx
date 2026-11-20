@@ -11,23 +11,26 @@ import {
 	Text,
 	View
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '../theme/ThemeContext';
-import { useAuth } from '../auth/AuthContext';
-import { ApiError } from '../services/api';
-import { validarNombreUsuario, validarTexto } from '../services/validacion';
-import { Button } from '../components/Button';
-import { TextField } from '../components/TextField';
-import { TextLink } from '../components/TextLink';
+import { useTheme } from '../../theme/ThemeContext';
+import { useAuth } from '../../auth/AuthContext';
+import { ApiError } from '../../services/api';
+import { validarNombreUsuario, validarTexto } from '../../services/validacion';
+import { Button } from '../../components/Button';
+import { TextField } from '../../components/TextField';
+import { TextLink } from '../../components/TextLink';
+import { destinoTrasLogin } from '../../navegacion/reglas';
 
 /**
- * Pantalla de login; explorar eventos no requiere cuenta.
+ * Pantalla de login; explorar eventos no requiere cuenta. Tras iniciar sesión
+ * vuelve a `volverA` si el rol lo permite (specs/003-navegacion-sesion research R3).
  * @returns {JSX.Element} Formulario de inicio de sesión.
  */
 export default function Login() {
 	const t = useTheme();
 	const router = useRouter();
+	const { volverA } = useLocalSearchParams();
 	const { iniciarSesion } = useAuth();
 	const [nombreUsuario, setNombreUsuario] = useState('');
 	const [contrasenia, setContrasenia] = useState('');
@@ -46,8 +49,11 @@ export default function Login() {
 		setErrores({});
 		setCargando(true);
 		try {
-			await iniciarSesion({ nombreUsuario: nombreUsuario.trim(), contrasenia });
-			router.replace('/');
+			const usuario = await iniciarSesion({
+				nombreUsuario: nombreUsuario.trim(),
+				contrasenia
+			});
+			router.replace(destinoTrasLogin(usuario, volverA));
 		} catch (err) {
 			const mensaje =
 				err instanceof ApiError && err.status === 401
@@ -108,7 +114,7 @@ export default function Login() {
 					<Button
 						size="lg"
 						variant="secondary"
-						onPress={() => router.replace('/')}
+						onPress={() => router.replace('/explorar')}
 					>
 						Explorar eventos sin cuenta
 					</Button>
@@ -123,7 +129,15 @@ export default function Login() {
 						<Text style={[t.typography.body, { color: t.colors.textMuted }]}>
 							¿No tenés cuenta?
 						</Text>
-						<TextLink onPress={() => router.push('/registro')}>
+						<TextLink
+							onPress={() =>
+								router.push(
+									volverA
+										? { pathname: '/registro', params: { volverA } }
+										: '/registro'
+								)
+							}
+						>
 							Creá una cuenta
 						</TextLink>
 					</View>

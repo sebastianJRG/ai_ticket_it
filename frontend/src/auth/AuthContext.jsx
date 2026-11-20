@@ -24,13 +24,19 @@ const AuthContext = createContext(null);
  * proveedor de sesión del cliente HTTP (renovación automática de tokens).
  * @param {Object} props Propiedades.
  * @param {import('react').ReactNode} props.children Árbol de la aplicación.
+ * @param {function(): void} [props.alExpirar] Aviso a la UI cuando la sesión
+ *   expira y no se pudo renovar; se llama una vez, después de limpiar la sesión
+ *   (specs/003-navegacion-sesion research R6).
  * @returns {JSX.Element} Proveedor de sesión.
  */
-export function AuthProvider({ children }) {
+export function AuthProvider({ children, alExpirar }) {
 	const [sesion, setSesionEstado] = useState(null);
 	const [cargando, setCargando] = useState(true);
 	// Copia sincrónica de la sesión para que el cliente HTTP lea siempre la vigente.
 	const sesionRef = useRef(null);
+	// En un ref para no reconfigurar el cliente HTTP cada vez que cambia la prop.
+	const avisoExpiracionRef = useRef(alExpirar);
+	avisoExpiracionRef.current = alExpirar;
 
 	const setSesion = useCallback((nueva) => {
 		sesionRef.current = nueva;
@@ -74,6 +80,7 @@ export function AuthProvider({ children }) {
 			alExpirar: async () => {
 				setSesion(null);
 				await SecureStore.deleteItemAsync(CLAVE);
+				avisoExpiracionRef.current?.();
 			}
 		});
 		return () => configurarSesion(null);
