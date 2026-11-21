@@ -27,8 +27,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/health",
-							"host": ["{{base_url}}"],
-							"path": ["health"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"health"
+							]
 						},
 						"description": "Público. Comprueba que el servidor responde: `{ status: 'ok', timestamp }`."
 					},
@@ -72,8 +76,12 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/usuarios",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios"
+							]
 						},
 						"description": "Público. Registra un ORGANIZADOR con un nombre de usuario único (lo genera el pre-request) y guarda `organizadorId`. 400 validación, 409 si el nombre de usuario ya existe.",
 						"body": {
@@ -120,13 +128,103 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/usuarios",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios"
+							]
 						},
 						"description": "Público. Registra un COMPRADOR con un nombre de usuario único (lo genera el pre-request).",
 						"body": {
 							"mode": "raw",
 							"raw": "{\"nombre\": \"{{nombre}}\", \"apellido\": \"{{apellido}}\", \"nombreUsuario\": \"{{usuarioComprador}}\", \"contrasenia\": \"{{password}}\", \"rol\": \"COMPRADOR\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Registrar usuario duplicado (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/usuarios",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios"
+							]
+						},
+						"description": "Reutiliza `usuarioComprador` ya registrado. 400 'El nombre de usuario ya está en uso.'",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nombre\":\"{{nombre}}\",\"apellido\":\"{{apellido}}\",\"nombreUsuario\":\"{{usuarioComprador}}\",\"contrasenia\":\"{{password}}\",\"rol\":\"COMPRADOR\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Registrar con contraseña débil (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/usuarios",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios"
+							]
+						},
+						"description": "Contraseña sin mayúscula/número/símbolo. 400.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nombre\":\"{{nombre}}\",\"apellido\":\"{{apellido}}\",\"nombreUsuario\":\"debil.{{$timestamp}}\",\"contrasenia\":\"abc\",\"rol\":\"COMPRADOR\"}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -167,8 +265,12 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/login",
-							"host": ["{{base_url}}"],
-							"path": ["login"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"login"
+							]
 						},
 						"description": "Público. Devuelve `{ accessToken, refreshToken, usuario }` y guarda los tokens del organizador. 400 validación, 401 credenciales inválidas.",
 						"body": {
@@ -209,8 +311,12 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/login",
-							"host": ["{{base_url}}"],
-							"path": ["login"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"login"
+							]
 						},
 						"description": "Público. Devuelve `{ accessToken, refreshToken, usuario }` y guarda los tokens del comprador. 400 validación, 401 credenciales inválidas.",
 						"body": {
@@ -251,13 +357,63 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/refresh",
-							"host": ["{{base_url}}"],
-							"path": ["refresh"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"refresh"
+							]
 						},
 						"description": "Público. Emite un nuevo access token y rota el refresh token (el anterior deja de servir). 400 validación, 401 refresh token inválido.",
 						"body": {
 							"mode": "raw",
 							"raw": "{\"refreshToken\": \"{{refreshTokenComprador}}\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Renovar token (organizador)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"const j = pm.response.json();",
+									"pm.collectionVariables.set(\"tokenOrganizador\", j.accessToken);",
+									"pm.collectionVariables.set(\"refreshTokenOrganizador\", j.refreshToken);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/refresh",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"refresh"
+							]
+						},
+						"description": "Rota el par de tokens del organizador.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"refreshToken\":\"{{refreshTokenOrganizador}}\"}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -291,8 +447,12 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/usuarios",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios"
+							]
 						},
 						"description": "Autenticada (COMPRADOR u ORGANIZADOR). Devuelve `{ id, nombre, apellido, nombreUsuario, rol, permissions }` del usuario del token. 401 sin token, 403 otro rol, 404 si el usuario ya no existe."
 					},
@@ -322,10 +482,258 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/usuarios",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios"
+							]
 						},
 						"description": "Autenticada (COMPRADOR u ORGANIZADOR). Devuelve `{ id, nombre, apellido, nombreUsuario, rol, permissions }` del comprador del token. 401 sin token, 403 otro rol, 404 si el usuario ya no existe."
+					},
+					"response": []
+				},
+				{
+					"name": "Login con credenciales inválidas (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 401\", () => pm.response.to.have.status(401));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"login"
+							]
+						},
+						"description": "401 'Credenciales inválidas.'",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nombreUsuario\":\"{{usuarioComprador}}\",\"contrasenia\":\"Incorrecta1!\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login sin cuerpo válido (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"login"
+							]
+						},
+						"description": "Falta `contrasenia`. 400 por validación.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nombreUsuario\":\"{{usuarioComprador}}\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh con token inválido (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 401\", () => pm.response.to.have.status(401));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/refresh",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"refresh"
+							]
+						},
+						"description": "401 'Refresh token inválido o expirado.'",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"refreshToken\":\"token-invalido\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh sin token (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/refresh",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"refresh"
+							]
+						},
+						"description": "Cuerpo vacío. 400 por validación.",
+						"body": {
+							"mode": "raw",
+							"raw": "{}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout con token inválido (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 401\", () => pm.response.to.have.status(401));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"logout"
+							]
+						},
+						"description": "401.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"refreshToken\":\"token-invalido\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Perfil sin token (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 401\", () => pm.response.to.have.status(401));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/usuarios",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios"
+							]
+						},
+						"description": "Sin Authorization. 401."
 					},
 					"response": []
 				}
@@ -362,8 +770,12 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/categorias",
-							"host": ["{{base_url}}"],
-							"path": ["categorias"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"categorias"
+							]
 						},
 						"description": "Solo ORGANIZADOR. Cuerpo `{ nombre, descripcion }`. Guarda `categoriaId`. 400 validación, 401 sin token, 403 si no es ORGANIZADOR.",
 						"body": {
@@ -396,10 +808,151 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/categorias",
-							"host": ["{{base_url}}"],
-							"path": ["categorias"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"categorias"
+							]
 						},
 						"description": "Público. Todas las categorías en orden de creación (`[]` si no hay)."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear categoría sin token (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 401\", () => pm.response.to.have.status(401));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/categorias",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"categorias"
+							]
+						},
+						"description": "401.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nombre\":\"X\",\"descripcion\":\"Y\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Crear categoría como COMPRADOR (403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenComprador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/categorias",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"categorias"
+							]
+						},
+						"description": "403.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nombre\":\"X\",\"descripcion\":\"Y\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Crear categoría sin nombre (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenOrganizador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/categorias",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"categorias"
+							]
+						},
+						"description": "400 por validación.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"descripcion\":\"Y\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
 					},
 					"response": []
 				}
@@ -438,8 +991,12 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/eventos",
-							"host": ["{{base_url}}"],
-							"path": ["eventos"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"eventos"
+							]
 						},
 						"description": "Solo ORGANIZADOR. Crea un evento con sus tipos de entrada (precio y cupo cada uno). La fecha debe ser futura. Guarda `eventoId` y el `tipoEntradaId` del primer tipo. 400 validación, 401 sin token, 403 si no es ORGANIZADOR.",
 						"body": {
@@ -472,8 +1029,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/eventos",
-							"host": ["{{base_url}}"],
-							"path": ["eventos"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"eventos"
+							]
 						},
 						"description": "Público. Todos los eventos. Cada uno incluye `puntajeOrganizador` (promedio de reseñas de todos los eventos de su organizador, o `null`)."
 					},
@@ -497,8 +1058,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/eventos?q={{nombreEvento}}&categoriaId={{categoriaId}}&sortBy=puntaje&order=desc",
-							"host": ["{{base_url}}"],
-							"path": ["eventos"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"eventos"
+							],
 							"query": [
 								{
 									"key": "q",
@@ -527,6 +1092,155 @@
 					"response": []
 				},
 				{
+					"name": "Listar eventos por precio ascendente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Es arreglo\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/eventos?sortBy=precio&order=asc",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"eventos"
+							],
+							"query": [
+								{
+									"key": "sortBy",
+									"value": "precio"
+								},
+								{
+									"key": "order",
+									"value": "asc"
+								}
+							]
+						},
+						"description": "Orden por precio."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar eventos por fecha ascendente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/eventos?sortBy=fecha&order=asc",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"eventos"
+							],
+							"query": [
+								{
+									"key": "sortBy",
+									"value": "fecha"
+								},
+								{
+									"key": "order",
+									"value": "asc"
+								}
+							]
+						},
+						"description": "Orden por fecha."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar eventos con sortBy inválido (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/eventos?sortBy=nombre",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"eventos"
+							],
+							"query": [
+								{
+									"key": "sortBy",
+									"value": "nombre"
+								}
+							]
+						},
+						"description": "400: `sortBy` debe ser precio, fecha o puntaje."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar eventos con order inválido (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/eventos?order=up",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"eventos"
+							],
+							"query": [
+								{
+									"key": "order",
+									"value": "up"
+								}
+							]
+						},
+						"description": "400: `order` debe ser asc o desc."
+					},
+					"response": []
+				},
+				{
 					"name": "Detalle de evento (público)",
 					"event": [
 						{
@@ -544,10 +1258,276 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/eventos/{{eventoId}}",
-							"host": ["{{base_url}}"],
-							"path": ["eventos", "{{eventoId}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"eventos",
+								"{{eventoId}}"
+							]
 						},
 						"description": "Público. Mismo formato que cada elemento del listado (organizador en versión pública, con `puntajeOrganizador`). 400 ID inválido, 404 si no existe."
+					},
+					"response": []
+				},
+				{
+					"name": "Detalle de evento inexistente (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/eventos/999999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"eventos",
+								"999999"
+							]
+						},
+						"description": "404."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear evento sin token (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 401\", () => pm.response.to.have.status(401));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/eventos",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"eventos"
+							]
+						},
+						"description": "401.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nombre\":\"X\",\"descripcion\":\"Y\",\"categoriaId\":\"{{categoriaId}}\",\"fecha\":\"{{fechaEvento}}\",\"tiposEntrada\":[{\"nombre\":\"General\",\"descripcion\":\"Acceso general\",\"precio\":100,\"cupo\":10}]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Crear evento como COMPRADOR (403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenComprador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/eventos",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"eventos"
+							]
+						},
+						"description": "403.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nombre\":\"X\",\"descripcion\":\"Y\",\"categoriaId\":\"{{categoriaId}}\",\"fecha\":\"{{fechaEvento}}\",\"tiposEntrada\":[{\"nombre\":\"General\",\"descripcion\":\"Acceso general\",\"precio\":100,\"cupo\":10}]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Crear evento con fecha pasada (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenOrganizador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/eventos",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"eventos"
+							]
+						},
+						"description": "400: la fecha debe ser futura.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nombre\":\"X\",\"descripcion\":\"Y\",\"categoriaId\":\"{{categoriaId}}\",\"fecha\":\"2020-01-01T20:00:00.000Z\",\"tiposEntrada\":[{\"nombre\":\"General\",\"descripcion\":\"Acceso general\",\"precio\":100,\"cupo\":10}]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Crear evento sin tipos de entrada (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenOrganizador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/eventos",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"eventos"
+							]
+						},
+						"description": "400: al menos un tipo de entrada.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nombre\":\"X\",\"descripcion\":\"Y\",\"categoriaId\":\"{{categoriaId}}\",\"fecha\":\"{{fechaEvento}}\",\"tiposEntrada\":[]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Crear evento con categoría inexistente (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenOrganizador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/eventos",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"eventos"
+							]
+						},
+						"description": "400: la categoría no existe.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nombre\":\"X\",\"descripcion\":\"Y\",\"categoriaId\":\"999999\",\"fecha\":\"{{fechaEvento}}\",\"tiposEntrada\":[{\"nombre\":\"General\",\"descripcion\":\"Acceso general\",\"precio\":100,\"cupo\":10}]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
 					},
 					"response": []
 				}
@@ -594,8 +1574,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios", "favoritos", "{{eventoId}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios",
+								"favoritos",
+								"{{eventoId}}"
+							]
 						},
 						"description": "Solo COMPRADOR. Agrega el evento a sus favoritos de forma idempotente (no duplica ni cambia su posición; se permite un evento que ya ocurrió). Sin cuerpo. Devuelve 200 con la lista actualizada, en el mismo formato que `GET /api/eventos`. 400 ID vacío, 401 sin token, 403 otro rol, 404 usuario o evento inexistente."
 					},
@@ -612,8 +1598,14 @@
 								],
 								"url": {
 									"raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
-									"host": ["{{base_url}}"],
-									"path": ["usuarios", "favoritos", "{{eventoId}}"]
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"usuarios",
+										"favoritos",
+										"{{eventoId}}"
+									]
 								}
 							},
 							"status": "OK",
@@ -639,8 +1631,14 @@
 								],
 								"url": {
 									"raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
-									"host": ["{{base_url}}"],
-									"path": ["usuarios", "favoritos", "{{eventoId}}"]
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"usuarios",
+										"favoritos",
+										"{{eventoId}}"
+									]
 								}
 							},
 							"status": "Unauthorized",
@@ -684,8 +1682,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios", "favoritos", "{{eventoId}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios",
+								"favoritos",
+								"{{eventoId}}"
+							]
 						},
 						"description": "Repite el PUT anterior: la lista no cambia (operación idempotente)."
 					},
@@ -702,8 +1706,14 @@
 								],
 								"url": {
 									"raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
-									"host": ["{{base_url}}"],
-									"path": ["usuarios", "favoritos", "{{eventoId}}"]
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"usuarios",
+										"favoritos",
+										"{{eventoId}}"
+									]
 								}
 							},
 							"status": "OK",
@@ -743,7 +1753,9 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/usuarios/favoritos/{{favoritoEventoInexistenteId}}",
-							"host": ["{{base_url}}"],
+							"host": [
+								"{{base_url}}"
+							],
 							"path": [
 								"usuarios",
 								"favoritos",
@@ -765,7 +1777,9 @@
 								],
 								"url": {
 									"raw": "{{base_url}}/usuarios/favoritos/{{favoritoEventoInexistenteId}}",
-									"host": ["{{base_url}}"],
+									"host": [
+										"{{base_url}}"
+									],
 									"path": [
 										"usuarios",
 										"favoritos",
@@ -818,8 +1832,13 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/usuarios/favoritos",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios", "favoritos"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios",
+								"favoritos"
+							]
 						},
 						"description": "Solo COMPRADOR. Lista sus favoritos en orden de agregado (`[]` si no hay), con el mismo formato que `GET /api/eventos`; los eventos que ya no existan se omiten. 401 sin token, 403 otro rol, 404 usuario inexistente."
 					},
@@ -836,8 +1855,13 @@
 								],
 								"url": {
 									"raw": "{{base_url}}/usuarios/favoritos",
-									"host": ["{{base_url}}"],
-									"path": ["usuarios", "favoritos"]
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"usuarios",
+										"favoritos"
+									]
 								}
 							},
 							"status": "OK",
@@ -863,8 +1887,13 @@
 								],
 								"url": {
 									"raw": "{{base_url}}/usuarios/favoritos",
-									"host": ["{{base_url}}"],
-									"path": ["usuarios", "favoritos"]
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"usuarios",
+										"favoritos"
+									]
 								}
 							},
 							"status": "OK",
@@ -903,8 +1932,13 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/usuarios/favoritos",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios", "favoritos"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios",
+								"favoritos"
+							]
 						},
 						"description": "Las rutas de favoritos son solo para COMPRADOR."
 					},
@@ -921,8 +1955,13 @@
 								],
 								"url": {
 									"raw": "{{base_url}}/usuarios/favoritos",
-									"host": ["{{base_url}}"],
-									"path": ["usuarios", "favoritos"]
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"usuarios",
+										"favoritos"
+									]
 								}
 							},
 							"status": "Forbidden",
@@ -970,8 +2009,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios", "favoritos", "{{eventoId}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios",
+								"favoritos",
+								"{{eventoId}}"
+							]
 						},
 						"description": "Solo COMPRADOR. Quita el evento de favoritos de forma idempotente (si no estaba, 200 con la lista sin cambios; no verifica que el evento exista). Sin cuerpo. Devuelve 200 con la lista actualizada. 400 ID vacío, 401 sin token, 403 otro rol, 404 usuario inexistente."
 					},
@@ -988,8 +2033,14 @@
 								],
 								"url": {
 									"raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
-									"host": ["{{base_url}}"],
-									"path": ["usuarios", "favoritos", "{{eventoId}}"]
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"usuarios",
+										"favoritos",
+										"{{eventoId}}"
+									]
 								}
 							},
 							"status": "OK",
@@ -1015,8 +2066,14 @@
 								],
 								"url": {
 									"raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
-									"host": ["{{base_url}}"],
-									"path": ["usuarios", "favoritos", "{{eventoId}}"]
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"usuarios",
+										"favoritos",
+										"{{eventoId}}"
+									]
 								}
 							},
 							"status": "Forbidden",
@@ -1059,8 +2116,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios", "favoritos", "{{eventoId}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios",
+								"favoritos",
+								"{{eventoId}}"
+							]
 						},
 						"description": "Repite el DELETE: responde 200 sin error y con la lista igual."
 					},
@@ -1077,8 +2140,14 @@
 								],
 								"url": {
 									"raw": "{{base_url}}/usuarios/favoritos/{{eventoId}}",
-									"host": ["{{base_url}}"],
-									"path": ["usuarios", "favoritos", "{{eventoId}}"]
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"usuarios",
+										"favoritos",
+										"{{eventoId}}"
+									]
 								}
 							},
 							"status": "OK",
@@ -1127,8 +2196,12 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/compras",
-							"host": ["{{base_url}}"],
-							"path": ["compras"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras"
+							]
 						},
 						"description": "Solo COMPRADOR. La compra queda PENDIENTE y reserva cupo; el total lo calcula el servidor. Guarda `compraId`. 400 validación o evento ya ocurrido, 401 sin token, 403 si no es COMPRADOR, 404 evento o tipo inexistente, 409 cupo insuficiente.",
 						"body": {
@@ -1167,10 +2240,88 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/compras/{{compraId}}/confirmacion",
-							"host": ["{{base_url}}"],
-							"path": ["compras", "{{compraId}}", "confirmacion"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras",
+								"{{compraId}}",
+								"confirmacion"
+							]
 						},
 						"description": "Sin cuerpo. Solo el organizador del evento. PENDIENTE → CONFIRMADA. 400 si el evento ya ocurrió, 401, 403, 404, 409 si no está PENDIENTE."
+					},
+					"response": []
+				},
+				{
+					"name": "Confirmar compra otra vez (409)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 409\", () => pm.response.to.have.status(409));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenOrganizador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/compras/{{compraId}}/confirmacion",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras",
+								"{{compraId}}",
+								"confirmacion"
+							]
+						},
+						"description": "La compra ya está CONFIRMADA: transición no permitida."
+					},
+					"response": []
+				},
+				{
+					"name": "Confirmar compra como COMPRADOR (403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenComprador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/compras/{{compraId}}/confirmacion",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras",
+								"{{compraId}}",
+								"confirmacion"
+							]
+						},
+						"description": "Solo el organizador confirma."
 					},
 					"response": []
 				},
@@ -1201,8 +2352,12 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/compras",
-							"host": ["{{base_url}}"],
-							"path": ["compras"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras"
+							]
 						},
 						"description": "Solo COMPRADOR. Sus compras en cualquier estado y en orden de creación. Cada una trae `diasRestantes` (días hasta el evento, redondeado hacia arriba) si está CONFIRMADA; `null` en otro estado. 401 sin token, 403 otro rol."
 					},
@@ -1236,8 +2391,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/eventos/{{eventoId}}/compras",
-							"host": ["{{base_url}}"],
-							"path": ["eventos", "{{eventoId}}", "compras"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"eventos",
+								"{{eventoId}}",
+								"compras"
+							]
 						},
 						"description": "Solo el organizador dueño del evento. Devuelve `{ compras, disponibilidad }`: todas las compras (cualquier estado, orden de creación) y por cada tipo `{ tipoEntradaId, nombre, precio, cupo, vendidas, disponibles }` (PENDIENTE, CONFIRMADA y UTILIZADA ocupan cupo). 400 ID inválido, 401, 403 (comprador u organizador de otro evento), 404."
 					},
@@ -1271,8 +2432,12 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/compras",
-							"host": ["{{base_url}}"],
-							"path": ["compras"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras"
+							]
 						},
 						"description": "Segunda compra (PENDIENTE) para probar la cancelación sin afectar a `compraId`. Guarda `compraCancelarId`.",
 						"body": {
@@ -1311,10 +2476,357 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/compras/{{compraCancelarId}}/cancelacion",
-							"host": ["{{base_url}}"],
-							"path": ["compras", "{{compraCancelarId}}", "cancelacion"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras",
+								"{{compraCancelarId}}",
+								"cancelacion"
+							]
 						},
 						"description": "Sin cuerpo. El comprador cancela sus compras y el organizador las de sus eventos. PENDIENTE o CONFIRMADA → CANCELADA (libera cupo), nunca si está UTILIZADA ni si el evento ya ocurrió (400). 401, 403, 404, 409 si el estado no lo permite."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear compra a cancelar por organizador",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+									"pm.collectionVariables.set(\"compraCancelarOrgId\", pm.response.json().id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenComprador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/compras",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras"
+							]
+						},
+						"description": "Compra auxiliar; guarda `compraCancelarOrgId`.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"eventoId\":\"{{eventoId}}\",\"tipoEntradaId\":\"{{tipoEntradaId}}\",\"cantidad\":1}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cancelar compra (ORGANIZADOR)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Queda CANCELADA\", () => pm.expect(pm.response.json().estado).to.eql(\"CANCELADA\"));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenOrganizador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/compras/{{compraCancelarOrgId}}/cancelacion",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras",
+								"{{compraCancelarOrgId}}",
+								"cancelacion"
+							]
+						},
+						"description": "El organizador del evento puede cancelar."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear compra sin cupo (409)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 409\", () => pm.response.to.have.status(409));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenComprador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/compras",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras"
+							]
+						},
+						"description": "Cantidad mayor al cupo.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"eventoId\":\"{{eventoId}}\",\"tipoEntradaId\":\"{{tipoEntradaId}}\",\"cantidad\":999999}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Crear compra con tipo de entrada ajeno (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenComprador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/compras",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras"
+							]
+						},
+						"description": "El tipo de entrada no pertenece al evento.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"eventoId\":\"{{eventoId}}\",\"tipoEntradaId\":\"999999\",\"cantidad\":1}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Crear compra como ORGANIZADOR (403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenOrganizador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/compras",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras"
+							]
+						},
+						"description": "403.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"eventoId\":\"{{eventoId}}\",\"tipoEntradaId\":\"{{tipoEntradaId}}\",\"cantidad\":1}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Crear compra sin token (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 401\", () => pm.response.to.have.status(401));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/compras",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras"
+							]
+						},
+						"description": "401.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"eventoId\":\"{{eventoId}}\",\"tipoEntradaId\":\"{{tipoEntradaId}}\",\"cantidad\":1}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Compras del evento como COMPRADOR (403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenComprador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/eventos/{{eventoId}}/compras",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"eventos",
+								"{{eventoId}}",
+								"compras"
+							]
+						},
+						"description": "Solo el organizador dueño."
+					},
+					"response": []
+				},
+				{
+					"name": "Cancelar compra inexistente (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenComprador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/compras/{{compraInexistenteId}}/cancelacion",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras",
+								"{{compraInexistenteId}}",
+								"cancelacion"
+							]
+						},
+						"description": "404."
 					},
 					"response": []
 				}
@@ -1350,8 +2862,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/compras/{{compraId}}/mensajes",
-							"host": ["{{base_url}}"],
-							"path": ["compras", "{{compraId}}", "mensajes"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras",
+								"{{compraId}}",
+								"mensajes"
+							]
 						},
 						"description": "Chat de la compra. Solo el comprador dueño o el organizador del evento, en cualquier momento. El remitente sale del token. Mensaje de 1 a 1000 caracteres. 400 validación, 401, 403 si no participa, 404 si la compra no existe.",
 						"body": {
@@ -1393,8 +2911,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/compras/{{compraId}}/mensajes",
-							"host": ["{{base_url}}"],
-							"path": ["compras", "{{compraId}}", "mensajes"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras",
+								"{{compraId}}",
+								"mensajes"
+							]
 						},
 						"description": "El organizador del evento responde en el chat de la compra. Mismas reglas que el envío del comprador.",
 						"body": {
@@ -1433,10 +2957,154 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/compras/{{compraId}}/mensajes",
-							"host": ["{{base_url}}"],
-							"path": ["compras", "{{compraId}}", "mensajes"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras",
+								"{{compraId}}",
+								"mensajes"
+							]
 						},
 						"description": "Lista el chat de la compra, del más antiguo al más reciente. Solo el comprador dueño o el organizador del evento. 401, 403, 404."
+					},
+					"response": []
+				},
+				{
+					"name": "Mensaje vacío (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenComprador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/compras/{{compraId}}/mensajes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras",
+								"{{compraId}}",
+								"mensajes"
+							]
+						},
+						"description": "1–1000 caracteres.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"mensaje\":\"\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mensaje de más de 1000 caracteres (400)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.request.body.update(JSON.stringify({ mensaje: \"x\".repeat(1001) }));"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenComprador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/compras/{{compraId}}/mensajes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras",
+								"{{compraId}}",
+								"mensajes"
+							]
+						},
+						"description": "Se arma el texto en el pre-request.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"mensaje\":\"x\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mensajes sin token (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 401\", () => pm.response.to.have.status(401));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/compras/{{compraId}}/mensajes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras",
+								"{{compraId}}",
+								"mensajes"
+							]
+						},
+						"description": "401."
 					},
 					"response": []
 				}
@@ -1469,8 +3137,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/compras/{{compraId}}/reembolso",
-							"host": ["{{base_url}}"],
-							"path": ["compras", "{{compraId}}", "reembolso"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"compras",
+								"{{compraId}}",
+								"reembolso"
+							]
 						},
 						"description": "Sin cuerpo. Solo el organizador del evento. CONFIRMADA → REEMBOLSADA (libera cupo). 400 si el evento ya ocurrió, 401, 403, 404, 409 si no está CONFIRMADA."
 					},
@@ -1508,8 +3182,12 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/resenias",
-							"host": ["{{base_url}}"],
-							"path": ["resenias"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"resenias"
+							]
 						},
 						"description": "Solo COMPRADOR. Cuerpo `{ eventoId, detalle, puntuacion }` (entero 1–5, detalle hasta 1000 caracteres). Reglas: el evento ya debe haber ocurrido (400), el comprador debe tener una compra UTILIZADA de ese evento (403; pasa a UTILIZADA automáticamente cuando el evento ocurre) y una sola reseña por evento (409). En esta colección el evento es futuro, por eso el test espera 400.",
 						"body": {
@@ -1542,8 +3220,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/resenias/{{eventoId}}",
-							"host": ["{{base_url}}"],
-							"path": ["resenias", "{{eventoId}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"resenias",
+								"{{eventoId}}"
+							]
 						},
 						"description": "Público. Reseñas del evento en orden de creación (`[]` si no hay). 404 si el evento no existe."
 					},
@@ -1567,14 +3250,223 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/usuarios/{{organizadorId}}/resenias",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios", "{{organizadorId}}", "resenias"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios",
+								"{{organizadorId}}",
+								"resenias"
+							]
 						},
 						"description": "Público. Reseñas de todos los eventos del organizador, en orden de creación (`[]` si no hay): la experiencia previa con ese organizador. 400 ID inválido, 404 si no existe o no es ORGANIZADOR."
 					},
 					"response": []
+				},
+				{
+					"name": "Reseña con puntuación 0 (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenComprador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/resenias",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"resenias"
+							]
+						},
+						"description": "Puntuación 1–5.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"eventoId\":\"{{eventoId}}\",\"detalle\":\"x\",\"puntuacion\":0}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reseña con puntuación 6 (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenComprador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/resenias",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"resenias"
+							]
+						},
+						"description": "Puntuación 1–5.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"eventoId\":\"{{eventoId}}\",\"detalle\":\"x\",\"puntuacion\":6}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reseña como ORGANIZADOR (403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tokenOrganizador}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/resenias",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"resenias"
+							]
+						},
+						"description": "Solo COMPRADOR.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\"eventoId\":\"{{eventoId}}\",\"detalle\":\"x\",\"puntuacion\":5}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reseñas de evento inexistente (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/resenias/999999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"resenias",
+								"999999"
+							]
+						},
+						"description": "404."
+					},
+					"response": []
+				},
+				{
+					"name": "Reseñas de organizador inexistente (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/usuarios/999999/resenias",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios",
+								"999999",
+								"resenias"
+							]
+						},
+						"description": "404."
+					},
+					"response": []
 				}
-			]
+			],
+			"description": " Nota: el 201/409/403-sin-compra de POST /resenias no es alcanzable desde la colección: la API solo crea eventos con fecha futura."
 		},
 		{
 			"name": "Cierre de sesión",
@@ -1604,8 +3496,12 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/logout",
-							"host": ["{{base_url}}"],
-							"path": ["logout"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"logout"
+							]
 						},
 						"description": "Público. Invalida el refresh token del comprador y limpia sus tokens de la colección. 400 validación, 401 refresh token inválido.",
 						"body": {
@@ -1645,8 +3541,12 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/logout",
-							"host": ["{{base_url}}"],
-							"path": ["logout"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"logout"
+							]
 						},
 						"description": "Público. Invalida el refresh token del organizador y limpia sus tokens de la colección. 400 validación, 401 refresh token inválido.",
 						"body": {
@@ -1793,12 +3693,22 @@
 		{
 			"key": "favoritoEventoInexistenteId",
 			"value": "999999",
-			"type": "default"
+			"type": "string"
 		},
 		{
 			"key": "favoritoRequestId",
 			"value": "postman-favoritos",
-			"type": "default"
+			"type": "string"
+		},
+		{
+			"key": "compraInexistenteId",
+			"value": "999999",
+			"type": "string"
+		},
+		{
+			"key": "compraCancelarOrgId",
+			"value": "",
+			"type": "string"
 		}
 	]
 }

@@ -71,7 +71,7 @@ npm run test  # Run Jest tests (tests/*.test.js)
 
 #### Datos de prueba (seed)
 
-Con `SEED=true` (`npm run dev:seed` o `npm run dev:backend:seed`), `index.js` llama a `cargarDatosPrueba` (`backend/src/seed/datosPrueba.js`) antes de escuchar. Crea, por medio de los servicios, 5 categorías (Recitales, Teatro, Festivales, Conferencias, Deportes) y 3 eventos futuros por organizador (fechas relativas al arranque). Sin la variable, el backend arranca vacío; las pruebas nunca la cargan salvo `tests/seed.test.js`.
+Con `SEED=true` (`npm run dev:seed` o `npm run dev:backend:seed`), `index.js` llama a `cargarDatosPrueba` (`backend/src/seed/datosPrueba.js`) antes de escuchar. Crea, por medio de los servicios, 5 categorías (Recitales, Teatro, Festivales, Conferencias, Deportes), 3 eventos futuros y 3 eventos ya ocurridos por organizador (fechas relativas al arranque) y 2 compras UTILIZADA: `ana.comprador` en un evento pasado de Bruno y `lucas.comprador` en uno de Sofía. Sofía tiene además un cuarto evento futuro, "Sin cupo" (un solo tipo `General` de cupo 5), con una compra CONFIRMADA de `lucas.comprador` por las 5 entradas (`disponibles: 0`; comprar más da 409). Los eventos pasados se crean con fecha temporal y se mueven al pasado vía `eventoRepository`; las compras se crean y confirman con el reloj de `compraService` fijado antes del evento y luego pasan por `marcarComprasUtilizadas`. Sin la variable, el backend arranca vacío; las pruebas nunca la cargan salvo `tests/seed.test.js`.
 
 | Usuario | Rol | Contraseña |
 |---------|-----|------------|

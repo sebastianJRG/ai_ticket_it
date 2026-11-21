@@ -1,7 +1,8 @@
 /**
  * Tests de la seed de datos de prueba (`src/seed/datosPrueba.js`): carga, por
- * medio de los servicios, 2 compradores, 2 organizadores, 5 categorías y 3
- * eventos futuros por organizador, y solo cuando se la llama explícitamente.
+ * medio de los servicios, 2 compradores, 2 organizadores, 5 categorías, 3
+ * eventos futuros (4 la segunda, con uno "Sin cupo") y 3 ya ocurridos por organizador, 2 compras UTILIZADA y 1 que agota el cupo, y
+ * solo cuando se la llama explícitamente.
  *
  * @license ISC
  */
@@ -41,10 +42,11 @@ describe('Seed de datos de prueba', () => {
 
 	after(() => new Promise((resolve) => server.close(resolve)));
 
-	it('devuelve lo que creó: 4 usuarios, 5 categorías y 6 eventos', () => {
+	it('devuelve lo que creó: 4 usuarios, 5 categorías, 13 eventos y 3 compras', () => {
 		assert.equal(resultado.usuarios.length, 4);
 		assert.equal(resultado.categorias.length, 5);
-		assert.equal(resultado.eventos.length, 6);
+		assert.equal(resultado.eventos.length, 13);
+		assert.equal(resultado.compras.length, 3);
 	});
 
 	it('GET /api/categorias lista las 5 categorías', async () => {
@@ -58,25 +60,87 @@ describe('Seed de datos de prueba', () => {
 		]);
 	});
 
-	it('GET /api/eventos lista 6 eventos futuros, 3 de cada organizador', async () => {
+	it('GET /api/eventos lista 13 eventos: 7 futuros (3 y 4) y 6 pasados (3 y 3)', async () => {
 		const eventos = await (await fetch(`${baseUrl}/api/eventos`)).json();
-		assert.equal(eventos.length, 6);
+		assert.equal(eventos.length, 13);
 		const ahora = Date.now();
+		const futuros = new Map();
+		const pasados = new Map();
 		for (const e of eventos) {
-			assert.ok(
-				new Date(e.fecha).getTime() > ahora,
-				`${e.nombre} no es futuro`
-			);
 			assert.ok(e.tiposEntrada.length >= 1);
+			const grupo = new Date(e.fecha).getTime() > ahora ? futuros : pasados;
+			grupo.set(e.organizador.id, (grupo.get(e.organizador.id) ?? 0) + 1);
 		}
-		const porOrganizador = new Map();
-		for (const e of eventos) {
-			porOrganizador.set(
-				e.organizador.id,
-				(porOrganizador.get(e.organizador.id) ?? 0) + 1
-			);
+		assert.deepEqual([...futuros.values()].sort(), [3, 4]);
+		assert.deepEqual([...pasados.values()], [3, 3]);
+	});
+
+	it('cada comprador tiene 1 compra UTILIZADA de un evento pasado, que su organizador ve', async () => {
+		for (const nombreUsuario of ['ana.comprador', 'lucas.comprador']) {
+			const login = await fetch(`${baseUrl}/api/login`, {
+				method: 'POST',
+				headers: json,
+				body: JSON.stringify({
+					nombreUsuario,
+					contrasenia: CONTRASENIA_PRUEBA
+				})
+			});
+			const { accessToken } = await login.json();
+			const compras = await (
+				await fetch(`${baseUrl}/api/compras`, {
+					headers: { Authorization: `Bearer ${accessToken}` }
+				})
+			).json();
+			const utilizadas = compras.filter((c) => c.estado === 'UTILIZADA');
+			assert.equal(utilizadas.length, 1, nombreUsuario);
+			assert.equal(utilizadas[0].diasRestantes, null);
+			assert.ok(new Date(utilizadas[0].evento.fecha).getTime() < Date.now());
 		}
-		assert.deepEqual([...porOrganizador.values()], [3, 3]);
+		const utilizadas = resultado.compras.filter(
+			(c) => c.estado === 'UTILIZADA'
+		);
+		assert.equal(utilizadas.length, 2);
+		assert.notEqual(
+			utilizadas[0].evento.organizador.id,
+			utilizadas[1].evento.organizador.id
+		);
+	});
+
+	it('"Sin cupo" es un evento futuro de un tipo de cupo 5 totalmente vendido', async () => {
+		const eventos = await (await fetch(`${baseUrl}/api/eventos`)).json();
+		const sinCupo = eventos.find((e) => e.nombre === 'Sin cupo');
+		assert.ok(sinCupo, 'falta el evento "Sin cupo"');
+		assert.ok(new Date(sinCupo.fecha).getTime() > Date.now());
+		assert.equal(sinCupo.tiposEntrada.length, 1);
+		assert.equal(sinCupo.tiposEntrada[0].cupo, 5);
+		const detalle = await (
+			await fetch(`${baseUrl}/api/eventos/${sinCupo.id}`)
+		).json();
+		assert.equal(detalle.tiposEntrada[0].disponibles, 0);
+
+		const compra = resultado.compras.find((c) => c.evento.id === sinCupo.id);
+		assert.equal(compra.cantidad, 5);
+		assert.equal(compra.estado, 'CONFIRMADA');
+
+		const login = await fetch(`${baseUrl}/api/login`, {
+			method: 'POST',
+			headers: json,
+			body: JSON.stringify({
+				nombreUsuario: 'ana.comprador',
+				contrasenia: CONTRASENIA_PRUEBA
+			})
+		});
+		const { accessToken } = await login.json();
+		const respuesta = await fetch(`${baseUrl}/api/compras`, {
+			method: 'POST',
+			headers: { ...json, Authorization: `Bearer ${accessToken}` },
+			body: JSON.stringify({
+				eventoId: sinCupo.id,
+				tipoEntradaId: sinCupo.tiposEntrada[0].id,
+				cantidad: 1
+			})
+		});
+		assert.equal(respuesta.status, 409);
 	});
 
 	it('incluye los casos que usan las pantallas: gratis, cupo chico e imagen', async () => {

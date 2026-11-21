@@ -126,6 +126,7 @@ export function createApp(repository) {
 	app.locals.usuarioService = usuarioService;
 	app.locals.categoriaService = categoriaService;
 	app.locals.eventoService = eventoService;
+	app.locals.eventoRepository = eventoRepository;
 
 	// Rutas de usuarios
 	UsuariosRoutes.init(

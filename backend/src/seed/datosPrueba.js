@@ -1,6 +1,8 @@
 /**
  * @file Seed de datos de prueba para desarrollo: 2 compradores, 2 organizadores,
- *   5 categorías y 3 eventos futuros por organizador. Se carga solo si el
+ *   5 categorías, 3 eventos futuros y 3 ya ocurridos por organizador, y 2 compras
+ *   UTILIZADA (una de cada comprador, en eventos de organizadores distintos), y un
+ *   evento futuro "Sin cupo" con su cupo de 5 entradas vendido en una compra. Se carga solo si el
  *   backend arranca con `SEED=true` (ver `index.js`) y usa los servicios, así
  *   que pasa por las mismas validaciones, hash de contraseñas y permisos que la API.
  * @owner Equipo Al Ticket It — backend
@@ -173,6 +175,29 @@ const EVENTOS_PRUEBA = Object.freeze([
 	},
 	{
 		organizador: 'sofia.organizadora',
+		categoria: 'Conferencias',
+		enDias: 15,
+		hora: 19,
+		nombre: 'Sin cupo',
+		descripcion:
+			'Taller con entradas agotadas: sirve para probar el cupo insuficiente.',
+		multimedia: [],
+		tiposEntrada: [
+			{
+				nombre: 'General',
+				descripcion: 'Cupo único',
+				precio: 10000,
+				cupo: 5
+			}
+		],
+		compra: {
+			comprador: 'lucas.comprador',
+			tipoEntrada: 'General',
+			cantidad: 5
+		}
+	},
+	{
+		organizador: 'sofia.organizadora',
 		categoria: 'Recitales',
 		enDias: 45,
 		hora: 21,
@@ -191,11 +216,127 @@ const EVENTOS_PRUEBA = Object.freeze([
 ]);
 
 /**
+ * Eventos que ya ocurrieron (`haceDias` y `hora` arman una fecha pasada).
+ * `compra` marca los que llevan una compra UTILIZADA de ese comprador.
+ */
+const EVENTOS_PASADOS_PRUEBA = Object.freeze([
+	{
+		organizador: 'bruno.organizador',
+		categoria: 'Recitales',
+		haceDias: 10,
+		hora: 21,
+		nombre: 'Noche de blues en el Abasto',
+		descripcion:
+			'Trío de blues con armonicista invitado, en un bar con escenario.',
+		multimedia: [
+			'https://images.unsplash.com/photo-1501386761578-eaa54b5ccb7c?w=1200'
+		],
+		tiposEntrada: [
+			{ nombre: 'General', descripcion: 'De pie', precio: 14000, cupo: 100 }
+		],
+		compra: { comprador: 'ana.comprador', tipoEntrada: 'General', cantidad: 2 }
+	},
+	{
+		organizador: 'bruno.organizador',
+		categoria: 'Teatro',
+		haceDias: 25,
+		hora: 20,
+		nombre: 'La casa de Bernarda Alba',
+		descripcion:
+			'Clásico de García Lorca con puesta contemporánea. 1 h 50 min.',
+		multimedia: [],
+		tiposEntrada: [
+			{
+				nombre: 'Platea',
+				descripcion: 'Planta baja',
+				precio: 18000,
+				cupo: 120
+			},
+			{ nombre: 'Pullman', descripcion: 'Primer piso', precio: 12000, cupo: 60 }
+		]
+	},
+	{
+		organizador: 'bruno.organizador',
+		categoria: 'Conferencias',
+		haceDias: 40,
+		hora: 18,
+		nombre: 'Meetup de desarrollo web',
+		descripcion: 'Tres charlas cortas sobre frontend y rendimiento. Gratuito.',
+		multimedia: [],
+		tiposEntrada: [
+			{
+				nombre: 'Entrada libre',
+				descripcion: 'Con inscripción previa',
+				precio: 0,
+				cupo: 150
+			}
+		]
+	},
+	{
+		organizador: 'sofia.organizadora',
+		categoria: 'Festivales',
+		haceDias: 15,
+		hora: 15,
+		nombre: 'Festival de música electrónica',
+		descripcion: 'Una jornada con ocho DJs en un predio al aire libre.',
+		multimedia: [
+			'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1200'
+		],
+		tiposEntrada: [
+			{
+				nombre: 'Campo',
+				descripcion: 'Acceso general',
+				precio: 38000,
+				cupo: 1500
+			},
+			{
+				nombre: 'VIP',
+				descripcion: 'Sector con barra',
+				precio: 80000,
+				cupo: 100
+			}
+		],
+		compra: { comprador: 'lucas.comprador', tipoEntrada: 'VIP', cantidad: 1 }
+	},
+	{
+		organizador: 'sofia.organizadora',
+		categoria: 'Deportes',
+		haceDias: 30,
+		hora: 16,
+		nombre: 'Maratón de la ciudad',
+		descripcion: 'Circuito de 10 km por el centro. Incluye kit de corredor.',
+		multimedia: [],
+		tiposEntrada: [
+			{ nombre: 'Inscripción', descripcion: '10 km', precio: 12000, cupo: 800 }
+		]
+	},
+	{
+		organizador: 'sofia.organizadora',
+		categoria: 'Recitales',
+		haceDias: 60,
+		hora: 21,
+		nombre: 'Concierto sinfónico de verano',
+		descripcion: 'Orquesta sinfónica con obras de Beethoven y Dvořák.',
+		multimedia: [],
+		tiposEntrada: [
+			{
+				nombre: 'General',
+				descripcion: 'Butacas sin numerar',
+				precio: 16000,
+				cupo: 300
+			}
+		]
+	}
+]);
+
+/**
  * Servicios que necesita la seed (los expone `createApp` en `app.locals`).
  * @typedef {Object} ServiciosSeed
  * @property {import('../services/usuarioService.js').default} usuarioService
  * @property {import('../services/categoriaService.js').default} categoriaService
  * @property {import('../services/eventoService.js').default} eventoService
+ * @property {import('../services/compraService.js').default} compraService
+ * @property {import('../repositories/eventoRepository.js').default} eventoRepository
  */
 
 /**
@@ -213,15 +354,32 @@ function fechaFutura(ahora, dias, hora) {
 }
 
 /**
+ * Fecha `dias` días antes de `ahora`, a la hora indicada.
+ * @param {Date} ahora - Momento de referencia
+ * @param {number} dias - Días hacia atrás
+ * @param {number} hora - Hora local (0–23)
+ * @returns {Date} Fecha pasada
+ */
+function fechaPasada(ahora, dias, hora) {
+	return fechaFutura(ahora, -dias, hora);
+}
+
+/**
  * Carga los datos de prueba por medio de los servicios. Pensada para un
  * backend recién creado: si ya existen los usuarios, falla por nombre repetido.
  * @param {ServiciosSeed} servicios - Servicios de la app
  * @param {{logger?: {info: (linea: string) => void}, ahora?: Date}} [opciones] - Destino del log y momento de referencia para las fechas
- * @returns {Promise<{usuarios: object[], categorias: object[], eventos: object[]}>} Entidades creadas
+ * @returns {Promise<{usuarios: object[], categorias: object[], eventos: object[], compras: object[]}>} Entidades creadas (`eventos` incluye los futuros y los pasados; `compras` son las 2 UTILIZADA y la CONFIRMADA que agota el cupo)
  * @throws {Error} Si algún servicio rechaza los datos (p. ej. nombre de usuario en uso)
  */
 export async function cargarDatosPrueba(
-	{ usuarioService, categoriaService, eventoService },
+	{
+		usuarioService,
+		categoriaService,
+		eventoService,
+		compraService,
+		eventoRepository
+	},
 	{ logger = console, ahora = new Date() } = {}
 ) {
 	const usuarios = [];
@@ -243,21 +401,104 @@ export async function cargarDatosPrueba(
 	const idCategoria = new Map(categorias.map((c) => [c.nombre, c.id]));
 
 	const eventos = [];
+	const agotan = [];
 	for (const {
 		organizador,
 		categoria,
 		enDias,
 		hora,
+		compra,
 		...datos
 	} of EVENTOS_PRUEBA) {
-		eventos.push(
-			await eventoService.crearEvento({
-				...datos,
-				fecha: fechaFutura(ahora, enDias, hora),
-				organizadorId: idUsuario.get(organizador),
-				categoriaId: idCategoria.get(categoria)
+		const evento = await eventoService.crearEvento({
+			...datos,
+			fecha: fechaFutura(ahora, enDias, hora),
+			organizadorId: idUsuario.get(organizador),
+			categoriaId: idCategoria.get(categoria)
+		});
+		eventos.push(evento);
+		if (compra) agotan.push({ evento, compra, organizador });
+	}
+
+	// Compras que agotan el cupo de un evento futuro: con el reloj real alcanza.
+	// Quedan CONFIRMADA (con `diasRestantes`), no PENDIENTE.
+	const comprasAgotan = [];
+	for (const { evento, compra, organizador } of agotan) {
+		const tipo = evento.tiposEntrada.find(
+			(t) => t.nombre === compra.tipoEntrada
+		);
+		const { id } = await compraService.crearCompra({
+			compradorId: idUsuario.get(compra.comprador),
+			eventoId: evento.id,
+			tipoEntradaId: tipo.id,
+			cantidad: compra.cantidad
+		});
+		comprasAgotan.push(
+			await compraService.confirmarCompra({
+				compraId: id,
+				usuarioId: idUsuario.get(organizador)
 			})
 		);
+	}
+
+	// Eventos ya ocurridos: el servicio exige fecha futura, así que se crean con
+	// una fecha temporal y se mueven al pasado en el repositorio. Esto debe pasar
+	// antes de comprar, porque la compra guarda una copia del evento.
+	const eventosPasados = [];
+	for (const {
+		organizador,
+		categoria,
+		haceDias,
+		hora,
+		compra,
+		...datos
+	} of EVENTOS_PASADOS_PRUEBA) {
+		const creado = await eventoService.crearEvento({
+			...datos,
+			fecha: fechaFutura(ahora, 1, hora),
+			organizadorId: idUsuario.get(organizador),
+			categoriaId: idCategoria.get(categoria)
+		});
+		creado.fecha = fechaPasada(ahora, haceDias, hora);
+		const evento = await eventoRepository.actualizar(creado);
+		eventos.push(evento);
+		eventosPasados.push({ evento, compra, organizador });
+	}
+
+	// Compras UTILIZADA: se crean y confirman "antes del evento" (reloj del
+	// servicio fijado un día antes) y luego la tarea del sistema las marca.
+	const relojReal = compraService.reloj;
+	try {
+		for (const { evento, compra, organizador } of eventosPasados) {
+			if (!compra) continue;
+			compraService.reloj = () =>
+				new Date(evento.fecha.getTime() - 24 * 3600_000);
+			const tipo = evento.tiposEntrada.find(
+				(t) => t.nombre === compra.tipoEntrada
+			);
+			const { id } = await compraService.crearCompra({
+				compradorId: idUsuario.get(compra.comprador),
+				eventoId: evento.id,
+				tipoEntradaId: tipo.id,
+				cantidad: compra.cantidad
+			});
+			await compraService.confirmarCompra({
+				compraId: id,
+				usuarioId: idUsuario.get(organizador)
+			});
+		}
+	} finally {
+		compraService.reloj = relojReal;
+	}
+	await compraService.marcarComprasUtilizadas();
+	const comprasUtilizadas = [];
+	for (const { evento, compra, organizador } of eventosPasados) {
+		if (!compra) continue;
+		const delEvento = await compraService.listarComprasDeEvento({
+			eventoId: evento.id,
+			usuarioId: idUsuario.get(organizador)
+		});
+		comprasUtilizadas.push(...delEvento.compras);
 	}
 
 	logger.info(
@@ -265,8 +506,12 @@ export async function cargarDatosPrueba(
 			evento: 'seed_cargada',
 			usuarios: usuarios.length,
 			categorias: categorias.length,
-			eventos: eventos.length
+			eventos: eventos.length,
+			eventosPasados: eventosPasados.length,
+			comprasUtilizadas: comprasUtilizadas.length,
+			comprasAgotanCupo: comprasAgotan.length
 		})
 	);
-	return { usuarios, categorias, eventos };
+	const compras = [...comprasUtilizadas, ...comprasAgotan];
+	return { usuarios, categorias, eventos, compras };
 }
