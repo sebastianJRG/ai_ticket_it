@@ -1,9 +1,12 @@
 /**
  * @file Helper de pruebas: reseñas, tipos de entrada del checkout y compras de
- *   ejemplo con el formato de la API (specs/005-detalle-evento-compra/data-model.md §2–4).
+ *   ejemplo con el formato de la API (specs/005-detalle-evento-compra/data-model.md §2–4)
+ *   y compras del listado del comprador (specs/006-mis-compras-comprador/data-model.md §1).
  * @owner Equipo Al Ticket It — frontend
  * @license MIT
  */
+
+import { AHORA } from './eventosEjemplo';
 
 let secuencia = 0;
 
@@ -113,3 +116,106 @@ export function crearCompraRespuesta(parcial = {}) {
 		...parcial
 	};
 }
+
+const DIA = 24 * 60 * 60 * 1000;
+let secuenciaListado = 0;
+
+/**
+ * Crea una compra con el formato de `GET /api/compras`
+ * (specs/006-mis-compras-comprador/data-model.md §1).
+ * @param {object} [parcial] Campos a reemplazar.
+ * @returns {object} Compra del listado del comprador.
+ */
+export function crearCompraListado(parcial = {}) {
+	secuenciaListado += 1;
+	const estado = parcial.estado ?? 'PENDIENTE';
+	return {
+		id: `cl-${secuenciaListado}`,
+		comprador: { id: 'u-comprador', nombre: 'Ana', apellido: 'García' },
+		evento: {
+			id: `ev-l-${secuenciaListado}`,
+			nombre: `Evento ${secuenciaListado}`,
+			fecha: new Date(Date.now() + 10 * DIA).toISOString()
+		},
+		tipoEntrada: { id: 'te-pla', nombre: 'Platea', precio: 40000 },
+		cantidad: 2,
+		total: 80000,
+		estado,
+		diasRestantes: estado === 'CONFIRMADA' ? 10 : null,
+		...parcial
+	};
+}
+
+/**
+ * Siete compras en orden de creación, con fechas relativas a `ahora`:
+ * PENDIENTE futura, CONFIRMADA en 3 días, CONFIRMADA de hoy (más tarde),
+ * dos UTILIZADA del mismo evento pasado, CANCELADA y REEMBOLSADA.
+ * Totales por pestaña: Activas 3, Pasadas 2, Canceladas 2.
+ * @param {Date} ahora Momento de referencia.
+ * @returns {object[]} Compras del listado.
+ */
+export function comprasPorEstado(ahora) {
+	const en = (ms) => new Date(ahora.getTime() + ms).toISOString();
+	const pasado = {
+		id: 'ev-pasado',
+		nombre: 'Festival pasado',
+		fecha: en(-5 * DIA)
+	};
+	return [
+		crearCompraListado({
+			id: 'c-pen',
+			estado: 'PENDIENTE',
+			evento: { id: 'ev-pen', nombre: 'Recital pendiente', fecha: en(20 * DIA) }
+		}),
+		crearCompraListado({
+			id: 'c-con3',
+			estado: 'CONFIRMADA',
+			diasRestantes: 3,
+			evento: { id: 'ev-con3', nombre: 'Teatro en 3 días', fecha: en(3 * DIA) }
+		}),
+		crearCompraListado({
+			id: 'c-con0',
+			estado: 'CONFIRMADA',
+			diasRestantes: 0,
+			evento: {
+				id: 'ev-con0',
+				nombre: 'Show de hoy',
+				fecha: en(60 * 60 * 1000)
+			}
+		}),
+		crearCompraListado({
+			id: 'c-uti1',
+			estado: 'UTILIZADA',
+			evento: pasado
+		}),
+		crearCompraListado({
+			id: 'c-uti2',
+			estado: 'UTILIZADA',
+			evento: pasado,
+			tipoEntrada: { id: 'te-gen', nombre: 'General', precio: 25000 },
+			cantidad: 1,
+			total: 25000
+		}),
+		crearCompraListado({
+			id: 'c-can',
+			estado: 'CANCELADA',
+			evento: {
+				id: 'ev-can',
+				nombre: 'Conferencia cancelada',
+				fecha: en(8 * DIA)
+			}
+		}),
+		crearCompraListado({
+			id: 'c-ree',
+			estado: 'REEMBOLSADA',
+			evento: {
+				id: 'ev-ree',
+				nombre: 'Partido reembolsado',
+				fecha: en(9 * DIA)
+			}
+		})
+	];
+}
+
+/** {@link comprasPorEstado} con `AHORA` de `eventosEjemplo.js` (pruebas puras). */
+export const COMPRAS_POR_ESTADO = comprasPorEstado(AHORA);

@@ -3,7 +3,9 @@
  *   rutas, pestañas de cada rol, ruta inicial, decisión de acceso y destino
  *   tras iniciar sesión o registrarse (specs/003-navegacion-sesion/contracts/navegacion.md),
  *   más las rutas del detalle y del checkout de un evento
- *   (specs/005-detalle-evento-compra/contracts/pantallas.md › Rutas).
+ *   (specs/005-detalle-evento-compra/contracts/pantallas.md › Rutas) y la del
+ *   detalle de compra (specs/006-mis-compras-comprador/contracts/pantallas.md
+ *   › Rutas y acceso).
  * @owner Equipo Al Ticket It — frontend
  * @license MIT
  */
@@ -106,6 +108,7 @@ const PRIVADAS_COMPRADOR = new Set([
 ]);
 const DETALLE_EVENTO = /^\/evento\/[^/]+$/;
 const CHECKOUT = /^\/evento\/([^/]+)\/comprar$/;
+const DETALLE_COMPRA = /^\/compra\/[^/]+$/;
 
 const PERMITIR = Object.freeze({ tipo: 'permitir' });
 
@@ -169,6 +172,15 @@ export function hrefCheckout(idEvento) {
 }
 
 /**
+ * Ruta del detalle de una compra (feature 006, research R1).
+ * @param {string} idCompra ID de la compra.
+ * @returns {string} `/compra/<id codificado>`.
+ */
+export function hrefCompra(idCompra) {
+	return `/compra/${encodeURIComponent(idCompra)}`;
+}
+
+/**
  * Decide si el estado de sesión puede ver una ruta (data-model.md › Area).
  * Nunca redirige hacia la misma ruta y nunca lanza.
  * @param {{ usuario: UsuarioSesion, ruta?: string }} entrada Usuario y ruta pedida.
@@ -186,6 +198,12 @@ export function decidirAcceso({ usuario, ruta } = {}) {
 		return rol === 'COMPRADOR' ? PERMITIR : redirigir(`/evento/${checkout[1]}`);
 	}
 	if (DETALLE_EVENTO.test(r)) return PERMITIR;
+	if (DETALLE_COMPRA.test(r)) {
+		if (!usuario) return redirigir(hrefLogin(r));
+		return rol === 'COMPRADOR'
+			? PERMITIR
+			: redirigir(RUTAS.organizador.eventos);
+	}
 	if (PUBLICAS_COMPRADOR.has(r)) {
 		return rol === 'ORGANIZADOR'
 			? redirigir(RUTAS.organizador.eventos)

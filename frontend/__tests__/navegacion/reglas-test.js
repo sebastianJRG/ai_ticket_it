@@ -8,7 +8,8 @@ import {
 	destinoTrasLogin,
 	destinoTrasRegistro,
 	hrefEvento,
-	hrefCheckout
+	hrefCheckout,
+	hrefCompra
 } from '../../src/navegacion/reglas';
 import { COMPRADOR, ORGANIZADOR } from '../helpers/authFalso';
 
@@ -349,6 +350,56 @@ describe('checkout /evento/:id/comprar (feature 005)', () => {
 			'/evento/x/comprar'
 		);
 		expect(destinoTrasLogin(ORGANIZADOR, '/evento/x/comprar')).toBe(
+			'/organizador/eventos'
+		);
+	});
+});
+
+describe('hrefCompra y /compra/:id (feature 006)', () => {
+	it('arma la ruta del detalle de compra con el ID codificado', () => {
+		expect(hrefCompra('abc')).toBe('/compra/abc');
+		expect(hrefCompra('a b')).toBe('/compra/a%20b');
+	});
+
+	it('visitante va a login con volverA; COMPRADOR entra; ORGANIZADOR va a sus eventos', () => {
+		expect(decidirAcceso({ usuario: VISITANTE, ruta: '/compra/x' })).toEqual(
+			redirigir('/login?volverA=%2Fcompra%2Fx')
+		);
+		expect(decidirAcceso({ usuario: COMPRADOR, ruta: '/compra/x' })).toEqual(
+			permitir
+		);
+		expect(decidirAcceso({ usuario: ORGANIZADOR, ruta: '/compra/x' })).toEqual(
+			redirigir('/organizador/eventos')
+		);
+	});
+
+	it('ignora query y barra final al decidir', () => {
+		expect(
+			decidirAcceso({ usuario: VISITANTE, ruta: '/compra/x/?q=1' })
+		).toEqual(redirigir('/login?volverA=%2Fcompra%2Fx'));
+		expect(
+			decidirAcceso({ usuario: COMPRADOR, ruta: '/compra/x?q=1' })
+		).toEqual(permitir);
+		expect(decidirAcceso({ usuario: ORGANIZADOR, ruta: '/compra/x/' })).toEqual(
+			redirigir('/organizador/eventos')
+		);
+	});
+
+	it('/compras mantiene su comportamiento', () => {
+		expect(decidirAcceso({ usuario: VISITANTE, ruta: '/compras' })).toEqual(
+			redirigir('/login?volverA=%2Fcompras')
+		);
+		expect(decidirAcceso({ usuario: COMPRADOR, ruta: '/compras' })).toEqual(
+			permitir
+		);
+		expect(decidirAcceso({ usuario: ORGANIZADOR, ruta: '/compras' })).toEqual(
+			redirigir('/organizador/eventos')
+		);
+	});
+
+	it('tras el login, el COMPRADOR vuelve al detalle y el ORGANIZADOR no', () => {
+		expect(destinoTrasLogin(COMPRADOR, '/compra/x')).toBe('/compra/x');
+		expect(destinoTrasLogin(ORGANIZADOR, '/compra/x')).toBe(
 			'/organizador/eventos'
 		);
 	});
