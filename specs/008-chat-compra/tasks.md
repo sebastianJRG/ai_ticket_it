@@ -58,7 +58,7 @@ Cada fase tiene una tarea de aprobación explícita (⛔ GATE). No se implementa
 
 **Purpose**: datos de ejemplo de mensajes para todas las pruebas.
 
-- [ ] T001 Crear `frontend/__tests__/helpers/mensajesEjemplo.js`:
+- [X] T001 Crear `frontend/__tests__/helpers/mensajesEjemplo.js`:
   - `crearMensaje(parcial)`: un mensaje con la forma de `data-model.md` › `Mensaje.id`, `Mensaje.compraId`, `Mensaje.usuario`, `Mensaje.mensaje` y `Mensaje.enviado`. El `id` es incremental, `compraId` vale `'c-1'`, `usuario` es la versión pública de `COMPRADOR` y `enviado` es un ISO relativo a `AHORA`.
   - `remitentePublico(usuario)`: devuelve `{ id, nombre, apellido, rol }` de `authFalso`.
   - `CONVERSACION`: 4 mensajes de `c-1` en orden. Dos del comprador seguidos ayer, uno del organizador hoy a las 10:00 y otro del organizador hoy a las 10:01, para cubrir separadores de día y agrupación de autor.
@@ -70,22 +70,22 @@ Cada fase tiene una tarea de aprobación explícita (⛔ GATE). No se implementa
 
 **Purpose**: verificar la base del frontend y cerrar el hueco de observabilidad del backend (principio 5, [research R11](./research.md#r11-observabilidad-del-chat)). En el frontend ya existen el servicio (`mensajeService`), la sesión (`useAuth`), la ruta `/compra/[idCompra]` y su guardia (001, 003, 006 y 007). En el backend, `MensajeService` no emite logs estructurados. Es el único cambio en `backend/` de esta feature. Los comandos de esta fase se corren desde `backend/`.
 
-- [ ] T002 Verificar la base antes de empezar. Correr `npx jest __tests__/services/mensajeService-test.js __tests__/screens/detalle-compra-test.jsx` (desde `frontend/`) y confirmar que pasan. Confirmar también que `listarMensajes` y `enviarMensaje` coinciden con [contracts/api-mensajes.md](./contracts/api-mensajes.md). Si algo no coincide, detenerse y avisar: no se modifica el servicio del frontend en esta feature.
+- [X] T002 Verificar la base antes de empezar. Correr `npx jest __tests__/services/mensajeService-test.js __tests__/screens/detalle-compra-test.jsx` (desde `frontend/`) y confirmar que pasan. Confirmar también que `listarMensajes` y `enviarMensaje` coinciden con [contracts/api-mensajes.md](./contracts/api-mensajes.md). Si algo no coincide, detenerse y avisar: no se modifica el servicio del frontend en esta feature.
 
 ### Tests de observabilidad (escribir primero) ⚠️
 
-- [ ] T003 [P] Ampliar `backend/tests/unit/mensajes/mensaje.service.test.js`. Usar el logger falso `{ info: jest.fn() }`, inyectado como quinto argumento del constructor (después de `reloj`), y el helper `logs(logger)`, copiado de `backend/tests/unit/usuarios/favoritos.service.test.js`. Casos (eventos y campos en [contracts/api-mensajes.md](./contracts/api-mensajes.md#logs-del-servidor)):
+- [X] T003 [P] Ampliar `backend/tests/unit/mensajes/mensaje.service.test.js`. Usar el logger falso `{ info: jest.fn() }`, inyectado como quinto argumento del constructor (después de `reloj`), y el helper `logs(logger)`, copiado de `backend/tests/unit/usuarios/favoritos.service.test.js`. Casos (eventos y campos en [contracts/api-mensajes.md](./contracts/api-mensajes.md#logs-del-servidor)):
   - `crearMensaje(datos, { requestId: 'req-1' })` emite exactamente un `mensaje_creado` con `{ evento, requestId: 'req-1', usuarioId, rol, compraId, estadoCompra, mensajeId, largo }`, y **ninguna** línea contiene el texto del mensaje.
   - `listarPorCompra(datos, { requestId: 'req-2' })` emite `mensajes_listados` con `{ evento, requestId, usuarioId, rol, compraId, estadoCompra, cantidad }`.
   - Sin contexto, `requestId` es `null`.
   - Con un 400 (texto o ID inválido), un 403 (no participa) o un 404 (la compra no existe), no se emite ningún log.
   - Sin logger, el constructor no falla y usa `console` por defecto. Los demás casos existentes no cambian.
-- [ ] T004 [P] Ampliar `backend/tests/unit/mensajes/mensaje.controller.test.js`: con `req.id = 'req-1'`, `crear` llama a `servicio.crearMensaje({ compraId, usuarioId, mensaje }, { requestId: 'req-1' })` y `listar` llama a `servicio.listarPorCompra({ compraId, usuarioId }, { requestId: 'req-1' })`. Hay que ajustar los `toHaveBeenCalledWith` actuales, que hoy esperan un solo argumento.
-- [ ] T005 ⛔ GATE: presentar T003–T004 al usuario y esperar su **aprobación**. Después, correr `npm run test:jest -- tests/unit/mensajes` y confirmar que las pruebas nuevas fallan (rojo).
+- [X] T004 [P] Ampliar `backend/tests/unit/mensajes/mensaje.controller.test.js`: con `req.id = 'req-1'`, `crear` llama a `servicio.crearMensaje({ compraId, usuarioId, mensaje }, { requestId: 'req-1' })` y `listar` llama a `servicio.listarPorCompra({ compraId, usuarioId }, { requestId: 'req-1' })`. Hay que ajustar los `toHaveBeenCalledWith` actuales, que hoy esperan un solo argumento.
+- [X] T005 ⛔ GATE: presentar T003–T004 al usuario y esperar su **aprobación**. Después, correr `npm run test:jest -- tests/unit/mensajes` y confirmar que las pruebas nuevas fallan (rojo).
 
 ### Implementación de observabilidad
 
-- [ ] T006 Implementar los logs en el backend ([research R11](./research.md#r11-observabilidad-del-chat)):
+- [X] T006 Implementar los logs en el backend ([research R11](./research.md#r11-observabilidad-del-chat)):
   - `backend/src/services/mensajeService.js`:
     - Agregar `logger = console` como último parámetro del constructor.
     - Agregar el método privado `_log(evento, contexto, datos)`, igual al de `backend/src/services/usuarioService.js`.
@@ -94,7 +94,7 @@ Cada fase tiene una tarea de aprobación explícita (⛔ GATE). No se implementa
     - Actualizar el JSDoc (`@param` de `logger` y `contexto`).
   - `backend/src/controllers/mensajeController.js`: pasar `{ requestId: req.id }` como segundo argumento, como `backend/src/controllers/favoritoController.js`.
   - `backend/src/app.js`: `new MensajeService(mensajeRepository, compraRepository, usuarioRepository, undefined, console)`.
-- [ ] T007 Correr `npm run test:backend`: T003 y T004 en verde, y `backend/tests/mensajes.test.js` (integración) sin cambios y en verde.
+- [X] T007 Correr `npm run test:backend`: T003 y T004 en verde, y `backend/tests/mensajes.test.js` (integración) sin cambios y en verde.
 
 **Checkpoint**: la base del frontend está en verde y el chat del backend cumple el principio 5. Las historias pueden empezar.
 
@@ -108,7 +108,7 @@ Cada fase tiene una tarea de aprobación explícita (⛔ GATE). No se implementa
 
 ### Tests for User Story 1 (escribir primero) ⚠️
 
-- [ ] T008 [P] [US1] Escribir `frontend/__tests__/mensajes/chat-test.js` (funciones puras, [contracts/componentes.md](./contracts/componentes.md) › `chat.js`):
+- [X] T008 [P] [US1] Escribir `frontend/__tests__/mensajes/chat-test.js` (funciones puras, [contracts/componentes.md](./contracts/componentes.md) › `chat.js`):
   - **`validarMensaje`** (tabla de `data-model.md` §4, `LIMITE_MENSAJE`): `''` y `'   '` → `{ valido: false, largo: 0, error: null }`. `'a'` y `TEXTO_1000` son válidos. `TEXTO_1001` → `valido: false` con el error "El mensaje no puede superar los 1000 caracteres.". `'  ' + TEXTO_1000 + '  '` es válido, con `largo` 1000: el recorte va antes del máximo.
   - **`fusionarMensajes`**, reglas 1, 2 y 4 de research R4:
     - Ordena el servidor por `Mensaje.enviado` y luego por `Mensaje.id`.
@@ -127,19 +127,19 @@ Cada fase tiene una tarea de aprobación explícita (⛔ GATE). No se implementa
     - 400 → "No pudimos abrir esta conversación", con `reintentable: true`.
     - Estado 0 → el título de `mensajeError` de `frontend/src/eventos/presentacion.js`, con `reintentable: true`.
   - **`textoErrorEnvio`**: un 400 devuelve `error.message`; un estado 0, un 500, un 403 y un 404 devuelven "Revisá tu conexión e intentá de nuevo.".
-- [ ] T009 [P] [US1] Escribir `frontend/__tests__/components/ChatBubble-test.jsx` (props en [contracts/componentes.md](./contracts/componentes.md) › `ChatBubble`), en los dos temas:
+- [X] T009 [P] [US1] Escribir `frontend/__tests__/components/ChatBubble-test.jsx` (props en [contracts/componentes.md](./contracts/componentes.md) › `ChatBubble`), en los dos temas:
   - **Propia**: alineada a la derecha, con fondo `bubbleOwn`.
   - **Ajena**: alineada a la izquierda, con fondo `surfaceRaised`. El autor se ve solo con `mostrarAutor`.
   - **`accessibilityLabel`**: `"{autor}, {hora}: {texto}"`. Con `estado="enviando"` suma ". Enviando" y muestra "Enviando…" con ícono. Con `estado="error"` suma ". No se envió" y muestra el texto `error` y el botón "Reintentar", que llama a `alReintentar` y tiene un área táctil de 44 o más.
   - Sin `alReintentar` no hay botón.
-- [ ] T010 [P] [US1] Escribir `frontend/__tests__/components/MessageComposer-test.jsx` (props en [contracts/componentes.md](./contracts/componentes.md) › `MessageComposer`):
+- [X] T010 [P] [US1] Escribir `frontend/__tests__/components/MessageComposer-test.jsx` (props en [contracts/componentes.md](./contracts/componentes.md) › `MessageComposer`):
   - El placeholder por defecto es "Escribí un mensaje".
   - `alCambiar` recibe el texto.
   - **Botón "Enviar mensaje"**: con `valido=false` está deshabilitado (`accessibilityState.disabled`), tiene `accessibilityHint` "Escribí un mensaje para enviar" y no llama a `alEnviar`. Con `valido=true` llama a `alEnviar` una vez.
   - **Ayuda visible**: con `valor` vacío o solo espacios y sin `error`, se ve el texto "Escribí un mensaje para enviar" debajo del campo. Con texto válido no se ve. Con `error`, se ve el error en su lugar.
   - **Contador**: con `largo` 799 no se ve. Con 800 se ve "800/1000". Con 1001 se ve en `danger`, junto al `error` (que va en una región `polite`).
   - El `TextInput` no tiene `maxLength`.
-- [ ] T011 [P] [US1] Escribir `frontend/__tests__/hooks/useChatCompra-test.jsx`, con la parte de carga y envío, `activo: true` y `intervaloMs` grande para que no corra la consulta periódica (estado en `data-model.md` §5):
+- [X] T011 [P] [US1] Escribir `frontend/__tests__/hooks/useChatCompra-test.jsx`, con la parte de carga y envío, `activo: true` y `intervaloMs` grande para que no corra la consulta periódica (estado en `data-model.md` §5):
   - **Carga**: con ID vacío no llama a `listarMensajes`. Con `'c-1'` llama una vez, `cargando` pasa de `true` a `false` y `mensajes` devuelve la conversación.
   - **Error inicial**: un error en la carga inicial queda en `error`. `recargar()` vuelve a pedir. Con una consulta pendiente (`diferido`), llamar a `recargar()` no dispara un segundo GET.
   - **`enviar('  hola ')`**:
@@ -151,7 +151,7 @@ Cada fase tiene una tarea de aprobación explícita (⛔ GATE). No se implementa
   - **Fallo**: deja `MensajeLocal.estado` en `'error'` con `MensajeLocal.error`, sin perder el texto, y la cola sigue con el siguiente. `reintentar(claveLocal)` lo vuelve a `'enviando'` y lo reenvía con el mismo texto.
   - **Texto del error** (en `chat-test.js` con `textoErrorEnvio`, y acá en el ítem resultante): un 400 con el mensaje "El mensaje no puede estar vacío." muestra ese mensaje; un error de red (`status` 0) o un 500 muestran "Revisá tu conexión e intentá de nuevo.".
   - **Desmontado**: si se desmonta con un envío en curso, no actualiza estado.
-- [ ] T012 [P] [US1] Escribir `frontend/__tests__/mensajes/ChatCompra-test.jsx` (`frontend/src/mensajes/ChatCompra.jsx`, estados en [contracts/componentes.md](./contracts/componentes.md) › `ChatCompra`), con `useAuth` simulado como `COMPRADOR`, `activo` en `true` y un `encabezado` de prueba:
+- [X] T012 [P] [US1] Escribir `frontend/__tests__/mensajes/ChatCompra-test.jsx` (`frontend/src/mensajes/ChatCompra.jsx`, estados en [contracts/componentes.md](./contracts/componentes.md) › `ChatCompra`), con `useAuth` simulado como `COMPRADOR`, `activo` en `true` y un `encabezado` de prueba:
   - **Carga**: se ven el encabezado y los esqueletos (`busy`), y el composer está deshabilitado.
   - **Vacío** (`[]`): "Todavía no hay mensajes" y "Escribile al organizador si tenés dudas sobre tu compra.", con el composer habilitado (US1-4).
   - **Con `CONVERSACION`**: las burbujas salen en orden, con los separadores (US1-1).
@@ -159,33 +159,33 @@ Cada fase tiene una tarea de aprobación explícita (⛔ GATE). No se implementa
   - **Fallo del POST**: la burbuja muestra "No se envió" y "Reintentar", y al tocarlo se reenvía (US1-3).
   - **Validación**: con solo espacios, "Enviar mensaje" está deshabilitado. Con `TEXTO_1001` se ven el contador y el error.
   - **Error inicial de red**: `EmptyState` con "Reintentar".
-- [ ] T013 [US1] Ampliar `frontend/__tests__/screens/detalle-compra-test.jsx` para la variante del COMPRADOR, simulando `mensajeService`:
+- [X] T013 [US1] Ampliar `frontend/__tests__/screens/detalle-compra-test.jsx` para la variante del COMPRADOR, simulando `mensajeService`:
   - Al tocar la pestaña "Chat" se llama a `listarMensajes(<idCompra>)` y se ve la conversación.
   - Ya no aparece "Muy pronto vas a poder escribirle al organizador desde acá.".
   - Se puede enviar un mensaje.
   - En la pestaña "Detalle" no se llama a `listarMensajes`.
   - Una compra CANCELADA y una compra de un evento que ya ocurrió también muestran el composer habilitado (Edge Cases, FR-002).
-- [ ] T014 [US1] ⛔ GATE: presentar T008–T013 al usuario y esperar su **aprobación**. Después, correr `npx jest __tests__/mensajes __tests__/components/ChatBubble-test.jsx __tests__/components/MessageComposer-test.jsx __tests__/hooks/useChatCompra-test.jsx __tests__/screens/detalle-compra-test.jsx` y confirmar que las pruebas nuevas fallan (rojo).
+- [X] T014 [US1] ⛔ GATE: presentar T008–T013 al usuario y esperar su **aprobación**. Después, correr `npx jest __tests__/mensajes __tests__/components/ChatBubble-test.jsx __tests__/components/MessageComposer-test.jsx __tests__/hooks/useChatCompra-test.jsx __tests__/screens/detalle-compra-test.jsx` y confirmar que las pruebas nuevas fallan (rojo).
 
 ### Implementation for User Story 1
 
-- [ ] T015 [P] [US1] Crear `frontend/src/mensajes/chat.js` (puro), con los exports `LIMITE_MENSAJE`, `validarMensaje`, `fusionarMensajes` (reglas 1, 2 y 4 de research R4; la regla 3 va en T035), `agruparMensajes`, `mensajeErrorChat` y `textoErrorEnvio`:
+- [X] T015 [P] [US1] Crear `frontend/src/mensajes/chat.js` (puro), con los exports `LIMITE_MENSAJE`, `validarMensaje`, `fusionarMensajes` (reglas 1, 2 y 4 de research R4; la regla 3 va en T035), `agruparMensajes`, `mensajeErrorChat` y `textoErrorEnvio`:
   - `validarMensaje` según `data-model.md` §4.
   - `fusionarMensajes` según `data-model.md` › `MensajeLocal.estado` / `MensajeLocal.id`. Ordena y deduplica por `data-model.md` › `Mensaje.enviado` (orden) y `Mensaje.id` (clave única).
   - `agruparMensajes` según `data-model.md` §3: arma `ItemChat.tipo` (`'dia'` | `'mensaje'`), `ItemChat.clave` (`Mensaje.id` o `MensajeLocal.claveLocal`), `ItemChat.mostrarAutor` e `ItemChat.estado` (`'enviado'` | `'enviando'` | `'error'`, derivado de `MensajeLocal.estado`), además de `ItemChat.error`.
   - `mensajeErrorChat` según research R6. El 403 se agrega en T026.
   - `textoErrorEnvio(error)` según research R3: devuelve `error.message` si `status` es 400, o "Revisá tu conexión e intentá de nuevo." en cualquier otro caso.
-- [ ] T016 [P] [US1] Crear `frontend/src/components/ChatBubble.jsx` según [contracts/componentes.md](./contracts/componentes.md) › `ChatBubble` y `design-system/docs/componentes/ChatBubble.md`:
+- [X] T016 [P] [US1] Crear `frontend/src/components/ChatBubble.jsx` según [contracts/componentes.md](./contracts/componentes.md) › `ChatBubble` y `design-system/docs/componentes/ChatBubble.md`:
   - Ancho máximo del 80 %.
   - La propia tiene la esquina inferior derecha recortada.
   - El autor visible usa `overline` o `caption`.
   - El estado `error` muestra el ícono, el texto en `danger` y el botón "Reintentar".
-- [ ] T017 [P] [US1] Crear `frontend/src/components/MessageComposer.jsx` según [contracts/componentes.md](./contracts/componentes.md) › `MessageComposer` y `design-system/docs/componentes/MessageComposer.md`:
+- [X] T017 [P] [US1] Crear `frontend/src/components/MessageComposer.jsx` según [contracts/componentes.md](./contracts/componentes.md) › `MessageComposer` y `design-system/docs/componentes/MessageComposer.md`:
   - Pill `surfaceRaised`, multilínea hasta 4 líneas.
   - El botón enviar es un `IconButton` de 44 en `primary`, con la etiqueta "Enviar mensaje".
   - Contador con `largo >= 800` (`data-model.md` §4, `LIMITE_MENSAJE`). Sin `maxLength` y sin prop `locked`.
   - Ayuda visible "Escribí un mensaje para enviar" en `caption` / `textMuted` cuando el texto recortado está vacío y no hay `error` (research R5).
-- [ ] T018 [US1] Crear `frontend/src/hooks/useChatCompra.js` con la carga inicial, `recargar`, `enviar` y `reintentar` (estado en `data-model.md` §5; ciclo en `data-model.md` › `MensajeLocal.estado`):
+- [X] T018 [US1] Crear `frontend/src/hooks/useChatCompra.js` con la carga inicial, `recargar`, `enviar` y `reintentar` (estado en `data-model.md` §5; ciclo en `data-model.md` › `MensajeLocal.estado`):
   - **Carga**: sigue el patrón de secuencia y montado de `frontend/src/hooks/useComprasEvento.js`. `miId` sale de `useAuth()`.
   - **Mensajes locales**: `claveLocal` con un contador en `useRef` (`data-model.md` › `MensajeLocal.claveLocal`) y `creado = new Date()` (`MensajeLocal.creado`). Se guarda y se envía el texto recortado que devuelve `validarMensaje` (`data-model.md` › `MensajeLocal.mensaje`).
   - **Confirmación y error**: al responder el servidor, se completan `data-model.md` › `MensajeLocal.id` y `MensajeLocal.enviado` (solo en `confirmado`). Si falla, se guarda `MensajeLocal.error` (solo en `error`, se limpia al reintentar). El texto visible del error lo da `textoErrorEnvio` (research R3): `error.message` si es un 400, o "Revisá tu conexión e intentá de nuevo." en cualquier otro caso.
@@ -194,20 +194,20 @@ Cada fase tiene una tarea de aprobación explícita (⛔ GATE). No se implementa
   - **Salida**: `mensajes = fusionarMensajes(servidor, locales, miId)`.
   - **Error**: solo el bloqueante se expone en `error`.
   - En esta tarea el parámetro `activo` solo habilita la carga inicial. La consulta periódica va en T037.
-- [ ] T019 [US1] Crear `frontend/src/mensajes/ChatCompra.jsx` según [contracts/componentes.md](./contracts/componentes.md) › `ChatCompra`:
+- [X] T019 [US1] Crear `frontend/src/mensajes/ChatCompra.jsx` según [contracts/componentes.md](./contracts/componentes.md) › `ChatCompra`:
   - Un `FlatList` de `agruparMensajes(mensajes, usuario.id)`, con `keyExtractor` igual a `data-model.md` › `ItemChat.clave` y `encabezado` en `ListHeaderComponent`.
   - Según `data-model.md` › `ItemChat.tipo`: `'dia'` es un separador en `overline` y `'mensaje'` es un `ChatBubble` con `ItemChat.propio`, `ItemChat.mostrarAutor`, `ItemChat.estado` e `ItemChat.error`. `alReintentar` solo va cuando `ItemChat.estado` es `'error'`.
   - `MessageComposer` fijo abajo, con el texto como estado propio, validado con `validarMensaje` y vaciado al enviar.
   - `KeyboardAvoidingView` (`padding` en iOS) y safe area inferior con `useSafeAreaInsets`.
   - Al enviar un mensaje propio y en la carga inicial, `scrollToEnd`.
   - Estados de carga, error (con `mensajeErrorChat`; "Reintentar" solo si es `reintentable`, sin composer) y vacío según `rolOtro` (research R9).
-- [ ] T020 [US1] Modificar `frontend/src/app/compra/[idCompra].jsx`, variante `DetalleCompraComprador`:
+- [X] T020 [US1] Modificar `frontend/src/app/compra/[idCompra].jsx`, variante `DetalleCompraComprador`:
   - Con `pestana === 'chat'`, renderizar `<ChatCompra idCompra={compra.id} activo={pestana === 'chat'} encabezado={…} rolOtro="organizador" />` en lugar del `ScrollView`. El encabezado es la fecha, `ResumenCompra`, `StatusBadge` y `Tabs`.
   - Quitar el `EmptyState` provisorio.
   - La pestaña Detalle queda igual.
   - Actualizar el docstring del archivo ("La pestaña Chat la completa la feature 008" → descripción real).
   - Extraer el encabezado a una función local para no duplicarlo entre las dos pestañas.
-- [ ] T021 [US1] Correr las pruebas de T014 y dejarlas en verde. Refactorizar sin cambiar comportamiento y volver a correr `npx jest`.
+- [X] T021 [US1] Correr las pruebas de T014 y dejarlas en verde. Refactorizar sin cambiar comportamiento y volver a correr `npx jest`.
 
 **Checkpoint**: el comprador ya chatea (CU-05). Las respuestas del organizador se ven al volver a abrir la pestaña.
 

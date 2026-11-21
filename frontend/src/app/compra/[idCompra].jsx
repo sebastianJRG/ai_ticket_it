@@ -4,7 +4,9 @@
  *   línea de estado, cancelación y calificación del evento. No hay ruta de una
  *   sola compra: se busca en el listado (specs/006-mis-compras-comprador/
  *   contracts/pantallas.md › /compra/[idCompra]; research R1, R2, R10). La
- *   pestaña Chat la completa la feature 008. Con sesión de ORGANIZADOR
+ *   pestaña Chat monta `ChatCompra` (feature 008, CU-05/CU-06), con el resumen
+ *   y las pestañas como encabezado de la lista (specs/008-chat-compra/
+ *   research.md R1). Con sesión de ORGANIZADOR
  *   muestra la variante del organizador (feature 007 US5, research R9): lee
  *   `?evento=`, busca la compra en las compras de ese evento y no ofrece
  *   acciones de estado (viven en las compras del evento).
@@ -47,6 +49,7 @@ import {
 import { nombreComprador } from '../../compras/gestionCompras';
 import { mensajeError } from '../../eventos/presentacion';
 import { SeccionCalificacion } from '../../resenias/SeccionCalificacion';
+import { ChatCompra } from '../../mensajes/ChatCompra';
 import { RutaProtegida } from '../../navegacion/RutaProtegida';
 import { RUTAS } from '../../navegacion/reglas';
 
@@ -61,6 +64,44 @@ const PESTANAS = [
  * @returns {string|undefined} Valor.
  */
 const primero = (valor) => (Array.isArray(valor) ? valor[0] : valor);
+
+/**
+ * Encabezado del detalle del COMPRADOR: fecha, resumen, estado con días y
+ * pestañas. Se usa arriba de la pestaña Detalle y como encabezado del chat.
+ * @param {object} t Theme activo.
+ * @param {object} compra Compra del listado.
+ * @param {string} pestana Pestaña seleccionada.
+ * @param {function(string): void} setPestana Cambia de pestaña.
+ * @returns {JSX.Element} Encabezado.
+ */
+function encabezadoComprador(t, compra, pestana, setPestana) {
+	return (
+		<>
+			<View style={{ gap: t.spacing[3] }}>
+				<Text style={[t.typography.body, { color: t.colors.textMuted }]}>
+					{formatDate(compra.evento.fecha, 'long')}
+				</Text>
+				<ResumenCompra
+					titulo={compra.evento.nombre}
+					lineas={[
+						{
+							etiqueta: `${compra.cantidad} × ${compra.tipoEntrada.nombre}`,
+							valor: `${formatPrice(compra.tipoEntrada.precio)} c/u`
+						}
+					]}
+					total={formatPrice(compra.total)}
+				/>
+				<StatusBadge status={compra.estado} daysLeft={compra.diasRestantes} />
+			</View>
+			<Tabs
+				variante="segmented"
+				pestanas={PESTANAS}
+				seleccionada={pestana}
+				alCambiar={setPestana}
+			/>
+		</>
+	);
+}
 
 /**
  * Variante del ORGANIZADOR (feature 007, research R9): busca la compra en las
@@ -267,28 +308,7 @@ function DetalleCompraComprador() {
 	} else {
 		contenido = (
 			<>
-				<View style={{ gap: t.spacing[3] }}>
-					<Text style={[t.typography.body, { color: c.textMuted }]}>
-						{formatDate(compra.evento.fecha, 'long')}
-					</Text>
-					<ResumenCompra
-						titulo={compra.evento.nombre}
-						lineas={[
-							{
-								etiqueta: `${compra.cantidad} × ${compra.tipoEntrada.nombre}`,
-								valor: `${formatPrice(compra.tipoEntrada.precio)} c/u`
-							}
-						]}
-						total={formatPrice(compra.total)}
-					/>
-					<StatusBadge status={compra.estado} daysLeft={compra.diasRestantes} />
-				</View>
-				<Tabs
-					variante="segmented"
-					pestanas={PESTANAS}
-					seleccionada={pestana}
-					alCambiar={setPestana}
-				/>
+				{encabezadoComprador(t, compra, pestana, setPestana)}
 				{pestana === 'detalle' ? (
 					<View style={{ gap: t.spacing[6] }}>
 						<View style={{ gap: t.spacing[3] }}>
@@ -306,16 +326,12 @@ function DetalleCompraComprador() {
 							<SeccionCalificacion eventoId={compra.evento.id} />
 						) : null}
 					</View>
-				) : (
-					<EmptyState
-						icono="message"
-						titulo="Chat de la compra"
-						cuerpo="Muy pronto vas a poder escribirle al organizador desde acá."
-					/>
-				)}
+				) : null}
 			</>
 		);
 	}
+
+	const enChat = Boolean(compra) && pestana === 'chat';
 
 	return (
 		<View style={{ flex: 1, backgroundColor: c.bg }}>
@@ -324,21 +340,30 @@ function DetalleCompraComprador() {
 				subtitulo={compra?.evento.nombre}
 				alVolver={volver}
 			/>
-			<KeyboardAvoidingView
-				style={{ flex: 1 }}
-				behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-			>
-				<ScrollView
-					keyboardShouldPersistTaps="handled"
-					contentContainerStyle={{
-						padding: t.spacing[4],
-						paddingBottom: t.spacing[10],
-						gap: t.spacing[6]
-					}}
+			{enChat ? (
+				<ChatCompra
+					idCompra={compra.id}
+					activo={pestana === 'chat'}
+					rolOtro="organizador"
+					encabezado={encabezadoComprador(t, compra, pestana, setPestana)}
+				/>
+			) : (
+				<KeyboardAvoidingView
+					style={{ flex: 1 }}
+					behavior={Platform.OS === 'ios' ? 'padding' : undefined}
 				>
-					{contenido}
-				</ScrollView>
-			</KeyboardAvoidingView>
+					<ScrollView
+						keyboardShouldPersistTaps="handled"
+						contentContainerStyle={{
+							padding: t.spacing[4],
+							paddingBottom: t.spacing[10],
+							gap: t.spacing[6]
+						}}
+					>
+						{contenido}
+					</ScrollView>
+				</KeyboardAvoidingView>
+			)}
 			<ConfirmarCancelacion
 				compra={aCancelar}
 				alCerrar={cerrarDialogo}

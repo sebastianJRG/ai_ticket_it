@@ -9,6 +9,7 @@ import {
 import * as compraService from '../../src/services/compraService';
 import * as reseniaService from '../../src/services/reseniaService';
 import * as eventoService from '../../src/services/eventoService';
+import * as mensajeService from '../../src/services/mensajeService';
 import { ApiError } from '../../src/services/api';
 import { formatDate, formatPrice } from '../../src/theme/format';
 import { COMPRADOR, ORGANIZADOR, crearAuthFalso } from '../helpers/authFalso';
@@ -17,6 +18,7 @@ import {
 	crearCompraOrganizador,
 	crearResenia
 } from '../helpers/comprasEjemplo';
+import { CONVERSACION, crearMensaje } from '../helpers/mensajesEjemplo';
 
 let mockAuth;
 jest.mock('../../src/auth/AuthContext', () => ({
@@ -35,6 +37,10 @@ jest.mock('../../src/services/eventoService', () => ({
 	listarEventos: jest.fn(() => Promise.resolve([])),
 	obtenerEvento: jest.fn(() => new Promise(() => {})),
 	obtenerComprasEvento: jest.fn()
+}));
+jest.mock('../../src/services/mensajeService', () => ({
+	listarMensajes: jest.fn(),
+	enviarMensaje: jest.fn()
 }));
 jest.mock('../../src/services/categoriaService', () => ({
 	listarCategorias: jest.fn(() => Promise.resolve([]))
@@ -62,6 +68,7 @@ beforeEach(() => {
 	COMPRAS = comprasPorEstado(new Date());
 	compraService.listarMisCompras.mockResolvedValue(COMPRAS);
 	reseniaService.listarReseniasEvento.mockResolvedValue([]);
+	mensajeService.listarMensajes.mockResolvedValue([]);
 });
 
 describe('Detalle de compra — US3 (contracts/pantallas.md › /compra/[idCompra])', () => {
@@ -103,15 +110,9 @@ describe('Detalle de compra — US3 (contracts/pantallas.md › /compra/[idCompr
 		expect(screen.getByLabelText('Confirmada, completado')).toBeTruthy();
 	});
 
-	it('la pestaña Chat muestra el estado provisorio', async () => {
+	it('en la pestaña Detalle no pide mensajes', async () => {
 		await abrir('c-con3');
-		await act(async () => {
-			fireEvent.press(screen.getByLabelText('Chat'));
-		});
-		expect(
-			screen.getByRole('header', { name: 'Chat de la compra' })
-		).toBeTruthy();
-		expect(screen.queryByLabelText('Confirmada, estado actual')).toBeNull();
+		expect(mensajeService.listarMensajes).not.toHaveBeenCalled();
 	});
 
 	it('compra ausente del listado → no encontrada y "Ver mis compras"', async () => {
@@ -293,4 +294,59 @@ describe('Detalle de compra — variante ORGANIZADOR (feature 007 US5; research 
 		await abrirOrg('/compra/c1?evento=ev-1');
 		expect(screen.getByText('No tenés acceso a esta compra')).toBeTruthy();
 	});
+});
+
+describe('Detalle de compra — Chat del COMPRADOR (feature 008 US1)', () => {
+	/** Abre la compra y toca la pestaña Chat. */
+	async function abrirChat(id) {
+		await abrir(id);
+		await act(async () => {
+			fireEvent.press(screen.getByLabelText('Chat'));
+		});
+		await act(async () => {});
+	}
+
+	it('la pestaña Chat pide los mensajes de la compra y los muestra', async () => {
+		mensajeService.listarMensajes.mockResolvedValue(CONVERSACION);
+		await abrirChat('c-con3');
+		expect(mensajeService.listarMensajes).toHaveBeenCalledWith('c-con3');
+		expect(screen.getByText(CONVERSACION[2].mensaje)).toBeTruthy();
+		expect(screen.queryByLabelText('Confirmada, estado actual')).toBeNull();
+		expect(
+			screen.queryByText(
+				'Muy pronto vas a poder escribirle al organizador desde acá.'
+			)
+		).toBeNull();
+	});
+
+	it('se puede enviar un mensaje', async () => {
+		mensajeService.enviarMensaje.mockResolvedValue(
+			crearMensaje({ id: 'm-9', compraId: 'c-con3', mensaje: 'Hola' })
+		);
+		await abrirChat('c-con3');
+		await fireEvent.changeText(
+			screen.getByPlaceholderText('Escribí un mensaje'),
+			'Hola'
+		);
+		await act(async () => {
+			fireEvent.press(screen.getByRole('button', { name: 'Enviar mensaje' }));
+		});
+		expect(mensajeService.enviarMensaje).toHaveBeenCalledWith('c-con3', 'Hola');
+		expect(screen.getByText('Hola')).toBeTruthy();
+	});
+
+	it.each(['c-can', 'c-uti1'])(
+		'%s (cancelada o evento pasado) también permite escribir',
+		async (id) => {
+			await abrirChat(id);
+			await fireEvent.changeText(
+				screen.getByPlaceholderText('Escribí un mensaje'),
+				'Hola'
+			);
+			expect(
+				screen.getByRole('button', { name: 'Enviar mensaje' }).props
+					.accessibilityState
+			).toEqual(expect.objectContaining({ disabled: false }));
+		}
+	);
 });
