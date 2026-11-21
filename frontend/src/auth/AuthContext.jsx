@@ -1,5 +1,6 @@
 /**
- * @file Contexto de sesión: usuario, tokens y persistencia segura.
+ * @file Contexto de sesión: usuario, tokens y persistencia (SecureStore en
+ *   Android e iOS, `localStorage` en web; ver `almacenSesion.js`).
  * @owner Equipo Al Ticket It — frontend
  * @license MIT
  */
@@ -12,7 +13,7 @@ import React, {
 	useRef,
 	useState
 } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import { borrarSesion, guardarSesion, leerSesion } from './almacenSesion';
 import * as authService from '../services/authService';
 import { configurarSesion } from '../services/api';
 
@@ -45,7 +46,7 @@ export function AuthProvider({ children, alExpirar }) {
 
 	useEffect(() => {
 		let vivo = true;
-		SecureStore.getItemAsync(CLAVE)
+		leerSesion(CLAVE)
 			.then((raw) => {
 				if (vivo && raw) setSesion(JSON.parse(raw));
 			})
@@ -59,7 +60,7 @@ export function AuthProvider({ children, alExpirar }) {
 	const guardar = useCallback(
 		async (nueva) => {
 			setSesion(nueva);
-			await SecureStore.setItemAsync(CLAVE, JSON.stringify(nueva));
+			await guardarSesion(CLAVE, JSON.stringify(nueva));
 		},
 		[setSesion]
 	);
@@ -79,7 +80,7 @@ export function AuthProvider({ children, alExpirar }) {
 			// El refresh ya es inválido: se cierra solo la sesión local, sin logout.
 			alExpirar: async () => {
 				setSesion(null);
-				await SecureStore.deleteItemAsync(CLAVE);
+				await borrarSesion(CLAVE);
 				avisoExpiracionRef.current?.();
 			}
 		});
@@ -99,7 +100,7 @@ export function AuthProvider({ children, alExpirar }) {
 	const cerrarSesion = useCallback(async () => {
 		const refreshToken = sesion?.refreshToken;
 		setSesion(null);
-		await SecureStore.deleteItemAsync(CLAVE);
+		await borrarSesion(CLAVE);
 		if (refreshToken)
 			await authService.cerrarSesion(refreshToken).catch(() => {});
 	}, [sesion, setSesion]);

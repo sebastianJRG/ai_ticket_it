@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { Platform, Text } from 'react-native';
 import { act, render, screen, waitFor } from '@testing-library/react-native';
 import * as SecureStore from 'expo-secure-store';
 import { AuthProvider, useAuth } from '../src/auth/AuthContext';
@@ -88,6 +88,77 @@ describe('AuthContext', () => {
 		await act(() => auth.cerrarSesion());
 		expect(SecureStore.deleteItemAsync).toHaveBeenCalled();
 		expect(screen.getByText('anonimo')).toBeTruthy();
+	});
+});
+
+describe('AuthContext en web (sin SecureStore)', () => {
+	const OS_ORIGINAL = Platform.OS;
+	const LOCAL_ORIGINAL = globalThis.localStorage;
+	let datos;
+
+	beforeEach(() => {
+		jest.clearAllMocks();
+		Platform.OS = 'web';
+		datos = new Map();
+		globalThis.localStorage = {
+			getItem: (k) => (datos.has(k) ? datos.get(k) : null),
+			setItem: (k, v) => datos.set(k, String(v)),
+			removeItem: (k) => datos.delete(k)
+		};
+		// Como el stub web de expo-secure-store (`export default {}`): falla si se usa.
+		const noExiste = () => {
+			throw new TypeError(
+				'ExpoSecureStore.default.setValueWithKeyAsync is not a function'
+			);
+		};
+		SecureStore.getItemAsync.mockImplementation(noExiste);
+		SecureStore.setItemAsync.mockImplementation(noExiste);
+		SecureStore.deleteItemAsync.mockImplementation(noExiste);
+	});
+
+	afterEach(() => {
+		Platform.OS = OS_ORIGINAL;
+		globalThis.localStorage = LOCAL_ORIGINAL;
+		SecureStore.getItemAsync.mockReset();
+		SecureStore.setItemAsync.mockReset();
+		SecureStore.deleteItemAsync.mockReset();
+	});
+
+	it('iniciarSesion resuelve y guarda la sesión en localStorage', async () => {
+		authService.login.mockResolvedValue({
+			accessToken: 'a',
+			refreshToken: 'r',
+			usuario: { nombreUsuario: 'ana', rol: 'COMPRADOR' }
+		});
+		montar();
+		await waitFor(() => expect(screen.getByText('anonimo')).toBeTruthy());
+		let usuario;
+		await act(async () => {
+			usuario = await auth.iniciarSesion({
+				nombreUsuario: 'ana',
+				contrasenia: 'x'
+			});
+		});
+		expect(usuario).toEqual({ nombreUsuario: 'ana', rol: 'COMPRADOR' });
+		expect(screen.getByText('ana')).toBeTruthy();
+		expect(JSON.parse(datos.get('sesion')).usuario.nombreUsuario).toBe('ana');
+	});
+
+	it('restaura la sesión de localStorage y cerrarSesion la borra', async () => {
+		datos.set(
+			'sesion',
+			JSON.stringify({
+				accessToken: 'a',
+				refreshToken: 'r',
+				usuario: { nombreUsuario: 'ana' }
+			})
+		);
+		authService.cerrarSesion.mockResolvedValue();
+		montar();
+		await waitFor(() => expect(screen.getByText('ana')).toBeTruthy());
+		await act(() => auth.cerrarSesion());
+		expect(screen.getByText('anonimo')).toBeTruthy();
+		expect(datos.has('sesion')).toBe(false);
 	});
 });
 
