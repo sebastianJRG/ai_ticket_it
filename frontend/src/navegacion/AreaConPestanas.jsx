@@ -54,7 +54,7 @@ function BarraPestanas({ state, emitter, navigateToTab, tabs }) {
  */
 export function AreaConPestanas({ tabs, prefijo, listeners }) {
 	const t = useTheme();
-	const { usuario } = useAuth();
+	const { usuario, cierreVoluntario, terminarCierre } = useAuth();
 	const ruta = usePathname();
 	const router = useRouter();
 	// usePathname es global: con login apilado encima, esta área sigue montada y
@@ -63,10 +63,20 @@ export function AreaConPestanas({ tabs, prefijo, listeners }) {
 		const base = `${prefijo}/${tab.clave}`;
 		return ruta === base || ruta.startsWith(`${base}/`);
 	});
-	const decision = propia
+	const decidida = propia
 		? decidirAcceso({ usuario, ruta })
 		: { tipo: 'permitir' };
+	// Tras un cierre de sesión voluntario no se manda a login: la pantalla que
+	// cerró la sesión navega a Explorar (PantallaPerfil.salir). El cierre
+	// termina cuando el visitante llega a una ruta propia que la guardia permite.
+	const enCierre = !usuario && cierreVoluntario;
+	const decision =
+		enCierre && decidida.tipo === 'redirigir' ? { tipo: 'permitir' } : decidida;
 	const destino = decision.tipo === 'redirigir' ? decision.href : null;
+	const llegoTrasCierre = enCierre && propia && decidida.tipo === 'permitir';
+	useEffect(() => {
+		if (llegoTrasCierre) terminarCierre?.();
+	}, [llegoTrasCierre, terminarCierre]);
 	// Al montar se redirige con <Redirect> (enlaces profundos). Si la sesión
 	// cambia con el área ya montada (p. ej. expiró), se usa router.replace:
 	// devolver <Redirect> desmontaría las pestañas y la navegación terminaría

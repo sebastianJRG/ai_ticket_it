@@ -91,6 +91,57 @@ describe('AuthContext', () => {
 	});
 });
 
+describe('AuthContext — cierre voluntario (marca para las guardias)', () => {
+	const GUARDADA = JSON.stringify({
+		accessToken: 'a',
+		refreshToken: 'r',
+		usuario: { nombreUsuario: 'ana' }
+	});
+
+	beforeEach(() => {
+		jest.clearAllMocks();
+		SecureStore.getItemAsync.mockResolvedValue(GUARDADA);
+		authService.cerrarSesion.mockResolvedValue();
+	});
+
+	it('arranca en false, cerrarSesion la activa y terminarCierre la apaga', async () => {
+		montar();
+		await waitFor(() => expect(screen.getByText('ana')).toBeTruthy());
+		expect(auth.cierreVoluntario).toBe(false);
+		await act(() => auth.cerrarSesion());
+		expect(auth.cierreVoluntario).toBe(true);
+		await act(async () => auth.terminarCierre());
+		expect(auth.cierreVoluntario).toBe(false);
+	});
+
+	it('iniciarSesion la apaga', async () => {
+		authService.login.mockResolvedValue({
+			accessToken: 'a',
+			refreshToken: 'r',
+			usuario: { nombreUsuario: 'ana' }
+		});
+		montar();
+		await waitFor(() => expect(screen.getByText('ana')).toBeTruthy());
+		await act(() => auth.cerrarSesion());
+		await act(() =>
+			auth.iniciarSesion({ nombreUsuario: 'ana', contrasenia: 'x' })
+		);
+		expect(auth.cierreVoluntario).toBe(false);
+	});
+
+	it('la expiración no cuenta como cierre voluntario', async () => {
+		montar();
+		await waitFor(() => expect(screen.getByText('ana')).toBeTruthy());
+		const proveedor = configurarSesion.mock.calls
+			.map(([p]) => p)
+			.filter(Boolean)
+			.at(-1);
+		await act(() => proveedor.alExpirar());
+		expect(auth.usuario).toBeNull();
+		expect(auth.cierreVoluntario).toBe(false);
+	});
+});
+
 describe('AuthContext en web (sin SecureStore)', () => {
 	const OS_ORIGINAL = Platform.OS;
 	const LOCAL_ORIGINAL = globalThis.localStorage;

@@ -33,6 +33,9 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children, alExpirar }) {
 	const [sesion, setSesionEstado] = useState(null);
 	const [cargando, setCargando] = useState(true);
+	// `true` entre un cierre de sesión voluntario y el fin de la navegación que
+	// lo sigue: las guardias no mandan a login mientras tanto.
+	const [cierreVoluntario, setCierreVoluntario] = useState(false);
 	// Copia sincrónica de la sesión para que el cliente HTTP lea siempre la vigente.
 	const sesionRef = useRef(null);
 	// En un ref para no reconfigurar el cliente HTTP cada vez que cambia la prop.
@@ -79,6 +82,7 @@ export function AuthProvider({ children, alExpirar }) {
 			guardarTokens: guardar,
 			// El refresh ya es inválido: se cierra solo la sesión local, sin logout.
 			alExpirar: async () => {
+				setCierreVoluntario(false);
 				setSesion(null);
 				await borrarSesion(CLAVE);
 				avisoExpiracionRef.current?.();
@@ -91,6 +95,7 @@ export function AuthProvider({ children, alExpirar }) {
 		async (credenciales) => {
 			const { accessToken, refreshToken, usuario } =
 				await authService.login(credenciales);
+			setCierreVoluntario(false);
 			await guardar({ accessToken, refreshToken, usuario });
 			return usuario;
 		},
@@ -99,28 +104,40 @@ export function AuthProvider({ children, alExpirar }) {
 
 	const cerrarSesion = useCallback(async () => {
 		const refreshToken = sesion?.refreshToken;
+		setCierreVoluntario(true);
 		setSesion(null);
 		await borrarSesion(CLAVE);
 		if (refreshToken)
 			await authService.cerrarSesion(refreshToken).catch(() => {});
 	}, [sesion, setSesion]);
 
+	const terminarCierre = useCallback(() => setCierreVoluntario(false), []);
+
 	const valor = useMemo(
 		() => ({
 			usuario: sesion?.usuario ?? null,
 			accessToken: sesion?.accessToken ?? null,
 			cargando,
+			cierreVoluntario,
 			iniciarSesion,
-			cerrarSesion
+			cerrarSesion,
+			terminarCierre
 		}),
-		[sesion, cargando, iniciarSesion, cerrarSesion]
+		[
+			sesion,
+			cargando,
+			cierreVoluntario,
+			iniciarSesion,
+			cerrarSesion,
+			terminarCierre
+		]
 	);
 	return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>;
 }
 
 /**
  * Devuelve la sesión actual y sus acciones.
- * @returns {{usuario: object|null, accessToken: string|null, cargando: boolean, iniciarSesion: function(object): Promise<object>, cerrarSesion: function(): Promise<void>}} Estado de sesión.
+ * @returns {{usuario: object|null, accessToken: string|null, cargando: boolean, cierreVoluntario: boolean, iniciarSesion: function(object): Promise<object>, cerrarSesion: function(): Promise<void>, terminarCierre: function(): void}} Estado de sesión. `cierreVoluntario` es `true` desde `cerrarSesion` hasta `terminarCierre` (o un nuevo login): mientras tanto las guardias no redirigen a login.
  * @throws {Error} Si se usa fuera de AuthProvider.
  */
 export function useAuth() {

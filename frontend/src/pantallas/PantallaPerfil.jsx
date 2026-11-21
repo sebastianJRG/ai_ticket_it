@@ -45,6 +45,12 @@ function Fila({ etiqueta, valor }) {
 }
 
 /**
+ * Espera a la tarea siguiente del event loop.
+ * @returns {Promise<void>} Se resuelve en la tarea siguiente.
+ */
+const siguienteTarea = () => new Promise((resolver) => setTimeout(resolver, 0));
+
+/**
  * Perfil del usuario de la sesión. Errores: sin conexión u otro → datos de la
  * sesión y aviso; 404 → aviso, sesión cerrada (en `usePerfil`) y Explorar.
  * @returns {JSX.Element} Pantalla de perfil.
@@ -74,10 +80,14 @@ export function PantallaPerfil() {
 		}
 	}, [error, mostrar, recargar, router]);
 
-	// Se cierra la sesión y se navega en el mismo tick: así ninguna guardia
-	// alcanza a mandar a login antes de llegar a Explorar.
-	const salir = () => {
+	// Cerrar sesión y navegar van en tareas separadas: si pasan en el mismo
+	// render, la guardia del área puede ganar y mandar a login, y expo-router
+	// avisa que ROUTE_NAMES_CHANGED quedó sin manejar. Mientras dura el cierre
+	// voluntario las guardias no redirigen; lo termina AreaConPestanas al llegar
+	// a Explorar (pública para el visitante).
+	const salir = async () => {
 		const cierre = cerrarSesion();
+		await siguienteTarea();
 		router.replace('/explorar');
 		return cierre;
 	};
