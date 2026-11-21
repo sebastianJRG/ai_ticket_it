@@ -5,8 +5,9 @@
  *   sola compra: se busca en el listado (specs/006-mis-compras-comprador/
  *   contracts/pantallas.md › /compra/[idCompra]; research R1, R2, R10). La
  *   pestaña Chat monta `ChatCompra` (feature 008, CU-05/CU-06), con el resumen
- *   y las pestañas como encabezado de la lista (specs/008-chat-compra/
- *   research.md R1). Con sesión de ORGANIZADOR
+ *   y las pestañas como encabezado de la lista; consulta solo con la pantalla
+ *   visible (`usePantallaActiva`) y la pestaña Chat elegida (specs/
+ *   008-chat-compra/research.md R1, R2). Con sesión de ORGANIZADOR
  *   muestra la variante del organizador (feature 007 US5, research R9): lee
  *   `?evento=`, busca la compra en las compras de ese evento y no ofrece
  *   acciones de estado (viven en las compras del evento); su pestaña Chat
@@ -33,6 +34,7 @@ import { formatDate, formatPrice } from '../../theme/format';
 import { useAuth } from '../../auth/AuthContext';
 import { useComprasEvento } from '../../hooks/useComprasEvento';
 import { useMisCompras } from '../../hooks/useMisCompras';
+import { usePantallaActiva } from '../../hooks/usePantallaActiva';
 import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
 import { EmptyState } from '../../components/EmptyState';
@@ -160,6 +162,7 @@ function DetalleCompraOrganizador() {
 	const eventoId = primero(params.evento);
 	const { datos, cargando, error, recargar } = useComprasEvento(eventoId);
 	const [pestana, setPestana] = useState('detalle');
+	const activa = usePantallaActiva();
 	const compra = datos?.compras?.find((x) => x.id === id) ?? null;
 	const volver = () =>
 		puedeVolver ? router.back() : router.replace(RUTAS.organizador.mensajes);
@@ -229,7 +232,7 @@ function DetalleCompraOrganizador() {
 			{compra && pestana === 'chat' ? (
 				<ChatCompra
 					idCompra={compra.id}
-					activo={pestana === 'chat'}
+					activo={activa && pestana === 'chat'}
 					rolOtro="comprador"
 					encabezado={encabezadoOrganizador(t, compra, pestana, setPestana)}
 				/>
@@ -280,6 +283,7 @@ function DetalleCompraComprador() {
 	const id = Array.isArray(idCompra) ? idCompra[0] : idCompra;
 	const { compras, cargando, error, recargar } = useMisCompras();
 	const [pestana, setPestana] = useState('detalle');
+	const activa = usePantallaActiva();
 	const [aCancelar, setACancelar] = useState(null);
 	const cerrarDialogo = useCallback(() => setACancelar(null), []);
 	const primerFoco = useRef(true);
@@ -370,7 +374,7 @@ function DetalleCompraComprador() {
 			{enChat ? (
 				<ChatCompra
 					idCompra={compra.id}
-					activo={pestana === 'chat'}
+					activo={activa && pestana === 'chat'}
 					rolOtro="organizador"
 					encabezado={encabezadoComprador(t, compra, pestana, setPestana)}
 				/>

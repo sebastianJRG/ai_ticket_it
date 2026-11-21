@@ -7,7 +7,8 @@ import { COMPRADOR, crearAuthFalso } from '../helpers/authFalso';
 import {
 	CONVERSACION,
 	TEXTO_1001,
-	crearMensaje
+	crearMensaje,
+	remitentePublico
 } from '../helpers/mensajesEjemplo';
 
 let mockAuth;
@@ -206,5 +207,131 @@ describe('useChatCompra — envío (research R3)', () => {
 		await act(async () => d.resolver(crearMensaje({ id: 'x' })));
 		expect(errores).not.toHaveBeenCalled();
 		errores.mockRestore();
+	});
+});
+
+describe('useChatCompra — consulta periódica (research R2, US3)', () => {
+	const CADA_5 = { activo: true, intervaloMs: 5000 };
+	/** Avanza los timers falsos dentro de act. */
+	const avanzar = (ms) =>
+		act(async () => {
+			await jest.advanceTimersByTimeAsync(ms);
+		});
+
+	beforeEach(() => jest.useFakeTimers());
+	afterEach(() => jest.useRealTimers());
+
+	it('con activo=false no consulta aunque pasen 30 s (SC-003)', async () => {
+		await montar('c-1', { activo: false, intervaloMs: 5000 });
+		await avanzar(30000);
+		expect(mensajeService.listarMensajes).not.toHaveBeenCalled();
+	});
+
+	it('consulta al instante y otra a los 5 s de cada respuesta', async () => {
+		await montar('c-1', CADA_5);
+		await avanzar(0);
+		expect(mensajeService.listarMensajes).toHaveBeenCalledTimes(1);
+		await avanzar(4999);
+		expect(mensajeService.listarMensajes).toHaveBeenCalledTimes(1);
+		await avanzar(1);
+		expect(mensajeService.listarMensajes).toHaveBeenCalledTimes(2);
+		await avanzar(5000);
+		expect(mensajeService.listarMensajes).toHaveBeenCalledTimes(3);
+	});
+
+	it('no encima consultas con una respuesta lenta', async () => {
+		const d = diferido();
+		mensajeService.listarMensajes.mockReturnValue(d.promesa);
+		await montar('c-1', CADA_5);
+		await avanzar(20000);
+		expect(mensajeService.listarMensajes).toHaveBeenCalledTimes(1);
+		mensajeService.listarMensajes.mockResolvedValue([]);
+		await act(async () => d.resolver([]));
+		await avanzar(5000);
+		expect(mensajeService.listarMensajes).toHaveBeenCalledTimes(2);
+	});
+
+	it('al desactivar se detiene y descarta la respuesta en vuelo; al reactivar consulta ya', async () => {
+		const d = diferido();
+		mensajeService.listarMensajes.mockResolvedValueOnce([]);
+		const { result, rerender } = await montar('c-1', CADA_5);
+		await avanzar(0);
+		mensajeService.listarMensajes.mockReturnValueOnce(d.promesa);
+		await avanzar(5000);
+		expect(mensajeService.listarMensajes).toHaveBeenCalledTimes(2);
+		await rerender({ id: 'c-1', o: { activo: false, intervaloMs: 5000 } });
+		await act(async () => d.resolver(CONVERSACION));
+		expect(result.current.mensajes).toEqual([]);
+		await avanzar(30000);
+		expect(mensajeService.listarMensajes).toHaveBeenCalledTimes(2);
+		mensajeService.listarMensajes.mockResolvedValue(CONVERSACION);
+		await rerender({ id: 'c-1', o: CADA_5 });
+		await avanzar(0);
+		expect(mensajeService.listarMensajes).toHaveBeenCalledTimes(3);
+		expect(result.current.mensajes).toHaveLength(4);
+	});
+
+	it('un error de red periódico con datos es silencioso y se reintenta', async () => {
+		mensajeService.listarMensajes
+			.mockResolvedValueOnce(CONVERSACION)
+			.mockRejectedValueOnce(new ApiError('x', 0))
+			.mockResolvedValue(CONVERSACION);
+		const { result } = await montar('c-1', CADA_5);
+		await avanzar(0);
+		await avanzar(5000);
+		expect(mensajeService.listarMensajes).toHaveBeenCalledTimes(2);
+		expect(result.current.error).toBeNull();
+		expect(result.current.mensajes).toHaveLength(4);
+		await avanzar(5000);
+		expect(mensajeService.listarMensajes).toHaveBeenCalledTimes(3);
+	});
+
+	it.each([403, 404])(
+		'un %p periódico fija error y detiene las consultas',
+		async (status) => {
+			mensajeService.listarMensajes
+				.mockResolvedValueOnce(CONVERSACION)
+				.mockRejectedValue(new ApiError('x', status));
+			const { result } = await montar('c-1', CADA_5);
+			await avanzar(0);
+			await avanzar(5000);
+			expect(result.current.error.status).toBe(status);
+			await avanzar(30000);
+			expect(mensajeService.listarMensajes).toHaveBeenCalledTimes(2);
+		}
+	);
+
+	it('carrera POST/GET: el mensaje se ve una sola vez (SC-002)', async () => {
+		const post = diferido();
+		mensajeService.enviarMensaje.mockReturnValue(post.promesa);
+		const gemelo = crearMensaje({
+			id: 'm-9',
+			mensaje: 'hola',
+			usuario: remitentePublico(COMPRADOR),
+			enviado: new Date().toISOString()
+		});
+		const { result } = await montar('c-1', CADA_5);
+		await avanzar(0);
+		await act(async () => result.current.enviar('hola'));
+		mensajeService.listarMensajes.mockResolvedValue([gemelo]);
+		await avanzar(5000);
+		expect(
+			result.current.mensajes.filter((m) => m.mensaje === 'hola')
+		).toHaveLength(1);
+		await act(async () => post.resolver(gemelo));
+		expect(
+			result.current.mensajes.filter((m) => m.mensaje === 'hola')
+		).toHaveLength(1);
+		await avanzar(5000);
+		expect(result.current.mensajes).toHaveLength(1);
+		expect(result.current.mensajes[0].id).toBe('m-9');
+	});
+
+	it('al desmontar se cancela el temporizador y no hay más consultas', async () => {
+		const { unmount } = await montar('c-1', CADA_5);
+		await avanzar(0);
+		await unmount();
+		await avanzar(30000);
+		expect(mensajeService.listarMensajes).toHaveBeenCalledTimes(1);
 	});
 });

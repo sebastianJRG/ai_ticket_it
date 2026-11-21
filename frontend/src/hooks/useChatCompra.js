@@ -1,6 +1,7 @@
 /**
  * @file Hook del chat de una compra (`GET` y `POST /api/compras/:id/mensajes`):
- *   carga la conversación mientras está activo, envía de forma optimista con
+ *   consulta la conversación cada ~5 s solo mientras está activo (`setTimeout`
+ *   encadenado, sin encimar consultas), envía de forma optimista con
  *   una cola FIFO de a uno y permite reintentar sin perder el texto
  *   (specs/008-chat-compra/data-model.md §2 y §5; research R2–R4).
  * @owner Equipo Al Ticket It — frontend
@@ -36,13 +37,13 @@ import { fusionarMensajes, validarMensaje } from '../mensajes/chat';
  * @param {OpcionesChatCompra} opciones Ver {@link OpcionesChatCompra}.
  * @returns {EstadoChatCompra} Estado y acciones.
  */
-export function useChatCompra(idCompra, { activo } = {}) {
+export function useChatCompra(idCompra, { activo, intervaloMs = 5000 } = {}) {
 	const { usuario } = useAuth();
 	const miId = usuario?.id ?? null;
 	const tieneId = typeof idCompra === 'string' && idCompra.trim() !== '';
 	const [servidor, setServidor] = useState(null);
 	const [locales, setLocales] = useState([]);
-	const [cargando, setCargando] = useState(tieneId && Boolean(activo));
+	const [cargando, setCargando] = useState(tieneId);
 	const [error, setError] = useState(null);
 
 	const montado = useRef(true);
@@ -55,6 +56,7 @@ export function useChatCompra(idCompra, { activo } = {}) {
 	const cola = useRef([]);
 	const postEnCurso = useRef(false);
 	const contador = useRef(0);
+	const detenido = useRef(false);
 
 	useEffect(() => {
 		montado.current = true;
@@ -69,17 +71,32 @@ export function useChatCompra(idCompra, { activo } = {}) {
 		secuencia.current += 1;
 		const numero = secuencia.current;
 		const vigente = () => montado.current && numero === secuencia.current;
+		if (!hayDatos.current) setCargando(true);
 		try {
 			const lista = await listarMensajes(idCompra);
 			if (vigente()) {
 				hayDatos.current = true;
+				detenido.current = false;
+				const ids = new Set(lista.map((m) => m.id));
 				setServidor(lista);
+				setLocales((ls) =>
+					ls.some((l) => l.estado === 'confirmado' && ids.has(l.id))
+						? ls.filter((l) => !(l.estado === 'confirmado' && ids.has(l.id)))
+						: ls
+				);
 				setError(null);
 				setCargando(false);
 			}
 		} catch (e) {
 			if (vigente()) {
-				if (!hayDatos.current) setError(e);
+				// 403/404 no se arreglan solos: se detiene la consulta (R6). Otros
+				// errores con datos son silenciosos y se reintenta en el próximo ciclo.
+				if (e?.status === 403 || e?.status === 404) {
+					detenido.current = true;
+					setError(e);
+				} else if (!hayDatos.current) {
+					setError(e);
+				}
 				setCargando(false);
 			}
 		} finally {
@@ -88,8 +105,24 @@ export function useChatCompra(idCompra, { activo } = {}) {
 	}, [idCompra, tieneId]);
 
 	useEffect(() => {
-		if (activo && tieneId) recargar();
-	}, [activo, tieneId, recargar]);
+		if (!activo || !tieneId) return undefined;
+		let vivo = true;
+		let temporizador = null;
+		const ciclo = async () => {
+			await recargar();
+			if (vivo && !detenido.current) {
+				temporizador = setTimeout(ciclo, intervaloMs);
+			}
+		};
+		ciclo();
+		return () => {
+			vivo = false;
+			clearTimeout(temporizador);
+			// Invalida la respuesta en vuelo y libera la próxima consulta.
+			secuencia.current += 1;
+			getEnCurso.current = false;
+		};
+	}, [activo, tieneId, recargar, intervaloMs]);
 
 	/** Actualiza un mensaje local por su clave. */
 	const actualizarLocal = useCallback((claveLocal, cambios) => {
@@ -124,7 +157,10 @@ export function useChatCompra(idCompra, { activo } = {}) {
 			if (montado.current) {
 				actualizarLocal(claveLocal, { estado: 'error', error: e });
 				// Sin acceso o compra inexistente: no se arregla reintentando (R6).
-				if (e?.status === 403 || e?.status === 404) setError(e);
+				if (e?.status === 403 || e?.status === 404) {
+					detenido.current = true;
+					setError(e);
+				}
 			}
 		} finally {
 			postEnCurso.current = false;

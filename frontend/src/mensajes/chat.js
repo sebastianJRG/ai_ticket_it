@@ -16,6 +16,9 @@ export const LIMITE_MENSAJE = 1000;
 /** Texto bajo una burbuja que no se envió por un error que no es un 400. */
 const ERROR_ENVIO_GENERICO = 'Revisá tu conexión e intentá de nuevo.';
 
+/** Tolerancia, en ms, para reconocer el gemelo del servidor de un envío en vuelo. */
+const TOLERANCIA_GEMELO_MS = 60 * 1000;
+
 /**
  * Mensaje tal como lo devuelve la API.
  * @typedef {Object} Mensaje
@@ -99,20 +102,37 @@ function porEnvio(a, b) {
 
 /**
  * Une la última lista del servidor con los mensajes locales (research R4):
- * el servidor es la verdad; un confirmado ya presente se descarta; el resto
- * va al final en orden de creación. No muta las entradas.
+ * el servidor es la verdad; un confirmado ya presente se descarta; un
+ * `enviando` se oculta si el servidor ya trae su gemelo propio (mismo texto,
+ * no más viejo que `creado` menos 60 s y no reclamado por otro local); el
+ * resto va al final en orden de creación. No muta las entradas.
  * @param {Mensaje[]} servidor Última lista del servidor.
  * @param {MensajeLocal[]} locales Mensajes locales.
  * @param {string} miId ID del usuario de la sesión.
  * @returns {Array<Mensaje|MensajeLocal>} Lista visible.
  */
-// eslint-disable-next-line no-unused-vars
 export function fusionarMensajes(servidor, locales, miId) {
 	const ordenados = [...servidor].sort(porEnvio);
 	const ids = new Set(ordenados.map((m) => m.id));
+	const reclamados = new Set(
+		locales.filter((l) => l.estado === 'confirmado' && l.id).map((l) => l.id)
+	);
 	const pendientes = [...locales]
 		.sort((a, b) => ms(a.creado) - ms(b.creado))
-		.filter((l) => l.estado !== 'confirmado' || !ids.has(l.id));
+		.filter((l) => {
+			if (l.estado === 'confirmado') return !ids.has(l.id);
+			if (l.estado !== 'enviando') return true;
+			const gemelo = ordenados.find(
+				(m) =>
+					!reclamados.has(m.id) &&
+					m.usuario?.id === miId &&
+					m.mensaje === l.mensaje &&
+					ms(m.enviado) >= ms(l.creado) - TOLERANCIA_GEMELO_MS
+			);
+			if (!gemelo) return true;
+			reclamados.add(gemelo.id);
+			return false;
+		});
 	return [...ordenados, ...pendientes];
 }
 
@@ -232,4 +252,19 @@ export function mensajeErrorChat(error) {
 				reintentable: true
 			};
 	}
+}
+
+/**
+ * Indica si la lista está desplazada hasta el final (research R8).
+ * @param {{contentOffset: {y: number}, contentSize: {height: number}, layoutMeasurement: {height: number}}} evento `nativeEvent` de `onScroll`.
+ * @param {number} [margen] Distancia máxima al final, en px (48 por defecto).
+ * @returns {boolean} Si está al final.
+ */
+export function estaAlFinal(
+	{ contentOffset, contentSize, layoutMeasurement },
+	margen = 48
+) {
+	return (
+		contentSize.height - (contentOffset.y + layoutMeasurement.height) <= margen
+	);
 }

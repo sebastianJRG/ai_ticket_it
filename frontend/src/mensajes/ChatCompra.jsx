@@ -2,11 +2,19 @@
  * @file Chat de una compra, el mismo para comprador y organizador (feature
  *   008, FR-006; specs/008-chat-compra/contracts/componentes.md › ChatCompra):
  *   lista virtualizada con el encabezado de la pantalla, separadores de día,
- *   burbujas y el composer fijo abajo, pegado al teclado (research R1, R7, R9).
+ *   burbujas y el composer fijo abajo, pegado al teclado. Baja solo si el
+ *   usuario ya estaba al final; si no, ofrece "Mensajes nuevos" (research R1,
+ *   R7–R9).
  * @owner Equipo Al Ticket It — frontend
  * @license MIT
  */
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState
+} from 'react';
 import {
 	FlatList,
 	KeyboardAvoidingView,
@@ -21,8 +29,14 @@ import { useChatCompra } from '../hooks/useChatCompra';
 import { ChatBubble } from '../components/ChatBubble';
 import { EmptyState } from '../components/EmptyState';
 import { MessageComposer } from '../components/MessageComposer';
+import { Chip } from '../components/Chip';
 import { Skeleton } from '../components/Skeleton';
-import { agruparMensajes, mensajeErrorChat, validarMensaje } from './chat';
+import {
+	agruparMensajes,
+	estaAlFinal,
+	mensajeErrorChat,
+	validarMensaje
+} from './chat';
 
 /** Texto del estado vacío según quién es el otro participante (research R9). */
 const CUERPO_VACIO = {
@@ -53,6 +67,10 @@ export function ChatCompra({ idCompra, activo, encabezado, rolOtro }) {
 	const [texto, setTexto] = useState('');
 	const lista = useRef(null);
 	const bajar = useRef({ pendiente: true, animado: false });
+	const alFinal = useRef(true);
+	const propioPendiente = useRef(false);
+	const ultimaVista = useRef(null);
+	const [hayNuevos, setHayNuevos] = useState(false);
 
 	const items = useMemo(
 		() => agruparMensajes(mensajes, usuario?.id),
@@ -65,7 +83,39 @@ export function ChatCompra({ idCompra, activo, encabezado, rolOtro }) {
 		enviar(texto);
 		setTexto('');
 		bajar.current = { pendiente: true, animado: true };
+		propioPendiente.current = true;
 	}, [enviar, texto]);
+
+	const irAlFinal = useCallback(() => {
+		lista.current?.scrollToEnd?.({ animated: true });
+		alFinal.current = true;
+		setHayNuevos(false);
+	}, []);
+
+	const alDesplazar = useCallback((evento) => {
+		alFinal.current = estaAlFinal(evento.nativeEvent);
+		if (alFinal.current) setHayNuevos(false);
+	}, []);
+
+	// Ante un mensaje nuevo al final: baja si el usuario estaba al final o si es
+	// propio y recién enviado; si no, avisa con "Mensajes nuevos" (R8).
+	const ultimo = items.length ? items[items.length - 1] : null;
+	const claveUltimo = ultimo?.tipo === 'mensaje' ? ultimo.clave : null;
+	useEffect(() => {
+		const anterior = ultimaVista.current;
+		ultimaVista.current = claveUltimo;
+		if (anterior === null || claveUltimo === null || claveUltimo === anterior) {
+			return;
+		}
+		if (ultimo.propio && propioPendiente.current) {
+			propioPendiente.current = false;
+			irAlFinal();
+		} else if (alFinal.current) {
+			irAlFinal();
+		} else if (!ultimo.propio) {
+			setHayNuevos(true);
+		}
+	}, [claveUltimo, ultimo, irAlFinal]);
 
 	const alCambiarTamano = useCallback(() => {
 		if (!bajar.current.pendiente || cargando) return;
@@ -155,6 +205,9 @@ export function ChatCompra({ idCompra, activo, encabezado, rolOtro }) {
 		>
 			<FlatList
 				ref={lista}
+				testID="chat-lista"
+				onScroll={alDesplazar}
+				scrollEventThrottle={100}
 				data={error ? [] : items}
 				keyExtractor={(item) => item.clave}
 				renderItem={renderItem}
@@ -172,6 +225,18 @@ export function ChatCompra({ idCompra, activo, encabezado, rolOtro }) {
 					gap: t.spacing[1]
 				}}
 			/>
+			{hayNuevos && !error ? (
+				<View
+					pointerEvents="box-none"
+					style={{ alignItems: 'center', paddingVertical: t.spacing[2] }}
+				>
+					<Chip
+						etiqueta="Mensajes nuevos"
+						icono="ArrowDown"
+						alPresionar={irAlFinal}
+					/>
+				</View>
+			) : null}
 			{error ? null : (
 				<View
 					style={{

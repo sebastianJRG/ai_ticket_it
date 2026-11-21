@@ -386,6 +386,24 @@ describe('Detalle de compra — Chat del COMPRADOR (feature 008 US1)', () => {
 		expect(screen.getByText('Hola')).toBeTruthy();
 	});
 
+	it('al volver de Chat a Detalle se detienen las consultas (SC-003)', async () => {
+		jest.useFakeTimers();
+		try {
+			await abrirChat('c-con3');
+			const llamadas = mensajeService.listarMensajes.mock.calls.length;
+			expect(llamadas).toBeGreaterThan(0);
+			await act(async () => {
+				fireEvent.press(screen.getByLabelText('Detalle'));
+			});
+			await act(async () => {
+				await jest.advanceTimersByTimeAsync(10000);
+			});
+			expect(mensajeService.listarMensajes).toHaveBeenCalledTimes(llamadas);
+		} finally {
+			jest.useRealTimers();
+		}
+	});
+
 	it.each(['c-can', 'c-uti1'])(
 		'%s (cancelada o evento pasado) también permite escribir',
 		async (id) => {

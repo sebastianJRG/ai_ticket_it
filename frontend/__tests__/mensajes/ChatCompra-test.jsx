@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { FlatList, Text } from 'react-native';
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { ChatCompra } from '../../src/mensajes/ChatCompra';
 import * as mensajeService from '../../src/services/mensajeService';
@@ -263,5 +263,84 @@ describe('ChatCompra — US2 organizador y acceso', () => {
 		).toBeTruthy();
 		expect(screen.queryByRole('button', { name: 'Reintentar' })).toBeNull();
 		expect(screen.queryByPlaceholderText('Escribí un mensaje')).toBeNull();
+	});
+});
+
+describe('ChatCompra — US3 mensajes nuevos y scroll (research R8)', () => {
+	const NUEVO = crearMensaje({
+		id: 'm-5',
+		mensaje: 'Te esperamos.',
+		usuario: {
+			id: ORGANIZADOR.id,
+			nombre: ORGANIZADOR.nombre,
+			apellido: ORGANIZADOR.apellido,
+			rol: ORGANIZADOR.rol
+		},
+		enviado: new Date(AHORA.getTime() + 60 * 1000).toISOString()
+	});
+	const avanzar = (ms) =>
+		act(async () => {
+			await jest.advanceTimersByTimeAsync(ms);
+		});
+	const desplazar = (y) =>
+		fireEvent.scroll(screen.getByTestId('chat-lista'), {
+			nativeEvent: {
+				contentOffset: { y },
+				contentSize: { height: 2000 },
+				layoutMeasurement: { height: 600 }
+			}
+		});
+	let scrollToEnd;
+
+	beforeEach(() => {
+		jest.useFakeTimers({ now: AHORA });
+		scrollToEnd = jest
+			.spyOn(FlatList.prototype, 'scrollToEnd')
+			.mockImplementation(() => {});
+		mensajeService.listarMensajes
+			.mockResolvedValueOnce(CONVERSACION)
+			.mockResolvedValue([...CONVERSACION, NUEVO]);
+	});
+
+	afterEach(() => scrollToEnd.mockRestore());
+
+	it('un mensaje nuevo del otro participante aparece a los 5 s', async () => {
+		await montar();
+		expect(screen.queryByText('Te esperamos.')).toBeNull();
+		await avanzar(5000);
+		expect(screen.getByText('Te esperamos.')).toBeTruthy();
+	});
+
+	it('si estaba al final, baja', async () => {
+		await montar();
+		await desplazar(1400);
+		scrollToEnd.mockClear();
+		await avanzar(5000);
+		expect(scrollToEnd).toHaveBeenCalled();
+		expect(
+			screen.queryByRole('button', { name: 'Mensajes nuevos' })
+		).toBeNull();
+	});
+
+	it('si había subido, no baja y ofrece "Mensajes nuevos"', async () => {
+		await montar();
+		await desplazar(0);
+		scrollToEnd.mockClear();
+		await avanzar(5000);
+		expect(scrollToEnd).not.toHaveBeenCalled();
+		await act(async () => {
+			fireEvent.press(screen.getByRole('button', { name: 'Mensajes nuevos' }));
+		});
+		expect(scrollToEnd).toHaveBeenCalledTimes(1);
+		expect(
+			screen.queryByRole('button', { name: 'Mensajes nuevos' })
+		).toBeNull();
+	});
+
+	it('con activo=false no consulta', async () => {
+		mensajeService.listarMensajes.mockReset();
+		await montar({ activo: false });
+		await avanzar(20000);
+		expect(mensajeService.listarMensajes).not.toHaveBeenCalled();
 	});
 });

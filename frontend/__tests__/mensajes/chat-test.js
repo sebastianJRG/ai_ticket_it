@@ -1,6 +1,7 @@
 import {
 	LIMITE_MENSAJE,
 	agruparMensajes,
+	estaAlFinal,
 	fusionarMensajes,
 	mensajeErrorChat,
 	textoErrorEnvio,
@@ -294,5 +295,109 @@ describe('textoErrorEnvio (research R3)', () => {
 		expect(textoErrorEnvio(new ApiError('x', status))).toBe(
 			'Revisá tu conexión e intentá de nuevo.'
 		);
+	});
+});
+
+describe('fusionarMensajes — regla 3 (research R4, US3)', () => {
+	const propio = (parcial) =>
+		crearMensaje({ usuario: remitentePublico(COMPRADOR), ...parcial });
+
+	it('oculta un enviando si el servidor ya trae su gemelo propio', () => {
+		const gemelo = propio({
+			id: 'g',
+			mensaje: 'hola',
+			enviado: AHORA.toISOString()
+		});
+		const resultado = fusionarMensajes([gemelo], [local()], COMPRADOR.id);
+		expect(resultado.map((m) => m.id ?? m.claveLocal)).toEqual(['g']);
+	});
+
+	it('dos locales iguales con un solo gemelo dejan visible uno', () => {
+		const gemelo = propio({
+			id: 'g',
+			mensaje: 'hola',
+			enviado: AHORA.toISOString()
+		});
+		const resultado = fusionarMensajes(
+			[gemelo],
+			[
+				local(),
+				local({ claveLocal: 'l-2', creado: new Date(AHORA.getTime() + 10) })
+			],
+			COMPRADOR.id
+		);
+		expect(resultado.map((m) => m.id ?? m.claveLocal)).toEqual(['g', 'l-2']);
+	});
+
+	it('un mensaje ajeno con el mismo texto no reclama', () => {
+		const ajeno = crearMensaje({
+			id: 'a',
+			mensaje: 'hola',
+			usuario: remitentePublico(ORGANIZADOR),
+			enviado: AHORA.toISOString()
+		});
+		expect(fusionarMensajes([ajeno], [local()], COMPRADOR.id)).toHaveLength(2);
+	});
+
+	it('un gemelo más viejo que la tolerancia de 60 s no reclama', () => {
+		const viejo = propio({
+			id: 'v',
+			mensaje: 'hola',
+			enviado: new Date(AHORA.getTime() - 61 * 1000).toISOString()
+		});
+		expect(fusionarMensajes([viejo], [local()], COMPRADOR.id)).toHaveLength(2);
+	});
+
+	it('un gemelo ya reclamado por un confirmado no oculta otro enviando', () => {
+		const g = propio({
+			id: 'g',
+			mensaje: 'hola',
+			enviado: AHORA.toISOString()
+		});
+		const confirmado = local({
+			claveLocal: 'l-0',
+			estado: 'confirmado',
+			id: 'g'
+		});
+		const resultado = fusionarMensajes(
+			[g],
+			[confirmado, local()],
+			COMPRADOR.id
+		);
+		expect(resultado.map((m) => m.id ?? m.claveLocal)).toEqual(['g', 'l-1']);
+	});
+
+	it('un local en error no se oculta', () => {
+		const g = propio({
+			id: 'g',
+			mensaje: 'hola',
+			enviado: AHORA.toISOString()
+		});
+		expect(
+			fusionarMensajes([g], [local({ estado: 'error' })], COMPRADOR.id)
+		).toHaveLength(2);
+	});
+});
+
+describe('estaAlFinal (research R8)', () => {
+	const evento = (y, alto = 1000, visible = 400) => ({
+		contentOffset: { y },
+		contentSize: { height: alto },
+		layoutMeasurement: { height: visible }
+	});
+
+	it('true dentro del margen de 48', () => {
+		expect(estaAlFinal(evento(600))).toBe(true);
+		expect(estaAlFinal(evento(552))).toBe(true);
+	});
+
+	it('false fuera del margen', () => {
+		expect(estaAlFinal(evento(551))).toBe(false);
+		expect(estaAlFinal(evento(0))).toBe(false);
+	});
+
+	it('acepta un margen personalizado', () => {
+		expect(estaAlFinal(evento(500), 100)).toBe(true);
+		expect(estaAlFinal(evento(499), 100)).toBe(false);
 	});
 });

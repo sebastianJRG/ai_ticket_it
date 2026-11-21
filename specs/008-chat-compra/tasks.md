@@ -256,16 +256,16 @@ Cada fase tiene una tarea de aprobación explícita (⛔ GATE). No se implementa
 
 ### Tests for User Story 3 (escribir primero) ⚠️
 
-- [ ] T030 [P] [US3] Ampliar `frontend/__tests__/mensajes/chat-test.js`:
+- [X] T030 [P] [US3] Ampliar `frontend/__tests__/mensajes/chat-test.js`:
   - **`fusionarMensajes`, regla 3 de research R4**: un local `enviando` se oculta si el servidor trae un mensaje propio con el mismo texto recortado, posterior a `MensajeLocal.creado` menos 60 s y no reclamado. Dos locales iguales con un solo gemelo en el servidor dejan visible uno. Un mensaje ajeno con el mismo texto no reclama. Un gemelo más viejo que la tolerancia no reclama.
   - **`estaAlFinal`**: `true` dentro de un margen de 48 y `false` fuera. Acepta un margen personalizado.
-- [ ] T031 [P] [US3] Escribir `frontend/__tests__/hooks/usePantallaActiva-test.jsx`. Simula `useFocusEffect` de `expo-router` y `AppState` (`currentState` y `addEventListener` con `remove`). El hook devuelve:
+- [X] T031 [P] [US3] Escribir `frontend/__tests__/hooks/usePantallaActiva-test.jsx`. Simula `useFocusEffect` de `expo-router` y `AppState` (`currentState` y `addEventListener` con `remove`). El hook devuelve:
   - `true` con foco y `active`;
   - `false` al pasar a `background`;
   - `false` al perder el foco.
 
   Además, limpia la suscripción al desmontar.
-- [ ] T032 [P] [US3] Ampliar `frontend/__tests__/hooks/useChatCompra-test.jsx` con `jest.useFakeTimers()` e `intervaloMs: 5000`:
+- [X] T032 [P] [US3] Ampliar `frontend/__tests__/hooks/useChatCompra-test.jsx` con `jest.useFakeTimers()` e `intervaloMs: 5000`:
   - Con `activo: false` hay 0 llamadas, aun avanzando 30 s (SC-003).
   - Con `activo: true` hay 1 llamada al instante y otra a los 5 s de cada respuesta.
   - Con una respuesta `diferido` pendiente, avanzar 20 s no dispara otra (sin encimar).
@@ -275,27 +275,27 @@ Cada fase tiene una tarea de aprobación explícita (⛔ GATE). No se implementa
   - Un 403 o 404 periódico fija `error` y detiene las consultas.
   - Carrera POST/GET: el GET trae el mensaje antes de que resuelva el POST y se ve una sola vez. Cuando resuelve el POST, sigue una sola vez (SC-002).
   - Al desmontar no queda ningún temporizador (`jest.getTimerCount()` es 0).
-- [ ] T033 [US3] Ampliar `frontend/__tests__/mensajes/ChatCompra-test.jsx`:
+- [X] T033 [US3] Ampliar `frontend/__tests__/mensajes/ChatCompra-test.jsx`:
   - Con `activo` y temporizadores falsos, un mensaje nuevo del otro participante aparece al avanzar 5 s.
   - Si el usuario estaba al final (`onScroll` con `estaAlFinal` en `true`), se llama a `scrollToEnd`.
   - Si había subido (`onScroll` fuera del margen), no se llama a `scrollToEnd` y aparece el chip "Mensajes nuevos", que al tocarlo baja y desaparece (research R8).
   - Con `activo: false` no se consulta.
 
   Además, ampliar `frontend/__tests__/screens/detalle-compra-test.jsx`: al volver de "Chat" a "Detalle", avanzar 10 s no produce llamadas nuevas a `listarMensajes`.
-- [ ] T034 [US3] ⛔ GATE: presentar T030–T033 al usuario y esperar su **aprobación**. Después, correr `npx jest __tests__/mensajes __tests__/hooks/useChatCompra-test.jsx __tests__/hooks/usePantallaActiva-test.jsx __tests__/screens/detalle-compra-test.jsx` y confirmar que las pruebas nuevas fallan (rojo).
+- [X] T034 [US3] ⛔ GATE: presentar T030–T033 al usuario y esperar su **aprobación**. Después, correr `npx jest __tests__/mensajes __tests__/hooks/useChatCompra-test.jsx __tests__/hooks/usePantallaActiva-test.jsx __tests__/screens/detalle-compra-test.jsx` y confirmar que las pruebas nuevas fallan (rojo).
 
 ### Implementation for User Story 3
 
-- [ ] T035 [P] [US3] En `frontend/src/mensajes/chat.js`, agregar a `fusionarMensajes` la regla 3 de research R4 (cruce por autor, texto y tolerancia de 60 s sobre `data-model.md` › `MensajeLocal.creado` y `Mensaje.usuario` / `Mensaje.mensaje`, sin reutilizar un mismo gemelo) y agregar `estaAlFinal`.
-- [ ] T036 [P] [US3] Crear `frontend/src/hooks/usePantallaActiva.js` (`data-model.md` §5): `useFocusEffect` para el foco, más `AppState.currentState` y `AppState.addEventListener('change')`, con limpieza.
-- [ ] T037 [US3] Agregar a `frontend/src/hooks/useChatCompra.js` la consulta periódica de research R2:
+- [X] T035 [P] [US3] En `frontend/src/mensajes/chat.js`, agregar a `fusionarMensajes` la regla 3 de research R4 (cruce por autor, texto y tolerancia de 60 s sobre `data-model.md` › `MensajeLocal.creado` y `Mensaje.usuario` / `Mensaje.mensaje`, sin reutilizar un mismo gemelo) y agregar `estaAlFinal`.
+- [X] T036 [P] [US3] Crear `frontend/src/hooks/usePantallaActiva.js` (`data-model.md` §5): `useFocusEffect` para el foco, más `AppState.currentState` y `AppState.addEventListener('change')`, con limpieza.
+- [X] T037 [US3] Agregar a `frontend/src/hooks/useChatCompra.js` la consulta periódica de research R2:
   - `setTimeout` encadenado tras cada respuesta, con `intervaloMs` por defecto en 5000 y una llamada inmediata al activarse.
   - Cancelar el temporizador e invalidar la secuencia al desactivarse o desmontarse.
   - Los errores periódicos con datos son silenciosos. Un 403 o 404 detiene las consultas y fija `error`.
   - Al fusionar, limpiar los locales `confirmado` cuyo `MensajeLocal.id` ya llegó del servidor.
-- [ ] T038 [US3] En `frontend/src/mensajes/ChatCompra.jsx`, implementar el seguimiento del scroll (`onScroll` con `estaAlFinal`, `scrollEventThrottle`) y la regla de research R8: si el usuario está al final, `scrollToEnd`; si no, el chip "Mensajes nuevos", que baja y se oculta. Se usa el `Chip` existente (`frontend/src/components/Chip.jsx`) con `etiqueta="Mensajes nuevos"`, `icono="ArrowDown"` (nombre Lucide, como lo resuelve `Icon`) y `alPresionar`, flotando sobre el composer.
-- [ ] T039 [US3] En `frontend/src/app/compra/[idCompra].jsx`, en las dos variantes, calcular `const activa = usePantallaActiva();` y pasar `activo={activa && pestana === 'chat'}` a `ChatCompra`.
-- [ ] T040 [US3] Correr las pruebas de T034 y dejarlas en verde. Después, la suite completa `npx jest`.
+- [X] T038 [US3] En `frontend/src/mensajes/ChatCompra.jsx`, implementar el seguimiento del scroll (`onScroll` con `estaAlFinal`, `scrollEventThrottle`) y la regla de research R8: si el usuario está al final, `scrollToEnd`; si no, el chip "Mensajes nuevos", que baja y se oculta. Se usa el `Chip` existente (`frontend/src/components/Chip.jsx`) con `etiqueta="Mensajes nuevos"`, `icono="ArrowDown"` (nombre Lucide, como lo resuelve `Icon`) y `alPresionar`, flotando sobre el composer.
+- [X] T039 [US3] En `frontend/src/app/compra/[idCompra].jsx`, en las dos variantes, calcular `const activa = usePantallaActiva();` y pasar `activo={activa && pestana === 'chat'}` a `ChatCompra`.
+- [X] T040 [US3] Correr las pruebas de T034 y dejarlas en verde. Después, la suite completa `npx jest`.
 
 **Checkpoint**: la conversación se actualiza sola mientras está visible, sin consultas cuando no lo está (SC-001, SC-002 y SC-003).
 
