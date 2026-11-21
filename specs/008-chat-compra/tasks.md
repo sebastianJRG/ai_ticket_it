@@ -303,11 +303,11 @@ Cada fase tiene una tarea de aprobación explícita (⛔ GATE). No se implementa
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T041 [P] Revisar el JSDoc y los docstrings de archivo de `frontend/src/mensajes/chat.js`, `frontend/src/mensajes/ChatCompra.jsx`, `frontend/src/hooks/useChatCompra.js`, `frontend/src/hooks/usePantallaActiva.js`, `frontend/src/components/ChatBubble.jsx`, `frontend/src/components/MessageComposer.jsx` y `frontend/src/app/compra/[idCompra].jsx` (principio 6):
+- [X] T041 [P] Revisar el JSDoc y los docstrings de archivo de `frontend/src/mensajes/chat.js`, `frontend/src/mensajes/ChatCompra.jsx`, `frontend/src/hooks/useChatCompra.js`, `frontend/src/hooks/usePantallaActiva.js`, `frontend/src/components/ChatBubble.jsx`, `frontend/src/components/MessageComposer.jsx` y `frontend/src/app/compra/[idCompra].jsx` (principio 6):
   - `@typedef` de `MensajeLocal`, `ItemChat`, `ResultadoValidacion`, `EstadoChatCompra` y de las props.
   - `@throws` donde corresponda (los hooks documentan que nunca lanzan).
   - Sin menciones desactualizadas a "provisorio" o "feature 008 la completa".
-- [ ] T042 [P] Actualizar `AGENTS.md` › Navigation (Frontend):
+- [X] T042 [P] Actualizar `AGENTS.md` › Navigation (Frontend):
   - Quitar "La pestaña Chat es provisoria hasta la 008" y "La pestaña Chat del detalle es provisoria hasta la 008".
   - Agregar una viñeta "Chat de una compra (feature 008, `specs/008-chat-compra/`)" que describa:
     - `ChatCompra` (`src/mensajes/`), el mismo para ambos roles en la pestaña Chat de `/compra/[idCompra]`;
@@ -316,8 +316,8 @@ Cada fase tiene una tarea de aprobación explícita (⛔ GATE). No se implementa
     - `src/mensajes/chat.js` (`validarMensaje`, `fusionarMensajes`, `agruparMensajes`, `mensajeErrorChat`, `estaAlFinal`).
   - Sumar `ChatBubble` y `MessageComposer` a la lista de componentes compartidos.
   - En AGENTS.md › Observabilidad (ID de petición), sumar los eventos de log de mensajes: `mensaje_creado` y `mensajes_listados`.
-- [ ] T043 Correr `npm run lint` y `npm run format` desde la raíz y corregir lo que reporten.
-- [ ] T044 Correr la suite completa con `npm test` en `frontend/`, `npm run test:backend` y `npx expo-doctor` en `frontend/`. Todo tiene que quedar en verde, sin regresiones de 003–007. En `git status backend/` solo pueden aparecer `src/services/mensajeService.js`, `src/controllers/mensajeController.js`, `src/app.js`, `tests/unit/mensajes/mensaje.service.test.js` y `tests/unit/mensajes/mensaje.controller.test.js`. Revisar que no aparezca el warning "VirtualizedLists should never be nested" en las pruebas de la pantalla (research R1).
+- [X] T043 Correr `npm run lint` y `npm run format` desde la raíz y corregir lo que reporten.
+- [X] T044 Correr la suite completa con `npm test` en `frontend/`, `npm run test:backend` y `npx expo-doctor` en `frontend/`. Todo tiene que quedar en verde, sin regresiones de 003–007. En `git status backend/` solo pueden aparecer `src/services/mensajeService.js`, `src/controllers/mensajeController.js`, `src/app.js`, `tests/unit/mensajes/mensaje.service.test.js` y `tests/unit/mensajes/mensaje.controller.test.js`. Revisar que no aparezca el warning "VirtualizedLists should never be nested" en las pruebas de la pantalla (research R1).
 - [ ] T045 Ejecutar la validación manual de [quickstart.md](./quickstart.md) (escenarios 1–9, más el tema y la accesibilidad), incluida la medición de SC-001 (el otro participante lo ve en menos de 10 s) y SC-003 (Network sin `GET …/mensajes` fuera del chat), y anotar cualquier desvío.
 
 ---
