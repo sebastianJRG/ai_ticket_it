@@ -24,7 +24,7 @@ Desde el detalle de su compra, pestaña Chat, el comprador ve la conversación y
 
 **Acceptance Scenarios**:
 
-1. **Given** el chat de una compra, **When** se abre, **Then** se ven los mensajes del más antiguo al más reciente, propios a un lado y ajenos al otro, con autor y hora.
+1. **Given** el chat de una compra, **When** se abre, **Then** se ven los mensajes del más antiguo al más reciente, propios a un lado y ajenos al otro, con hora en cada mensaje y el autor visible en el primer mensaje ajeno de cada grupo consecutivo (los propios se identifican por posición y color). El lector de pantalla anuncia siempre autor, hora y texto.
 2. **Given** un texto válido, **When** envía, **Then** el mensaje aparece al instante como "enviando" y queda confirmado al responder el servidor.
 3. **Given** un fallo al enviar, **When** ocurre, **Then** el mensaje queda marcado con error y opción de reintentar, sin perder el texto.
 4. **Given** sin mensajes, **When** se abre el chat, **Then** se invita a escribir el primero.
