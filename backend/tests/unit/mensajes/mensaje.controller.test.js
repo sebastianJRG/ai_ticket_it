@@ -1,6 +1,8 @@
 /**
  * Tests unitarios de `MensajeController`.
  * El servicio y los objetos de Express son dobles creados en cada test.
+ * El controlador pasa `{ requestId: req.id }` al servicio para los logs
+ * (specs/008-chat-compra/research.md R11).
  *
  * @license ISC
  */
@@ -41,7 +43,8 @@ describe('MensajeController', () => {
 		req = {
 			user: { id: '5', rol: 'COMPRADOR' },
 			params: { idCompra: '3' },
-			body: { mensaje: 'Hola' }
+			body: { mensaje: 'Hola' },
+			id: 'req-1'
 		};
 		res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
 		next = jest.fn();
@@ -60,11 +63,14 @@ describe('MensajeController', () => {
 
 			await controlador.crear(req, res, next);
 
-			expect(servicio.crearMensaje).toHaveBeenCalledWith({
-				compraId: '3',
-				usuarioId: '5',
-				mensaje: 'Hola'
-			});
+			expect(servicio.crearMensaje).toHaveBeenCalledWith(
+				{
+					compraId: '3',
+					usuarioId: '5',
+					mensaje: 'Hola'
+				},
+				{ requestId: 'req-1' }
+			);
 		});
 
 		it('tolera un cuerpo ausente pasando mensaje undefined al servicio', async () => {
@@ -72,11 +78,14 @@ describe('MensajeController', () => {
 
 			await controlador.crear(req, res, next);
 
-			expect(servicio.crearMensaje).toHaveBeenCalledWith({
-				compraId: '3',
-				usuarioId: '5',
-				mensaje: undefined
-			});
+			expect(servicio.crearMensaje).toHaveBeenCalledWith(
+				{
+					compraId: '3',
+					usuarioId: '5',
+					mensaje: undefined
+				},
+				{ requestId: 'req-1' }
+			);
 		});
 
 		it('propaga el error del servicio con next', async () => {
@@ -94,10 +103,13 @@ describe('MensajeController', () => {
 		it('responde 200 con la lista serializada', async () => {
 			await controlador.listar(req, res, next);
 
-			expect(servicio.listarPorCompra).toHaveBeenCalledWith({
-				compraId: '3',
-				usuarioId: '5'
-			});
+			expect(servicio.listarPorCompra).toHaveBeenCalledWith(
+				{
+					compraId: '3',
+					usuarioId: '5'
+				},
+				{ requestId: 'req-1' }
+			);
 			expect(res.status).toHaveBeenCalledWith(200);
 			expect(res.json).toHaveBeenCalledWith([respuestaEsperada()]);
 		});

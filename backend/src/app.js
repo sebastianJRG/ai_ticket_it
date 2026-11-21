@@ -103,7 +103,9 @@ export function createApp(repository) {
 	const mensajeService = new MensajeService(
 		mensajeRepository,
 		compraRepository,
-		usuarioRepository
+		usuarioRepository,
+		undefined,
+		console
 	);
 
 	// Controladores

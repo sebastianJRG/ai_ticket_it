@@ -1,7 +1,8 @@
 /**
  * Controlador de mensajes del chat de una compra.
  * La autenticación y el rol los exige el middleware de la ruta; la participación
- * en la compra la valida el servicio.
+ * en la compra la valida el servicio. Pasa `{ requestId: req.id }` al servicio
+ * para sus logs estructurados.
  *
  * @module controllers/mensajeController
  * @license ISC
@@ -27,11 +28,14 @@ export default class MensajeController {
 	 */
 	async crear(req, res, next) {
 		try {
-			const mensaje = await this.mensajeService.crearMensaje({
-				compraId: req.params.idCompra,
-				usuarioId: req.user.id,
-				mensaje: req.body?.mensaje
-			});
+			const mensaje = await this.mensajeService.crearMensaje(
+				{
+					compraId: req.params.idCompra,
+					usuarioId: req.user.id,
+					mensaje: req.body?.mensaje
+				},
+				{ requestId: req.id }
+			);
 			return res.status(201).json(aMensajeRespuesta(mensaje));
 		} catch (error) {
 			next(error);
@@ -47,10 +51,13 @@ export default class MensajeController {
 	 */
 	async listar(req, res, next) {
 		try {
-			const mensajes = await this.mensajeService.listarPorCompra({
-				compraId: req.params.idCompra,
-				usuarioId: req.user.id
-			});
+			const mensajes = await this.mensajeService.listarPorCompra(
+				{
+					compraId: req.params.idCompra,
+					usuarioId: req.user.id
+				},
+				{ requestId: req.id }
+			);
 			return res.status(200).json(mensajes.map(aMensajeRespuesta));
 		} catch (error) {
 			next(error);

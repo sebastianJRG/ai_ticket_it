@@ -1,5 +1,7 @@
 /**
  * Servicio de mensajes: chat interno entre el comprador y el organizador de una compra.
+ * Cada operación exitosa emite un log estructurado (JSON) con el ID de petición,
+ * el rol del usuario y el estado de la compra; nunca el texto del mensaje.
  *
  * @module services/mensajeService
  * @license ISC
@@ -16,12 +18,14 @@ export default class MensajeService {
 	 * @param {import('../repositories/compraRepository.js').default} compraRepository
 	 * @param {import('../repositories/usuarioRepository.js').default} usuarioRepository
 	 * @param {() => Date} [reloj] Devuelve la fecha actual; se inyecta para poder probar sin depender de la hora real
+	 * @param {{info: (linea: string) => void}} [logger=console] Destino de los logs estructurados (JSON)
 	 */
 	constructor(
 		mensajeRepository,
 		compraRepository,
 		usuarioRepository,
-		reloj = () => new Date()
+		reloj = () => new Date(),
+		logger = console
 	) {
 		/** @private */
 		this.mensajeRepository = mensajeRepository;
@@ -31,6 +35,25 @@ export default class MensajeService {
 		this.usuarioRepository = usuarioRepository;
 		/** @private */
 		this.reloj = reloj;
+		/** @private */
+		this.logger = logger;
+	}
+
+	/** Escribe una línea de log estructurado (JSON).
+	 * @private
+	 * @param {string} evento - Nombre de la operación registrada
+	 * @param {{requestId?: string}} contexto - Datos de la petición
+	 * @param {object} datos - Campos propios de la operación
+	 * @returns {void}
+	 */
+	_log(evento, contexto, datos) {
+		this.logger.info(
+			JSON.stringify({
+				evento,
+				requestId: contexto.requestId ?? null,
+				...datos
+			})
+		);
 	}
 
 	/**
@@ -41,12 +64,13 @@ export default class MensajeService {
 	 * @param {string} datos.compraId - ID de la compra (viene de la URL)
 	 * @param {string} datos.usuarioId - ID del remitente (viene del token, no del cliente)
 	 * @param {string} datos.mensaje - Texto de 1 a 1000 caracteres
+	 * @param {{requestId?: string}} [contexto={}] - Datos de la petición para el log (`mensaje_creado`)
 	 * @returns {Promise<Mensaje>} El mensaje creado
 	 * @throws {ErrorHttp} 400 si el ID de compra o el texto son inválidos
 	 * @throws {ErrorHttp} 403 si el usuario no es el comprador ni el organizador de la compra
 	 * @throws {ErrorHttp} 404 si la compra o el usuario no existen
 	 */
-	async crearMensaje({ compraId, usuarioId, mensaje }) {
+	async crearMensaje({ compraId, usuarioId, mensaje }, contexto = {}) {
 		const id = this._validarIdCompra(compraId);
 		const resultado = crearMensajeSchema.safeParse({ mensaje });
 		if (!resultado.success) {
@@ -57,11 +81,20 @@ export default class MensajeService {
 		}
 
 		const { compra, actor } = await this._obtenerCompraYActor(id, usuarioId);
-		return this.mensajeRepository.crear(
+		const creado = await this.mensajeRepository.crear(
 			new Mensaje(null, actor, resultado.data.mensaje, this.reloj(), {
 				id: compra.id
 			})
 		);
+		this._log('mensaje_creado', contexto, {
+			usuarioId: actor.id,
+			rol: actor.rol,
+			compraId: compra.id,
+			estadoCompra: compra.estado,
+			mensajeId: creado.id,
+			largo: resultado.data.mensaje.length
+		});
+		return creado;
 	}
 
 	/**
@@ -69,15 +102,24 @@ export default class MensajeService {
 	 * @param {object} datos
 	 * @param {string} datos.compraId - ID de la compra (viene de la URL)
 	 * @param {string} datos.usuarioId - ID del usuario que consulta (viene del token)
+	 * @param {{requestId?: string}} [contexto={}] - Datos de la petición para el log (`mensajes_listados`)
 	 * @returns {Promise<Mensaje[]>} Mensajes de la compra (vacío si no hay)
 	 * @throws {ErrorHttp} 400 si el ID de compra es inválido
 	 * @throws {ErrorHttp} 403 si el usuario no es el comprador ni el organizador de la compra
 	 * @throws {ErrorHttp} 404 si la compra o el usuario no existen
 	 */
-	async listarPorCompra({ compraId, usuarioId }) {
+	async listarPorCompra({ compraId, usuarioId }, contexto = {}) {
 		const id = this._validarIdCompra(compraId);
-		const { compra } = await this._obtenerCompraYActor(id, usuarioId);
-		return this.mensajeRepository.buscarPorCompraId(compra.id);
+		const { compra, actor } = await this._obtenerCompraYActor(id, usuarioId);
+		const mensajes = await this.mensajeRepository.buscarPorCompraId(compra.id);
+		this._log('mensajes_listados', contexto, {
+			usuarioId: actor.id,
+			rol: actor.rol,
+			compraId: compra.id,
+			estadoCompra: compra.estado,
+			cantidad: mensajes.length
+		});
+		return mensajes;
 	}
 
 	/**

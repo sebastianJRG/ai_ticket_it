@@ -1,10 +1,11 @@
 /**
  * Tests unitarios de `MensajeService`.
- * Repositorios en memoria nuevos en cada test y reloj inyectado.
+ * Repositorios en memoria nuevos en cada test, reloj inyectado y logger falso
+ * (logs estructurados: specs/008-chat-compra/research.md R11).
  *
  * @license ISC
  */
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import EstadoCompra from '../../../src/models/estadoCompra.js';
 import CompraRepository from '../../../src/repositories/compraRepository.js';
 import EventoRepository from '../../../src/repositories/eventoRepository.js';
@@ -19,7 +20,17 @@ import {
 
 const AHORA = new Date('2030-03-01T12:00:00.000Z');
 
+/**
+ * Devuelve los objetos registrados en `logger.info`, ya parseados.
+ * @param {{info: import('@jest/globals').jest.Mock}} logger - Logger falso
+ * @returns {object[]} Líneas de log parseadas
+ */
+function logs(logger) {
+	return logger.info.mock.calls.map(([linea]) => JSON.parse(linea));
+}
+
 describe('MensajeService', () => {
+	let logger;
 	let mensajeRepo;
 	let compraRepo;
 	let usuarioRepo;
@@ -44,11 +55,13 @@ describe('MensajeService', () => {
 		usuarioRepo = new UsuarioRepository();
 		eventoRepo = new EventoRepository();
 		ahora = AHORA;
+		logger = { info: jest.fn() };
 		servicio = new MensajeService(
 			mensajeRepo,
 			compraRepo,
 			usuarioRepo,
-			() => ahora
+			() => ahora,
+			logger
 		);
 
 		comprador = await usuarioRepo.crear(
@@ -239,6 +252,146 @@ describe('MensajeService', () => {
 			await expect(
 				servicio.listarPorCompra({ compraId: ' ', usuarioId: comprador.id })
 			).rejects.toMatchObject({ status: 400 });
+		});
+	});
+
+	describe('logs estructurados (principio 5)', () => {
+		it('crearMensaje emite un único mensaje_creado sin el texto', async () => {
+			const texto = 'Texto privado del chat';
+
+			const mensaje = await servicio.crearMensaje(
+				{
+					compraId: compra.id,
+					usuarioId: comprador.id,
+					mensaje: `  ${texto}  `
+				},
+				{ requestId: 'req-1' }
+			);
+
+			expect(logs(logger)).toEqual([
+				{
+					evento: 'mensaje_creado',
+					requestId: 'req-1',
+					usuarioId: comprador.id,
+					rol: 'COMPRADOR',
+					compraId: compra.id,
+					estadoCompra: EstadoCompra.PENDIENTE,
+					mensajeId: mensaje.id,
+					largo: texto.length
+				}
+			]);
+			for (const [linea] of logger.info.mock.calls) {
+				expect(linea).not.toContain(texto);
+			}
+		});
+
+		it('registra el rol y el estado de la compra del organizador', async () => {
+			const confirmada = await construirCompra(compraRepo, {
+				comprador,
+				evento,
+				tipoEntrada: evento.tiposEntrada[0],
+				estado: EstadoCompra.CONFIRMADA
+			});
+
+			await servicio.crearMensaje(
+				{ compraId: confirmada.id, usuarioId: organizador.id, mensaje: 'Hola' },
+				{ requestId: 'req-3' }
+			);
+
+			expect(logs(logger)[0]).toMatchObject({
+				evento: 'mensaje_creado',
+				rol: 'ORGANIZADOR',
+				usuarioId: organizador.id,
+				estadoCompra: EstadoCompra.CONFIRMADA
+			});
+		});
+
+		it('listarPorCompra emite mensajes_listados con la cantidad', async () => {
+			await enviar(comprador, 'uno');
+			await enviar(organizador, 'dos');
+			logger.info.mockClear();
+
+			await servicio.listarPorCompra(
+				{ compraId: compra.id, usuarioId: organizador.id },
+				{ requestId: 'req-2' }
+			);
+
+			expect(logs(logger)).toEqual([
+				{
+					evento: 'mensajes_listados',
+					requestId: 'req-2',
+					usuarioId: organizador.id,
+					rol: 'ORGANIZADOR',
+					compraId: compra.id,
+					estadoCompra: EstadoCompra.PENDIENTE,
+					cantidad: 2
+				}
+			]);
+		});
+
+		it('sin contexto, requestId es null', async () => {
+			await enviar(comprador);
+			await listar(comprador);
+
+			expect(logs(logger).map((l) => l.requestId)).toEqual([null, null]);
+		});
+
+		it.each([
+			[
+				'400 (texto vacío)',
+				() =>
+					servicio.crearMensaje(
+						{ compraId: compra.id, usuarioId: comprador.id, mensaje: '' },
+						{ requestId: 'r' }
+					)
+			],
+			[
+				'400 (ID inválido)',
+				() =>
+					servicio.listarPorCompra(
+						{ compraId: ' ', usuarioId: comprador.id },
+						{ requestId: 'r' }
+					)
+			],
+			['403 al enviar', () => enviar(otroComprador)],
+			['403 al listar', () => listar(otroOrganizador)],
+			[
+				'404 (la compra no existe)',
+				() =>
+					servicio.listarPorCompra(
+						{ compraId: '999', usuarioId: comprador.id },
+						{ requestId: 'r' }
+					)
+			]
+		])('no emite logs ante un error: %s', async (_nombre, operar) => {
+			await expect(operar()).rejects.toBeTruthy();
+
+			expect(logger.info).not.toHaveBeenCalled();
+		});
+
+		it('sin logger usa console por defecto y no falla', async () => {
+			const espia = jest.spyOn(console, 'info').mockImplementation(() => {});
+			try {
+				const porDefecto = new MensajeService(
+					mensajeRepo,
+					compraRepo,
+					usuarioRepo,
+					() => ahora
+				);
+
+				await porDefecto.crearMensaje({
+					compraId: compra.id,
+					usuarioId: comprador.id,
+					mensaje: 'Hola'
+				});
+
+				expect(espia).toHaveBeenCalledTimes(1);
+				expect(JSON.parse(espia.mock.calls[0][0]).evento).toBe(
+					'mensaje_creado'
+				);
+			} finally {
+				espia.mockRestore();
+			}
 		});
 	});
 });
