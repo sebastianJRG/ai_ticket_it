@@ -1,7 +1,9 @@
 /**
  * @file Reglas de navegación por sesión y rol (puras, sin React ni servicios):
  *   rutas, pestañas de cada rol, ruta inicial, decisión de acceso y destino
- *   tras iniciar sesión o registrarse (specs/003-navegacion-sesion/contracts/navegacion.md).
+ *   tras iniciar sesión o registrarse (specs/003-navegacion-sesion/contracts/navegacion.md),
+ *   más las rutas del detalle y del checkout de un evento
+ *   (specs/005-detalle-evento-compra/contracts/pantallas.md › Rutas).
  * @owner Equipo Al Ticket It — frontend
  * @license MIT
  */
@@ -103,6 +105,7 @@ const PRIVADAS_COMPRADOR = new Set([
 	RUTAS.perfil
 ]);
 const DETALLE_EVENTO = /^\/evento\/[^/]+$/;
+const CHECKOUT = /^\/evento\/([^/]+)\/comprar$/;
 
 const PERMITIR = Object.freeze({ tipo: 'permitir' });
 
@@ -148,6 +151,24 @@ export function hrefLogin(volverA) {
 }
 
 /**
+ * Ruta del detalle de un evento (feature 005).
+ * @param {string} idEvento ID del evento.
+ * @returns {string} `/evento/<id codificado>`.
+ */
+export function hrefEvento(idEvento) {
+	return `/evento/${encodeURIComponent(idEvento)}`;
+}
+
+/**
+ * Ruta del checkout de un evento (feature 005, research R2).
+ * @param {string} idEvento ID del evento.
+ * @returns {string} `/evento/<id codificado>/comprar`.
+ */
+export function hrefCheckout(idEvento) {
+	return `${hrefEvento(idEvento)}/comprar`;
+}
+
+/**
  * Decide si el estado de sesión puede ver una ruta (data-model.md › Area).
  * Nunca redirige hacia la misma ruta y nunca lanza.
  * @param {{ usuario: UsuarioSesion, ruta?: string }} entrada Usuario y ruta pedida.
@@ -159,6 +180,11 @@ export function decidirAcceso({ usuario, ruta } = {}) {
 
 	if (r === '/') return redirigir(rutaInicial(usuario));
 	if (AUTH.has(r)) return usuario ? redirigir(rutaInicial(usuario)) : PERMITIR;
+	const checkout = r.match(CHECKOUT);
+	if (checkout) {
+		if (!usuario) return redirigir(hrefLogin(r));
+		return rol === 'COMPRADOR' ? PERMITIR : redirigir(`/evento/${checkout[1]}`);
+	}
 	if (DETALLE_EVENTO.test(r)) return PERMITIR;
 	if (PUBLICAS_COMPRADOR.has(r)) {
 		return rol === 'ORGANIZADOR'

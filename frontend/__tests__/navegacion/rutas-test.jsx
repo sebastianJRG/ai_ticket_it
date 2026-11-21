@@ -39,6 +39,7 @@ jest.mock('../../src/auth/AuthContext', () => {
 });
 jest.mock('../../src/services/usuarioService', () => ({
 	obtenerPerfil: jest.fn(() => new Promise(() => {})),
+	listarReseniasOrganizador: jest.fn(() => Promise.resolve([])),
 	listarFavoritos: jest.fn(() => Promise.resolve([])),
 	agregarFavorito: jest.fn(() => Promise.resolve([])),
 	quitarFavorito: jest.fn(() => Promise.resolve([]))
@@ -46,7 +47,21 @@ jest.mock('../../src/services/usuarioService', () => ({
 // Explorar y Buscar (feature 004) consultan eventos y categorías al montar.
 jest.mock('../../src/services/eventoService', () => ({
 	listarEventos: jest.fn(() => Promise.resolve([])),
-	obtenerEvento: jest.fn(() => new Promise(() => {}))
+	obtenerEvento: jest.fn((id) =>
+		Promise.resolve({
+			id,
+			nombre: `Evento ${id}`,
+			descripcion: 'Descripción',
+			categoria: { id: 'cat', nombre: 'Recitales', descripcion: '' },
+			fecha: new Date(Date.now() + 7 * 86400000).toISOString(),
+			tiposEntrada: [
+				{ id: 'te', nombre: 'General', descripcion: '', precio: 1000, cupo: 10 }
+			],
+			multimedia: [],
+			organizador: { id: 'org', nombre: 'Bruno', apellido: 'Pérez' },
+			puntajeOrganizador: null
+		})
+	)
 }));
 jest.mock('../../src/services/categoriaService', () => ({
 	listarCategorias: jest.fn(() => Promise.resolve([]))
@@ -163,7 +178,7 @@ describe('Navegación del visitante — US2', () => {
 		expect(screen.getByRole('header', { name: 'Buscar' })).toBeTruthy();
 		await testRouter.push('/evento/abc123');
 		expect(
-			screen.getByRole('header', { name: 'Detalle del evento' })
+			await screen.findByRole('header', { name: 'Evento abc123' })
 		).toBeTruthy();
 	});
 
@@ -248,5 +263,48 @@ describe('Perfil y expiración — US3', () => {
 		await act(async () => mockSesion.set(crearAuthFalso()));
 		expect(screen).toHavePathname('/explorar');
 		expect(pestanasBarra()).toHaveLength(5);
+	});
+});
+
+describe('Detalle y checkout — feature 005', () => {
+	it('visitante: "Comprar entradas" → login y, como COMPRADOR, vuelve al checkout (US3-5)', async () => {
+		await abrir('/evento/ev-9');
+		mockSesion.valor.iniciarSesion.mockImplementation(async () => {
+			mockSesion.set({
+				...mockSesion.valor,
+				usuario: COMPRADOR,
+				accessToken: 'token'
+			});
+			return COMPRADOR;
+		});
+		await act(async () => {
+			fireEvent.press(
+				await screen.findByRole('button', { name: /^Comprar entradas/ })
+			);
+		});
+		expect(screen).toHavePathname('/login');
+		expect(screen).toHaveSearchParams({ volverA: '/evento/ev-9/comprar' });
+		await act(async () => {
+			fireEvent.changeText(screen.getByLabelText('Nombre de usuario'), 'ana');
+			fireEvent.changeText(screen.getByLabelText('Contraseña'), 'Abcdef1!');
+		});
+		await act(async () => {
+			fireEvent.press(screen.getByRole('button', { name: 'Iniciar sesión' }));
+		});
+		expect(screen).toHavePathname('/evento/ev-9/comprar');
+		expect(
+			await screen.findByRole('header', { name: 'Comprar entradas' })
+		).toBeTruthy();
+	});
+
+	it('un ORGANIZADOR que abre el checkout termina en el detalle', async () => {
+		await abrir('/evento/ev-9/comprar', { usuario: ORGANIZADOR });
+		expect(screen).toHavePathname('/evento/ev-9');
+	});
+
+	it('un visitante que abre el checkout por enlace termina en login con volverA', async () => {
+		await abrir('/evento/ev-9/comprar');
+		expect(screen).toHavePathname('/login');
+		expect(screen).toHaveSearchParams({ volverA: '/evento/ev-9/comprar' });
 	});
 });

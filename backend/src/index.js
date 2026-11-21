@@ -1,5 +1,6 @@
 import { createApp } from './app.js';
 import { programarTarea } from './utils/programador.js';
+import { cargarDatosPrueba } from './seed/datosPrueba.js';
 
 const app = createApp();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,17 @@ programarTarea(
 			)
 	}
 );
+
+// Datos de prueba para desarrollo: solo con SEED=true (npm run dev:seed).
+if (process.env.SEED === 'true') {
+	try {
+		await cargarDatosPrueba(app.locals);
+	} catch (error) {
+		console.error(
+			JSON.stringify({ evento: 'error_seed', mensaje: error?.message })
+		);
+	}
+}
 
 app.listen(PORT, () => {
 	console.log(`Servidor backend corriendo en http://localhost:${PORT}`);

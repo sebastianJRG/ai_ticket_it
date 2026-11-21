@@ -55,6 +55,7 @@ npm run format    # Format code with prettier
 npm run lint      # Lint with eslint
 npm run lint:fix  # Lint and auto-fix
 npm run dev:backend   # Start backend dev server (nodemon)
+npm run dev:backend:seed  # Igual, pero cargando los datos de prueba (SEED=true)
 npm run dev:frontend  # Start frontend dev server (expo start)
 npm run test:backend  # Run backend Jest tests
 ```
@@ -64,8 +65,20 @@ npm run test:backend  # Run backend Jest tests
 ```bash
 npm start     # Start production server (node src/index.js)
 npm run dev   # Start dev server with --watch
+npm run dev:seed  # Dev server con datos de prueba (SEED=true)
 npm run test  # Run Jest tests (tests/*.test.js)
 ```
+
+#### Datos de prueba (seed)
+
+Con `SEED=true` (`npm run dev:seed` o `npm run dev:backend:seed`), `index.js` llama a `cargarDatosPrueba` (`backend/src/seed/datosPrueba.js`) antes de escuchar. Crea, por medio de los servicios, 5 categorías (Recitales, Teatro, Festivales, Conferencias, Deportes) y 3 eventos futuros por organizador (fechas relativas al arranque). Sin la variable, el backend arranca vacío; las pruebas nunca la cargan salvo `tests/seed.test.js`.
+
+| Usuario | Rol | Contraseña |
+|---------|-----|------------|
+| `ana.comprador` | COMPRADOR | `Prueba123!` |
+| `lucas.comprador` | COMPRADOR | `Prueba123!` |
+| `bruno.organizador` | ORGANIZADOR | `Prueba123!` |
+| `sofia.organizadora` | ORGANIZADOR | `Prueba123!` |
 
 ### Frontend (`frontend/`)
 
@@ -88,11 +101,14 @@ npx expo install <pkg>  # Install Expo-compatible packages
   - `(auth)/` → `/login`, `/registro` (con sesión al entrar, redirige al destino del rol).
   - `(comprador)/` (Tabs) → `/explorar`, `/buscar` (públicas), `/favoritos`, `/compras`, `/perfil` (requieren sesión de COMPRADOR).
   - `organizador/` (Tabs) → `/organizador/eventos`, `/organizador/crear`, `/organizador/mensajes`, `/organizador/perfil` (requieren sesión de ORGANIZADOR).
-  - `/evento/[idEvento]` → detalle público, apilado sobre las pestañas. `/` redirige a la ruta inicial (visitante y comprador → `/explorar`; organizador → `/organizador/eventos`).
+  - `/evento/[idEvento]` → detalle público, apilado sobre las pestañas (`src/app/evento/[idEvento]/index.jsx`).
+  - `/evento/[idEvento]/comprar` → checkout (feature 005, `specs/005-detalle-evento-compra/`): solo COMPRADOR; visitante → login con `volverA`; ORGANIZADOR → detalle. Lo protege `RutaProtegida` (`frontend/src/navegacion/RutaProtegida.jsx`), que aplica `decidirAcceso` en rutas fuera de un área con pestañas. Armar los enlaces con `hrefEvento(id)` y `hrefCheckout(id)` de `reglas.js`.
+  - `/` redirige a la ruta inicial (visitante y comprador → `/explorar`; organizador → `/organizador/eventos`).
 - Las reglas de acceso viven **solo** en `frontend/src/navegacion/reglas.js` (`decidirAcceso`, `rutaInicial`, `hrefLogin`, `destinoTrasLogin`, `destinoTrasRegistro`). Toda ruta nueva se registra ahí con su prueba en `frontend/__tests__/navegacion/reglas-test.js`.
 - Para pedir sesión desde una acción: `router.push(hrefLogin(rutaActual))`. Login lee `volverA` y vuelve ahí solo si el rol lo permite (rutas internas; se ignoran URLs externas).
-- Componentes compartidos: `AppHeader`, `BottomNav`, `EmptyState`, `Skeleton`, `Toast` (con `useToast()` de `src/feedback/ToastContext.jsx`) y `Modal`, en `frontend/src/components/`. Feature 004 suma `SearchBar`, `Chip`, `CategoryChips`, `SortSelector`, `BottomSheet` (sobre el `Modal` de RN), `Rating` (compact), `ArteCategoria`, `EventCard` (`feature` | `compact`) y `EventCardSkeleton` / `EsqueletosEventos`. Son presentacionales: no importan servicios ni contextos.
+- Componentes compartidos: `AppHeader`, `BottomNav`, `EmptyState`, `Skeleton`, `Toast` (con `useToast()` de `src/feedback/ToastContext.jsx`) y `Modal`, en `frontend/src/components/`. Feature 004 suma `SearchBar`, `Chip`, `CategoryChips`, `SortSelector`, `BottomSheet` (sobre el `Modal` de RN), `Rating` (compact), `ArteCategoria`, `EventCard` (`feature` | `compact`) y `EventCardSkeleton` / `EsqueletosEventos`. Feature 005 suma `TicketTypeRow` (informativo | radio), `QuantityStepper`, `ReviewCard`, `Avatar`, `ResumenCompra`, `BarraAccion` y la variante `estrellas` de `Rating`. Son presentacionales: no importan servicios ni contextos.
 - Explorar, Buscar y Favoritos (feature 004, `specs/004-explorar-busqueda-favoritos/`): las tarjetas se renderizan con `EventoConFavorito` (`frontend/src/eventos/`), que abre `/evento/<id>` y maneja el corazón según el rol (COMPRADOR alterna, visitante va a login con `volverA`, ORGANIZADOR no lo ve). El estado de favoritos vive en `FavoritosProvider` / `useFavoritos()` (`frontend/src/favoritos/FavoritosContext.jsx`, montado en el layout raíz; optimista con reversión y toast). Filtrar y ordenar lo hace siempre el servidor (`useEventos` descarta respuestas viejas; `src/eventos/orden.js` define las 6 opciones de orden; `src/eventos/presentacion.js` es la lógica pura de tarjeta).
+- Detalle y checkout (feature 005): el detalle carga el evento con `useEvento` y las reseñas del organizador con `SeccionResenias` (`frontend/src/resenias/`, hook `useReseniasOrganizador`); un fallo de reseñas no tapa el detalle. La barra de compra la decide `modoCta` (`src/eventos/detalle.js`). El checkout elige un solo tipo de entrada con cantidad topada en el cupo total (el control real es el 409 del servidor), crea la compra con `useCrearCompra` (una sola petición en curso) y traduce errores con `mensajeErrorCompra` (`src/compras/checkout.js`).
 - JSDoc: `npm run lint` verifica el JSDoc de `frontend/src/` con `eslint-plugin-jsdoc` (docstring `@file`, `@param` con tipo, `@returns`; tags `@owner` y `@license` permitidos).
 
 ### Authentication & Security

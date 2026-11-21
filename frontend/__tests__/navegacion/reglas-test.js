@@ -6,7 +6,9 @@ import {
 	decidirAcceso,
 	hrefLogin,
 	destinoTrasLogin,
-	destinoTrasRegistro
+	destinoTrasRegistro,
+	hrefEvento,
+	hrefCheckout
 } from '../../src/navegacion/reglas';
 import { COMPRADOR, ORGANIZADOR } from '../helpers/authFalso';
 
@@ -63,6 +65,13 @@ describe('decidirAcceso (matriz de data-model.md › Area)', () => {
 		['/explorar', permitir, permitir, redirigir('/organizador/eventos')],
 		['/buscar', permitir, permitir, redirigir('/organizador/eventos')],
 		['/evento/abc123', permitir, permitir, permitir],
+		// checkout (feature 005, research R2)
+		[
+			'/evento/abc123/comprar',
+			redirigir('/login?volverA=%2Fevento%2Fabc123%2Fcomprar'),
+			permitir,
+			redirigir('/evento/abc123')
+		],
 		// comprador
 		[
 			'/favoritos',
@@ -310,5 +319,37 @@ describe('TABS (data-model.md › TabDef)', () => {
 	])('claves únicas en %s', (_, tabs) => {
 		const claves = tabs.map((t) => t.clave);
 		expect(new Set(claves).size).toBe(claves.length);
+	});
+});
+
+describe('hrefEvento y hrefCheckout (feature 005)', () => {
+	it('arman la ruta del detalle y del checkout con el ID codificado', () => {
+		expect(hrefEvento('abc123')).toBe('/evento/abc123');
+		expect(hrefCheckout('abc123')).toBe('/evento/abc123/comprar');
+		expect(hrefEvento('a b')).toBe('/evento/a%20b');
+		expect(hrefCheckout('a/b')).toBe('/evento/a%2Fb/comprar');
+	});
+});
+
+describe('checkout /evento/:id/comprar (feature 005)', () => {
+	it('ignora query y barra final al decidir', () => {
+		expect(
+			decidirAcceso({ usuario: VISITANTE, ruta: '/evento/x/comprar/?q=1' })
+		).toEqual(redirigir('/login?volverA=%2Fevento%2Fx%2Fcomprar'));
+		expect(
+			decidirAcceso({ usuario: ORGANIZADOR, ruta: '/evento/x/comprar?q=1' })
+		).toEqual(redirigir('/evento/x'));
+		expect(
+			decidirAcceso({ usuario: COMPRADOR, ruta: '/evento/x/comprar/' })
+		).toEqual(permitir);
+	});
+
+	it('tras el login, el COMPRADOR vuelve al checkout y el ORGANIZADOR no', () => {
+		expect(destinoTrasLogin(COMPRADOR, '/evento/x/comprar')).toBe(
+			'/evento/x/comprar'
+		);
+		expect(destinoTrasLogin(ORGANIZADOR, '/evento/x/comprar')).toBe(
+			'/organizador/eventos'
+		);
 	});
 });

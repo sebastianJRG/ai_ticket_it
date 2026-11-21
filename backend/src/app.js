@@ -118,6 +118,10 @@ export function createApp(repository) {
 
 	// Expone el servicio de compras al punto de entrada (index.js) para su tarea periódica
 	app.locals.compraService = compraService;
+	// Expone los servicios que usa la seed de datos de prueba (index.js con SEED=true)
+	app.locals.usuarioService = usuarioService;
+	app.locals.categoriaService = categoriaService;
+	app.locals.eventoService = eventoService;
 
 	// Rutas de usuarios
 	UsuariosRoutes.init(
