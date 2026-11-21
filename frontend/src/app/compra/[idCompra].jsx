@@ -9,7 +9,8 @@
  *   research.md R1). Con sesión de ORGANIZADOR
  *   muestra la variante del organizador (feature 007 US5, research R9): lee
  *   `?evento=`, busca la compra en las compras de ese evento y no ofrece
- *   acciones de estado (viven en las compras del evento).
+ *   acciones de estado (viven en las compras del evento); su pestaña Chat
+ *   monta el mismo `ChatCompra` (feature 008 US2).
  * @owner Equipo Al Ticket It — frontend
  * @license MIT
  */
@@ -104,6 +105,47 @@ function encabezadoComprador(t, compra, pestana, setPestana) {
 }
 
 /**
+ * Encabezado del detalle del ORGANIZADOR: fecha, resumen, comprador, estado y
+ * pestañas. Se usa arriba de la pestaña Detalle y como encabezado del chat.
+ * @param {object} t Theme activo.
+ * @param {object} compra Compra de las compras del evento.
+ * @param {string} pestana Pestaña seleccionada.
+ * @param {function(string): void} setPestana Cambia de pestaña.
+ * @returns {JSX.Element} Encabezado.
+ */
+function encabezadoOrganizador(t, compra, pestana, setPestana) {
+	return (
+		<>
+			<View style={{ gap: t.spacing[3] }}>
+				<Text style={[t.typography.body, { color: t.colors.textMuted }]}>
+					{formatDate(compra.evento.fecha, 'long')}
+				</Text>
+				<ResumenCompra
+					titulo={compra.evento.nombre}
+					lineas={[
+						{
+							etiqueta: `${compra.cantidad} × ${compra.tipoEntrada.nombre}`,
+							valor: `${formatPrice(compra.tipoEntrada.precio)} c/u`
+						}
+					]}
+					total={formatPrice(compra.total)}
+				/>
+				<Text style={[t.typography.bodyStrong, { color: t.colors.text }]}>
+					{`Comprador: ${nombreComprador(compra)}`}
+				</Text>
+				<StatusBadge status={compra.estado} size="sm" />
+			</View>
+			<Tabs
+				variante="segmented"
+				pestanas={PESTANAS}
+				seleccionada={pestana}
+				alCambiar={setPestana}
+			/>
+		</>
+	);
+}
+
+/**
  * Variante del ORGANIZADOR (feature 007, research R9): busca la compra en las
  * compras del evento de `?evento=`; sin acciones de estado.
  * @returns {JSX.Element} Pantalla.
@@ -164,31 +206,7 @@ function DetalleCompraOrganizador() {
 	} else {
 		contenido = (
 			<>
-				<View style={{ gap: t.spacing[3] }}>
-					<Text style={[t.typography.body, { color: c.textMuted }]}>
-						{formatDate(compra.evento.fecha, 'long')}
-					</Text>
-					<ResumenCompra
-						titulo={compra.evento.nombre}
-						lineas={[
-							{
-								etiqueta: `${compra.cantidad} × ${compra.tipoEntrada.nombre}`,
-								valor: `${formatPrice(compra.tipoEntrada.precio)} c/u`
-							}
-						]}
-						total={formatPrice(compra.total)}
-					/>
-					<Text style={[t.typography.bodyStrong, { color: c.text }]}>
-						{`Comprador: ${nombreComprador(compra)}`}
-					</Text>
-					<StatusBadge status={compra.estado} size="sm" />
-				</View>
-				<Tabs
-					variante="segmented"
-					pestanas={PESTANAS}
-					seleccionada={pestana}
-					alCambiar={setPestana}
-				/>
+				{encabezadoOrganizador(t, compra, pestana, setPestana)}
 				{pestana === 'detalle' ? (
 					<View style={{ gap: t.spacing[3] }}>
 						<Text style={[t.typography.titleSm, { color: c.text }]}>
@@ -196,13 +214,7 @@ function DetalleCompraOrganizador() {
 						</Text>
 						<StatusTimeline pasos={pasosLinea(compra.estado)} />
 					</View>
-				) : (
-					<EmptyState
-						icono="message"
-						titulo="Chat de la compra"
-						cuerpo="Muy pronto vas a poder escribirle al comprador desde acá."
-					/>
-				)}
+				) : null}
 			</>
 		);
 	}
@@ -214,15 +226,30 @@ function DetalleCompraOrganizador() {
 				subtitulo={compra?.evento.nombre}
 				alVolver={volver}
 			/>
-			<ScrollView
-				contentContainerStyle={{
-					padding: t.spacing[4],
-					paddingBottom: t.spacing[10],
-					gap: t.spacing[6]
-				}}
-			>
-				{contenido}
-			</ScrollView>
+			{compra && pestana === 'chat' ? (
+				<ChatCompra
+					idCompra={compra.id}
+					activo={pestana === 'chat'}
+					rolOtro="comprador"
+					encabezado={encabezadoOrganizador(t, compra, pestana, setPestana)}
+				/>
+			) : (
+				<KeyboardAvoidingView
+					style={{ flex: 1 }}
+					behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+				>
+					<ScrollView
+						keyboardShouldPersistTaps="handled"
+						contentContainerStyle={{
+							padding: t.spacing[4],
+							paddingBottom: t.spacing[10],
+							gap: t.spacing[6]
+						}}
+					>
+						{contenido}
+					</ScrollView>
+				</KeyboardAvoidingView>
+			)}
 		</View>
 	);
 }

@@ -221,28 +221,28 @@ Cada fase tiene una tarea de aprobación explícita (⛔ GATE). No se implementa
 
 ### Tests for User Story 2 (escribir primero) ⚠️
 
-- [ ] T022 [P] [US2] Ampliar `frontend/__tests__/mensajes/chat-test.js` con `mensajeErrorChat` para el 403: devuelve "No tenés acceso a esta conversación" / "Solo el comprador y el organizador del evento pueden usar este chat." con `reintentable: false` (research R6).
-- [ ] T023 [P] [US2] Ampliar `frontend/__tests__/mensajes/ChatCompra-test.jsx`:
+- [X] T022 [P] [US2] Ampliar `frontend/__tests__/mensajes/chat-test.js` con `mensajeErrorChat` para el 403: devuelve "No tenés acceso a esta conversación" / "Solo el comprador y el organizador del evento pueden usar este chat." con `reintentable: false` (research R6).
+- [X] T023 [P] [US2] Ampliar `frontend/__tests__/mensajes/ChatCompra-test.jsx`:
   - Con `useAuth` como `ORGANIZADOR` y `CONVERSACION`, los mensajes del comprador son ajenos, con su nombre en la primera burbuja del grupo, y los del organizador son propios.
   - El vacío con `rolOtro="comprador"` dice "Escribile al comprador sobre esta compra.".
   - Si `listarMensajes` rechaza con 403, se ve "No tenés acceso a esta conversación", sin "Reintentar" y sin composer.
   - Si `enviarMensaje` rechaza con 403, el chat pasa a ese mismo estado.
   - Si `listarMensajes` rechaza con 404, se ve "Esta compra ya no existe", sin "Reintentar" y sin composer.
-- [ ] T024 [US2] Ampliar `frontend/__tests__/screens/detalle-compra-test.jsx` para la variante del ORGANIZADOR (`/compra/<id>?evento=<idEvento>`, con `obtenerComprasEvento` simulado como en 007):
+- [X] T024 [US2] Ampliar `frontend/__tests__/screens/detalle-compra-test.jsx` para la variante del ORGANIZADOR (`/compra/<id>?evento=<idEvento>`, con `obtenerComprasEvento` simulado como en 007):
   - La pestaña "Chat" muestra la conversación y permite responder.
   - Ya no aparece "Muy pronto vas a poder escribirle al comprador desde acá.".
   - Con `listarMensajes` en 403 se ve "No tenés acceso a esta conversación" (US2-2).
-- [ ] T025 [US2] ⛔ GATE: presentar T022–T024 al usuario y esperar su **aprobación**. Después, correr `npx jest __tests__/mensajes __tests__/screens/detalle-compra-test.jsx` y confirmar que las pruebas nuevas fallan (rojo).
+- [X] T025 [US2] ⛔ GATE: presentar T022–T024 al usuario y esperar su **aprobación**. Después, correr `npx jest __tests__/mensajes __tests__/screens/detalle-compra-test.jsx` y confirmar que las pruebas nuevas fallan (rojo).
 
 ### Implementation for User Story 2
 
-- [ ] T026 [P] [US2] Agregar el 403 a `mensajeErrorChat` en `frontend/src/mensajes/chat.js`.
-- [ ] T027 [US2] En `frontend/src/hooks/useChatCompra.js`, hacer que un 403 o 404 en `enviar` deje el local en `error` **y** fije el `error` bloqueante (research R3, R6).
-- [ ] T028 [US2] Modificar `frontend/src/app/compra/[idCompra].jsx`, variante `DetalleCompraOrganizador`:
+- [X] T026 [P] [US2] Agregar el 403 a `mensajeErrorChat` en `frontend/src/mensajes/chat.js`.
+- [X] T027 [US2] En `frontend/src/hooks/useChatCompra.js`, hacer que un 403 o 404 en `enviar` deje el local en `error` **y** fije el `error` bloqueante (research R3, R6).
+- [X] T028 [US2] Modificar `frontend/src/app/compra/[idCompra].jsx`, variante `DetalleCompraOrganizador`:
   - Con `pestana === 'chat'`, renderizar `ChatCompra` con `rolOtro="comprador"` y el encabezado propio de la variante (fecha, `ResumenCompra`, comprador, `StatusBadge` y `Tabs`).
   - Envolver en `KeyboardAvoidingView`, como la variante del comprador.
   - Quitar el `EmptyState` provisorio.
-- [ ] T029 [US2] Correr las pruebas de T025 y dejarlas en verde. Después, la suite completa `npx jest` (sin regresiones de 006 y 007 en `detalle-compra-test.jsx` ni en `mensajes-organizador-test.jsx`).
+- [X] T029 [US2] Correr las pruebas de T025 y dejarlas en verde. Después, la suite completa `npx jest` (sin regresiones de 006 y 007 en `detalle-compra-test.jsx` ni en `mensajes-organizador-test.jsx`).
 
 **Checkpoint**: comprador y organizador conversan en el mismo chat (CU-05 y CU-06).
 

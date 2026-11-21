@@ -7,7 +7,7 @@ import { ApiError } from '../../src/services/api';
 import { formatDate } from '../../src/theme/format';
 import { renderConTema } from '../helpers/renderConTema';
 import { diferido } from '../helpers/diferido';
-import { COMPRADOR, crearAuthFalso } from '../helpers/authFalso';
+import { COMPRADOR, ORGANIZADOR, crearAuthFalso } from '../helpers/authFalso';
 import { AHORA } from '../helpers/eventosEjemplo';
 import {
 	CONVERSACION,
@@ -199,5 +199,69 @@ describe('ChatCompra — US1 (contracts/componentes.md › ChatCompra)', () => {
 			fireEvent.press(screen.getByRole('button', { name: 'Reintentar' }));
 		});
 		expect(screen.getByText('Hoy')).toBeTruthy();
+	});
+});
+
+describe('ChatCompra — US2 organizador y acceso', () => {
+	it('desde el organizador, los del comprador son ajenos y con su nombre', async () => {
+		mockAuth = crearAuthFalso({ usuario: ORGANIZADOR });
+		mensajeService.listarMensajes.mockResolvedValue(CONVERSACION);
+		await montar({ rolOtro: 'comprador' });
+		const hora = (i) => formatDate(CONVERSACION[i].enviado, 'time');
+		const etiquetas = screen
+			.getAllByTestId('chat-bubble')
+			.map((n) => n.props.accessibilityLabel);
+		expect(etiquetas).toEqual([
+			`Ana García, ${hora(0)}: ${CONVERSACION[0].mensaje}`,
+			`Ana García, ${hora(1)}: ${CONVERSACION[1].mensaje}`,
+			`Vos, ${hora(2)}: ${CONVERSACION[2].mensaje}`,
+			`Vos, ${hora(3)}: ${CONVERSACION[3].mensaje}`
+		]);
+		expect(screen.getAllByText('Ana García')).toHaveLength(1);
+	});
+
+	it('vacío con rolOtro="comprador"', async () => {
+		mockAuth = crearAuthFalso({ usuario: ORGANIZADOR });
+		await montar({ rolOtro: 'comprador' });
+		expect(
+			screen.getByText('Escribile al comprador sobre esta compra.')
+		).toBeTruthy();
+	});
+
+	it('403 al cargar: sin acceso, sin reintentar ni composer', async () => {
+		mensajeService.listarMensajes.mockRejectedValue(new ApiError('No', 403));
+		await montar();
+		expect(
+			screen.getByRole('header', {
+				name: 'No tenés acceso a esta conversación'
+			})
+		).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Reintentar' })).toBeNull();
+		expect(screen.queryByPlaceholderText('Escribí un mensaje')).toBeNull();
+	});
+
+	it('403 al enviar: el chat pasa al mismo estado', async () => {
+		mensajeService.enviarMensaje.mockRejectedValue(new ApiError('No', 403));
+		await montar();
+		await fireEvent.changeText(campo(), 'hola');
+		await act(async () => {
+			fireEvent.press(botonEnviar());
+		});
+		expect(
+			screen.getByRole('header', {
+				name: 'No tenés acceso a esta conversación'
+			})
+		).toBeTruthy();
+		expect(screen.queryByPlaceholderText('Escribí un mensaje')).toBeNull();
+	});
+
+	it('404 al cargar: la compra ya no existe, sin reintentar ni composer', async () => {
+		mensajeService.listarMensajes.mockRejectedValue(new ApiError('No', 404));
+		await montar();
+		expect(
+			screen.getByRole('header', { name: 'Esta compra ya no existe' })
+		).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Reintentar' })).toBeNull();
+		expect(screen.queryByPlaceholderText('Escribí un mensaje')).toBeNull();
 	});
 });

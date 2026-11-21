@@ -204,6 +204,13 @@ export function agruparMensajes(mensajes, miId, ahora = new Date()) {
  */
 export function mensajeErrorChat(error) {
 	switch (error?.status) {
+		case 403:
+			return {
+				titulo: 'No tenés acceso a esta conversación',
+				cuerpo:
+					'Solo el comprador y el organizador del evento pueden usar este chat.',
+				reintentable: false
+			};
 		case 404:
 			return {
 				titulo: 'Esta compra ya no existe',

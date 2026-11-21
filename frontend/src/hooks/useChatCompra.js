@@ -123,6 +123,8 @@ export function useChatCompra(idCompra, { activo } = {}) {
 		} catch (e) {
 			if (montado.current) {
 				actualizarLocal(claveLocal, { estado: 'error', error: e });
+				// Sin acceso o compra inexistente: no se arregla reintentando (R6).
+				if (e?.status === 403 || e?.status === 404) setError(e);
 			}
 		} finally {
 			postEnCurso.current = false;

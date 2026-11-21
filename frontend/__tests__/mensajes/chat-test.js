@@ -243,6 +243,15 @@ describe('agruparMensajes (data-model.md §3 › ItemChat)', () => {
 });
 
 describe('mensajeErrorChat (research R6)', () => {
+	it('403', () => {
+		expect(mensajeErrorChat(new ApiError('x', 403))).toEqual({
+			titulo: 'No tenés acceso a esta conversación',
+			cuerpo:
+				'Solo el comprador y el organizador del evento pueden usar este chat.',
+			reintentable: false
+		});
+	});
+
 	it('404', () => {
 		expect(mensajeErrorChat(new ApiError('x', 404))).toEqual(
 			expect.objectContaining({

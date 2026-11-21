@@ -259,8 +259,59 @@ describe('Detalle de compra — variante ORGANIZADOR (feature 007 US5; research 
 		expect(screen.getAllByText('Confirmada').length).toBeGreaterThan(1);
 		expect(screen.getByText('Estado de la compra')).toBeTruthy();
 		expect(screen.getByLabelText('Detalle')).toBeTruthy();
-		await fireEvent.press(screen.getByLabelText('Chat'));
-		expect(screen.getByText('Chat de la compra')).toBeTruthy();
+	});
+
+	it('la pestaña Chat muestra la conversación y permite responder (US2-1)', async () => {
+		mensajeService.listarMensajes.mockResolvedValue(CONVERSACION);
+		mensajeService.enviarMensaje.mockResolvedValue(
+			crearMensaje({
+				id: 'm-9',
+				compraId: 'c1',
+				mensaje: 'Gracias por escribir',
+				usuario: {
+					id: ORGANIZADOR.id,
+					nombre: ORGANIZADOR.nombre,
+					apellido: ORGANIZADOR.apellido,
+					rol: ORGANIZADOR.rol
+				}
+			})
+		);
+		await abrirOrg('/compra/c1?evento=ev-1');
+		await act(async () => {
+			fireEvent.press(screen.getByLabelText('Chat'));
+		});
+		await act(async () => {});
+		expect(mensajeService.listarMensajes).toHaveBeenCalledWith('c1');
+		expect(screen.getByText(CONVERSACION[0].mensaje)).toBeTruthy();
+		expect(
+			screen.queryByText(
+				'Muy pronto vas a poder escribirle al comprador desde acá.'
+			)
+		).toBeNull();
+		await fireEvent.changeText(
+			screen.getByPlaceholderText('Escribí un mensaje'),
+			'Gracias por escribir'
+		);
+		await act(async () => {
+			fireEvent.press(screen.getByRole('button', { name: 'Enviar mensaje' }));
+		});
+		expect(mensajeService.enviarMensaje).toHaveBeenCalledWith(
+			'c1',
+			'Gracias por escribir'
+		);
+		expect(screen.getByText('Gracias por escribir')).toBeTruthy();
+	});
+
+	it('403 del chat → "No tenés acceso a esta conversación" (US2-2)', async () => {
+		mensajeService.listarMensajes.mockRejectedValue(new ApiError('No', 403));
+		await abrirOrg('/compra/c1?evento=ev-1');
+		await act(async () => {
+			fireEvent.press(screen.getByLabelText('Chat'));
+		});
+		await act(async () => {});
+		expect(
+			screen.getByText('No tenés acceso a esta conversación')
+		).toBeTruthy();
 	});
 
 	it('no ofrece acciones de estado', async () => {
