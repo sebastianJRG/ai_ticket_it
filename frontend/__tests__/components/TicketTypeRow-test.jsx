@@ -22,6 +22,18 @@ describe.each(['dark', 'light'])('TicketTypeRow (%s)', (scheme) => {
 			expect(screen.queryByRole('radio')).toBeNull();
 		});
 
+		it('muestra el texto del cupo disponible (corrección 2)', async () => {
+			await renderConTema(
+				<TicketTypeRow
+					{...BASE}
+					interactive={false}
+					cupoTexto="Quedan 5 entradas"
+				/>,
+				{ scheme }
+			);
+			expect(screen.getByText('Quedan 5 entradas')).toBeTruthy();
+		});
+
 		it('agotado muestra "Agotado" y "Sin cupo"', async () => {
 			await renderConTema(
 				<TicketTypeRow {...BASE} interactive={false} agotado />,

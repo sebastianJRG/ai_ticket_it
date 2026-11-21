@@ -8,10 +8,15 @@ import {
 } from 'expo-router/testing-library';
 import * as compraService from '../../src/services/compraService';
 import * as reseniaService from '../../src/services/reseniaService';
+import * as eventoService from '../../src/services/eventoService';
 import { ApiError } from '../../src/services/api';
 import { formatDate, formatPrice } from '../../src/theme/format';
 import { COMPRADOR, ORGANIZADOR, crearAuthFalso } from '../helpers/authFalso';
-import { comprasPorEstado, crearResenia } from '../helpers/comprasEjemplo';
+import {
+	comprasPorEstado,
+	crearCompraOrganizador,
+	crearResenia
+} from '../helpers/comprasEjemplo';
 
 let mockAuth;
 jest.mock('../../src/auth/AuthContext', () => ({
@@ -28,7 +33,8 @@ jest.mock('../../src/services/reseniaService', () => ({
 }));
 jest.mock('../../src/services/eventoService', () => ({
 	listarEventos: jest.fn(() => Promise.resolve([])),
-	obtenerEvento: jest.fn(() => new Promise(() => {}))
+	obtenerEvento: jest.fn(() => new Promise(() => {})),
+	obtenerComprasEvento: jest.fn()
 }));
 jest.mock('../../src/services/categoriaService', () => ({
 	listarCategorias: jest.fn(() => Promise.resolve([]))
@@ -172,9 +178,9 @@ describe('Detalle de compra — US3 (contracts/pantallas.md › /compra/[idCompr
 		expect(screen).toHaveSearchParams({ volverA: '/compra/c-con3' });
 	});
 
-	it('ORGANIZADOR → Mis eventos', async () => {
+	it('ORGANIZADOR ya no es redirigido (feature 007, research R1/R9)', async () => {
 		await abrir('c-con3', ORGANIZADOR);
-		expect(screen).toHavePathname('/organizador/eventos');
+		expect(screen).toHavePathname('/compra/c-con3');
 	});
 });
 
@@ -216,4 +222,75 @@ describe('Detalle de compra — US4 reseña', () => {
 			).toBeNull();
 		}
 	);
+});
+
+describe('Detalle de compra — variante ORGANIZADOR (feature 007 US5; research R9)', () => {
+	const COMPRA_ORG = crearCompraOrganizador({
+		id: 'c1',
+		estado: 'CONFIRMADA',
+		evento: {
+			id: 'ev-1',
+			nombre: 'Noche de jazz',
+			fecha: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString()
+		}
+	});
+
+	async function abrirOrg(url) {
+		mockAuth = crearAuthFalso({ usuario: ORGANIZADOR });
+		await renderRouter(APP, { initialUrl: url });
+		await act(async () => {});
+	}
+
+	beforeEach(() => {
+		eventoService.obtenerComprasEvento.mockResolvedValue({
+			compras: [COMPRA_ORG],
+			disponibilidad: []
+		});
+	});
+
+	it('carga las compras del evento (no listarMisCompras) y muestra la compra', async () => {
+		await abrirOrg('/compra/c1?evento=ev-1');
+		expect(eventoService.obtenerComprasEvento).toHaveBeenCalledWith('ev-1');
+		expect(compraService.listarMisCompras).not.toHaveBeenCalled();
+		expect(screen.getAllByText('Noche de jazz').length).toBeGreaterThan(0);
+		expect(screen.getByText('2 × Platea')).toBeTruthy();
+		expect(screen.getByText('Comprador: Ana García')).toBeTruthy();
+		expect(screen.getAllByText('Confirmada').length).toBeGreaterThan(1);
+		expect(screen.getByText('Estado de la compra')).toBeTruthy();
+		expect(screen.getByLabelText('Detalle')).toBeTruthy();
+		await fireEvent.press(screen.getByLabelText('Chat'));
+		expect(screen.getByText('Chat de la compra')).toBeTruthy();
+	});
+
+	it('no ofrece acciones de estado', async () => {
+		await abrirOrg('/compra/c1?evento=ev-1');
+		expect(
+			screen.queryByRole('button', { name: 'Cancelar compra' })
+		).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Reembolsar' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Confirmar' })).toBeNull();
+	});
+
+	it('sin ?evento: "No encontramos esta compra" sin pedir nada', async () => {
+		await abrirOrg('/compra/c1');
+		expect(eventoService.obtenerComprasEvento).not.toHaveBeenCalled();
+		expect(screen.getByText('No encontramos esta compra')).toBeTruthy();
+		await fireEvent.press(
+			screen.getByRole('button', { name: 'Ver mis eventos' })
+		);
+		expect(screen).toHavePathname('/organizador/eventos');
+	});
+
+	it('compra que no está en la respuesta → "No encontramos esta compra"', async () => {
+		await abrirOrg('/compra/otra?evento=ev-1');
+		expect(screen.getByText('No encontramos esta compra')).toBeTruthy();
+	});
+
+	it('403 → "No tenés acceso a esta compra"', async () => {
+		eventoService.obtenerComprasEvento.mockRejectedValue(
+			new ApiError('No', 403)
+		);
+		await abrirOrg('/compra/c1?evento=ev-1');
+		expect(screen.getByText('No tenés acceso a esta compra')).toBeTruthy();
+	});
 });

@@ -2,8 +2,8 @@
  * @file Lógica del checkout, pura (sin React ni servicios): selección inicial,
  *   tope de cantidad por cupo, total estimado, texto del botón y mensajes de
  *   error de la compra (specs/005-detalle-evento-compra/data-model.md §8;
- *   research R6, R7). El tope es el cupo total: el control real lo hace el
- *   servidor (409).
+ *   research R6, R7). El tope son las entradas disponibles que informa
+ *   `GET /api/eventos/:id`; el control real sigue siendo el 409 del servidor.
  * @owner Equipo Al Ticket It — frontend
  * @license MIT
  */
@@ -13,7 +13,7 @@ import { formatPrice } from '../theme/format';
  * Selección del checkout (data-model.md › SeleccionCheckout).
  * @typedef {Object} SeleccionCheckout
  * @property {string|null} tipoId Tipo de entrada elegido, o `null`.
- * @property {number} cantidad Entero entre 1 y el cupo del tipo.
+ * @property {number} cantidad Entero entre 1 y las entradas disponibles del tipo.
  */
 
 /**
@@ -49,10 +49,11 @@ export function seleccionInicial(tipos) {
 /**
  * Límites de cantidad para un tipo de entrada.
  * @param {import('../eventos/detalle').TipoEntradaVista} tipo Tipo elegido.
- * @returns {LimitesCantidad} `{ min: 1, max: cupo }`.
+ * @returns {LimitesCantidad} `{ min: 1, max: disponibles }` (o el cupo si no hay `disponibles`).
  */
 export function limitesCantidad(tipo) {
-	return { min: 1, max: Math.max(1, Math.trunc(tipo?.cupo ?? 1)) };
+	const tope = tipo?.disponibles ?? tipo?.cupo ?? 1;
+	return { min: 1, max: Math.max(1, Math.trunc(tope)) };
 }
 
 /**

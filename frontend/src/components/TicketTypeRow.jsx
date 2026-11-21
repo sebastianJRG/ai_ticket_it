@@ -17,6 +17,8 @@ import { useTheme } from '../theme/ThemeContext';
  * @property {string} [descripcion] Descripción (se omite si está vacía).
  * @property {string} precioTexto "$ 25.000" o "Gratis".
  * @property {boolean} [agotado] Muestra "Agotado" y "Sin cupo"; no se puede elegir.
+ * @property {string} [cupoTexto] Entradas que quedan ("Quedan 5 entradas"); no se muestra si está agotado.
+ * @property {boolean} [quedanPocas] Destaca `cupoTexto` con `secondary-text`.
  * @property {boolean} [interactive] `true` en el checkout (radio); `false` en el detalle.
  * @property {boolean} [seleccionado] Solo interactivo: fila elegida.
  * @property {function(): void} [alSeleccionar] Solo interactivo: al tocar la fila.
@@ -34,6 +36,8 @@ export function TicketTypeRow({
 	descripcion,
 	precioTexto,
 	agotado = false,
+	cupoTexto,
+	quedanPocas = false,
 	interactive = false,
 	seleccionado = false,
 	alSeleccionar,
@@ -93,6 +97,15 @@ export function TicketTypeRow({
 					<Text style={[t.typography.caption, { color: c.textSubtle }]}>
 						Sin cupo
 					</Text>
+				) : cupoTexto ? (
+					<Text
+						style={[
+							t.typography.caption,
+							{ color: quedanPocas ? c.secondaryText : c.textMuted }
+						]}
+					>
+						{cupoTexto}
+					</Text>
 				) : null}
 			</View>
 			<Text
@@ -140,7 +153,13 @@ export function TicketTypeRow({
 		<View style={estiloFila}>
 			<Pressable
 				accessibilityRole="radio"
-				accessibilityLabel={`${nombre}, ${precioTexto}${agotado ? ', agotado' : ''}`}
+				accessibilityLabel={`${nombre}, ${precioTexto}${
+					agotado
+						? ', agotado'
+						: cupoTexto
+							? `, ${cupoTexto.toLowerCase()}`
+							: ''
+				}`}
 				accessibilityState={{ checked: marcado, disabled: bloqueada }}
 				disabled={bloqueada}
 				onPress={bloqueada ? undefined : alSeleccionar}

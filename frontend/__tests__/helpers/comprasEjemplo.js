@@ -1,7 +1,9 @@
 /**
  * @file Helper de pruebas: reseñas, tipos de entrada del checkout y compras de
  *   ejemplo con el formato de la API (specs/005-detalle-evento-compra/data-model.md §2–4)
- *   y compras del listado del comprador (specs/006-mis-compras-comprador/data-model.md §1).
+ *   y compras del listado del comprador (specs/006-mis-compras-comprador/data-model.md §1)
+ *   y compras y disponibilidad de un evento del organizador
+ *   (specs/007-organizador-eventos/data-model.md §1).
  * @owner Equipo Al Ticket It — frontend
  * @license MIT
  */
@@ -219,3 +221,84 @@ export function comprasPorEstado(ahora) {
 
 /** {@link comprasPorEstado} con `AHORA` de `eventosEjemplo.js` (pruebas puras). */
 export const COMPRAS_POR_ESTADO = comprasPorEstado(AHORA);
+
+let secuenciaOrganizador = 0;
+
+/**
+ * Crea una compra con el formato de `GET /api/eventos/:id/compras` → `compras[]`
+ * (specs/007-organizador-eventos/data-model.md §1 › Compra del organizador).
+ * @param {object} [parcial] Campos a reemplazar.
+ * @returns {object} Compra del organizador (sin `diasRestantes`).
+ */
+export function crearCompraOrganizador(parcial = {}) {
+	secuenciaOrganizador += 1;
+	return {
+		id: `co-${secuenciaOrganizador}`,
+		comprador: { id: 'u-comprador', nombre: 'Ana', apellido: 'García' },
+		evento: {
+			id: 'ev-1',
+			nombre: 'Evento 1',
+			fecha: new Date(AHORA.getTime() + 10 * DIA).toISOString()
+		},
+		tipoEntrada: { id: 'te-pla', nombre: 'Platea', precio: 40000 },
+		cantidad: 2,
+		total: 80000,
+		estado: 'PENDIENTE',
+		...parcial
+	};
+}
+
+/**
+ * Seis compras de `ev-1` en orden de creación:
+ * Pendientes 2, Confirmadas 1, Utilizadas 1, Canceladas 2 (CANCELADA + REEMBOLSADA).
+ */
+export const COMPRAS_ORGANIZADOR = [
+	crearCompraOrganizador({ id: 'co-pen-1', estado: 'PENDIENTE' }),
+	crearCompraOrganizador({
+		id: 'co-con',
+		estado: 'CONFIRMADA',
+		comprador: { id: 'u-lucas', nombre: 'Lucas', apellido: 'Díaz' }
+	}),
+	crearCompraOrganizador({ id: 'co-uti', estado: 'UTILIZADA' }),
+	crearCompraOrganizador({ id: 'co-can', estado: 'CANCELADA' }),
+	crearCompraOrganizador({
+		id: 'co-pen-2',
+		estado: 'PENDIENTE',
+		comprador: { id: 'u-lucas', nombre: 'Lucas', apellido: 'Díaz' },
+		tipoEntrada: { id: 'te-vip', nombre: 'VIP', precio: 85000 },
+		cantidad: 1,
+		total: 85000
+	}),
+	crearCompraOrganizador({ id: 'co-ree', estado: 'REEMBOLSADA' })
+];
+
+/**
+ * Disponibilidad por tipo (data-model.md §1 › DisponibilidadTipo):
+ * General 89 % (normal), Platea 90 % (casi), VIP 100 % (agotado).
+ */
+export const DISPONIBILIDAD_EJEMPLO = [
+	{
+		tipoEntradaId: 'te-gen',
+		nombre: 'General',
+		precio: 32000,
+		cupo: 100,
+		vendidas: 89,
+		disponibles: 11
+	},
+	{
+		tipoEntradaId: 'te-pla',
+		nombre: 'Platea',
+		precio: 40000,
+		cupo: 100,
+		vendidas: 90,
+		disponibles: 10
+	},
+	{
+		tipoEntradaId: 'te-vip',
+		nombre: 'VIP',
+		precio: 85000,
+		cupo: 20,
+		vendidas: 20,
+		disponibles: 0
+	}
+];

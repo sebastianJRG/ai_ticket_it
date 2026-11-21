@@ -99,6 +99,21 @@ describe('Checkout — US3 (contracts/pantallas.md › /evento/[idEvento]/compra
 		expect(confirmar()).toBeDisabled();
 	});
 
+	it('muestra el cupo disponible y topa la cantidad (corrección 2)', async () => {
+		const [general, ...resto] = TIPOS_CHECKOUT;
+		eventoService.obtenerEvento.mockResolvedValue({
+			...EVENTO,
+			tiposEntrada: [{ ...general, cupo: 10, disponibles: 5 }, ...resto]
+		});
+		await abrir();
+		expect(await screen.findByText('Quedan 5 entradas')).toBeTruthy();
+		await presionar(fila('General'));
+		const sumar = screen.getByRole('button', { name: 'Sumar una' });
+		for (let i = 0; i < 6; i += 1) await presionar(sumar);
+		expect(screen.getByText('5')).toBeTruthy();
+		expect(screen.getByText('Solo quedan 5 entradas de General.')).toBeTruthy();
+	});
+
 	it('elegir un tipo y cantidad muestra el total y el monto en el botón (US3-1, FR-005)', async () => {
 		await abrir();
 		await elegirPlateaPorDos();
@@ -170,6 +185,7 @@ describe('Checkout — US3 (contracts/pantallas.md › /evento/[idEvento]/compra
 			screen.getByText('Cupo insuficiente: queda 1 entrada disponible.')
 		).toBeTruthy();
 		expect(confirmar()).not.toBeDisabled();
+		expect(eventoService.obtenerEvento).toHaveBeenCalledTimes(2);
 		await presionar(screen.getByRole('button', { name: 'Restar una' }));
 		expect(
 			screen.queryByText('No quedan suficientes entradas de este tipo')

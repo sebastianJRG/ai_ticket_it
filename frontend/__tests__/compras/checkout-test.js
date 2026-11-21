@@ -44,6 +44,14 @@ describe('limitesCantidad y ajustarCantidad (SC-002)', () => {
 		expect(limitesCantidad(GENERAL)).toEqual({ min: 1, max: 100 });
 	});
 
+	it('el máximo son las entradas disponibles, no el cupo total (corrección 2)', () => {
+		expect(
+			limitesCantidad(
+				aTipoEntradaVista({ ...GENERAL, cupo: 10, disponibles: 5 })
+			)
+		).toEqual({ min: 1, max: 5 });
+	});
+
 	it('nunca supera el cupo ni baja de 1', () => {
 		const l = limitesCantidad(PLATEA);
 		expect(ajustarCantidad(0, l)).toBe(1);

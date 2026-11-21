@@ -79,6 +79,25 @@ function Aviso({ titulo, cuerpo, tono, accion }) {
 }
 
 /**
+ * Indica si quedan pocas entradas de un tipo (≤ 5 o ≤ 10 % del cupo).
+ * @param {import('../../../eventos/detalle').TipoEntradaVista} tipo Tipo de entrada.
+ * @returns {boolean} `true` si conviene destacar el cupo.
+ */
+const quedanPocas = (tipo) =>
+	!tipo.agotado &&
+	(tipo.disponibles <= 5 || tipo.disponibles <= tipo.cupo * 0.1);
+
+/**
+ * Aviso bajo el selector cuando la cantidad llega al tope disponible.
+ * @param {import('../../../eventos/detalle').TipoEntradaVista} tipo Tipo elegido.
+ * @returns {string} "Solo quedan 5 entradas de General." (o en singular).
+ */
+const textoTope = (tipo) =>
+	tipo.disponibles === 1
+		? `Solo queda 1 entrada de ${tipo.nombre}.`
+		: `Solo quedan ${tipo.disponibles} entradas de ${tipo.nombre}.`;
+
+/**
  * Contenido del checkout (ya pasó la guardia de acceso).
  * @returns {JSX.Element} Pantalla.
  */
@@ -101,6 +120,23 @@ function Checkout() {
 	const [seleccion, setSeleccion] = useState(null);
 
 	const d = evento ? aDetalle(evento) : null;
+
+	// Cupo insuficiente (409): se vuelve a pedir el evento para mostrar lo que queda.
+	useEffect(() => {
+		if (errorCompra?.status === 409) recargar();
+	}, [errorCompra, recargar]);
+
+	// Si el cupo bajó al recargar, la cantidad elegida se ajusta al nuevo tope.
+	useEffect(() => {
+		if (!evento || !seleccion?.tipoId) return;
+		const tipo = aDetalle(evento).tipos.find((x) => x.id === seleccion.tipoId);
+		if (!tipo) return;
+		const ajustada = ajustarCantidad(seleccion.cantidad, limitesCantidad(tipo));
+		if (ajustada !== seleccion.cantidad) {
+			setSeleccion((s) => ({ ...s, cantidad: ajustada }));
+		}
+	}, [evento, seleccion]);
+
 	useEffect(() => {
 		if (evento && seleccion === null) {
 			setSeleccion(seleccionInicial(aDetalle(evento).tipos));
@@ -256,19 +292,34 @@ function Checkout() {
 								descripcion={x.descripcion}
 								precioTexto={x.precioTexto}
 								agotado={x.agotado}
+								cupoTexto={x.textoCupo}
+								quedanPocas={quedanPocas(x)}
 								interactive
 								seleccionado={elegido}
 								deshabilitado={enviando || finalizado}
 								alSeleccionar={() => elegir(x.id)}
 							>
 								{elegido ? (
-									<QuantityStepper
-										valor={seleccion.cantidad}
-										{...limitesCantidad(x)}
-										alCambiar={cambiarCantidad}
-										etiqueta={`Cantidad de ${x.nombre}`}
-										deshabilitado={enviando || finalizado}
-									/>
+									<View style={{ gap: t.spacing[2] }}>
+										<QuantityStepper
+											valor={seleccion.cantidad}
+											{...limitesCantidad(x)}
+											alCambiar={cambiarCantidad}
+											etiqueta={`Cantidad de ${x.nombre}`}
+											deshabilitado={enviando || finalizado}
+										/>
+										{seleccion.cantidad >= limitesCantidad(x).max ? (
+											<Text
+												accessibilityLiveRegion="polite"
+												style={[
+													t.typography.bodySm,
+													{ color: c.secondaryText }
+												]}
+											>
+												{textoTope(x)}
+											</Text>
+										) : null}
+									</View>
 								) : null}
 							</TicketTypeRow>
 						);

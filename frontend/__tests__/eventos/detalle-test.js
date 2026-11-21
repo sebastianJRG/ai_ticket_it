@@ -20,8 +20,29 @@ describe('aTipoEntradaVista (data-model.md §6)', () => {
 			precio: 25000,
 			precioTexto: '$\u00a025.000',
 			cupo: 100,
-			agotado: false
+			disponibles: 100,
+			agotado: false,
+			textoCupo: 'Quedan 100 entradas'
 		});
+	});
+
+	it('usa disponibles del servidor para agotado y el texto del cupo (corrección 2)', () => {
+		const v = aTipoEntradaVista({ ...GENERAL, cupo: 10, disponibles: 5 });
+		expect(v.cupo).toBe(10);
+		expect(v.disponibles).toBe(5);
+		expect(v.agotado).toBe(false);
+		expect(v.textoCupo).toBe('Quedan 5 entradas');
+		expect(aTipoEntradaVista({ ...GENERAL, disponibles: 1 }).textoCupo).toBe(
+			'Queda 1 entrada'
+		);
+		const agotado = aTipoEntradaVista({ ...GENERAL, cupo: 10, disponibles: 0 });
+		expect(agotado.agotado).toBe(true);
+		expect(agotado.textoCupo).toBe('Agotado');
+	});
+
+	it('sin disponibles en la respuesta usa el cupo total', () => {
+		expect(aTipoEntradaVista(PLATEA).disponibles).toBe(2);
+		expect(aTipoEntradaVista(AGOTADA).textoCupo).toBe('Agotado');
 	});
 
 	it('precio 0 → "Gratis"', () => {

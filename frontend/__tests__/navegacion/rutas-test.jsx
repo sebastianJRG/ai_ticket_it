@@ -157,10 +157,10 @@ describe('Navegación por rol y sesión — US1', () => {
 		}
 	});
 
-	it('ORGANIZADOR ve el estado vacío provisorio en Mensajes', async () => {
+	it('ORGANIZADOR sin compras ve el estado vacío de Mensajes (feature 007)', async () => {
 		await abrir('/organizador/mensajes', { usuario: ORGANIZADOR });
 		expect(
-			screen.getByRole('header', { name: 'Los mensajes viven en cada compra' })
+			await screen.findByText('Todavía no hay compras para conversar')
 		).toBeTruthy();
 	});
 });

@@ -81,7 +81,9 @@ export function createApp(repository) {
 		categoriaRepository,
 		usuarioRepository,
 		tipoEntradaRepository,
-		reseniaRepository
+		reseniaRepository,
+		console,
+		compraRepository
 	);
 	const categoriaService = new CategoriaService(categoriaRepository);
 	const compraService = new CompraService(

@@ -16,8 +16,10 @@ import { aTarjeta, esPasado } from './presentacion';
  * @property {string} descripcion Descripción (`''` si no tiene).
  * @property {number} precio Precio unitario.
  * @property {string} precioTexto "$ 25.000" o "Gratis".
- * @property {number} cupo Cupo total (no disponibles).
- * @property {boolean} agotado Si `cupo <= 0`.
+ * @property {number} cupo Cupo total.
+ * @property {number} disponibles Entradas que quedan según el servidor (`cupo` si no lo informa).
+ * @property {boolean} agotado Si `disponibles <= 0`.
+ * @property {string} textoCupo "Quedan 5 entradas", "Queda 1 entrada" o "Agotado".
  */
 
 /**
@@ -44,6 +46,13 @@ import { aTarjeta, esPasado } from './presentacion';
 export function aTipoEntradaVista(tipo) {
 	const precio = typeof tipo?.precio === 'number' ? tipo.precio : 0;
 	const cupo = typeof tipo?.cupo === 'number' ? tipo.cupo : 0;
+	const disponibles = Math.max(
+		0,
+		typeof tipo?.disponibles === 'number' ? tipo.disponibles : cupo
+	);
+	let textoCupo = 'Agotado';
+	if (disponibles === 1) textoCupo = 'Queda 1 entrada';
+	else if (disponibles > 1) textoCupo = `Quedan ${disponibles} entradas`;
 	return {
 		id: tipo?.id,
 		nombre: tipo?.nombre ?? '',
@@ -51,7 +60,9 @@ export function aTipoEntradaVista(tipo) {
 		precio,
 		precioTexto: formatPrice(precio),
 		cupo,
-		agotado: cupo <= 0
+		disponibles,
+		agotado: disponibles <= 0,
+		textoCupo
 	};
 }
 

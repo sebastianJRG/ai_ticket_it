@@ -9,7 +9,8 @@ import {
 	destinoTrasRegistro,
 	hrefEvento,
 	hrefCheckout,
-	hrefCompra
+	hrefCompra,
+	hrefComprasEvento
 } from '../../src/navegacion/reglas';
 import { COMPRADOR, ORGANIZADOR } from '../helpers/authFalso';
 
@@ -355,13 +356,21 @@ describe('checkout /evento/:id/comprar (feature 005)', () => {
 	});
 });
 
-describe('hrefCompra y /compra/:id (feature 006)', () => {
+describe('hrefCompra y /compra/:id (features 006 y 007)', () => {
 	it('arma la ruta del detalle de compra con el ID codificado', () => {
 		expect(hrefCompra('abc')).toBe('/compra/abc');
 		expect(hrefCompra('a b')).toBe('/compra/a%20b');
 	});
 
-	it('visitante va a login con volverA; COMPRADOR entra; ORGANIZADOR va a sus eventos', () => {
+	it('con eventoId suma ?evento= codificado (feature 007)', () => {
+		expect(hrefCompra('c1')).toBe('/compra/c1');
+		expect(hrefCompra('c1', {})).toBe('/compra/c1');
+		expect(hrefCompra('c 1', { eventoId: 'e/1' })).toBe(
+			'/compra/c%201?evento=e%2F1'
+		);
+	});
+
+	it('visitante va a login con volverA; COMPRADOR y ORGANIZADOR entran (007)', () => {
 		expect(decidirAcceso({ usuario: VISITANTE, ruta: '/compra/x' })).toEqual(
 			redirigir('/login?volverA=%2Fcompra%2Fx')
 		);
@@ -369,7 +378,7 @@ describe('hrefCompra y /compra/:id (feature 006)', () => {
 			permitir
 		);
 		expect(decidirAcceso({ usuario: ORGANIZADOR, ruta: '/compra/x' })).toEqual(
-			redirigir('/organizador/eventos')
+			permitir
 		);
 	});
 
@@ -380,9 +389,9 @@ describe('hrefCompra y /compra/:id (feature 006)', () => {
 		expect(
 			decidirAcceso({ usuario: COMPRADOR, ruta: '/compra/x?q=1' })
 		).toEqual(permitir);
-		expect(decidirAcceso({ usuario: ORGANIZADOR, ruta: '/compra/x/' })).toEqual(
-			redirigir('/organizador/eventos')
-		);
+		expect(
+			decidirAcceso({ usuario: ORGANIZADOR, ruta: '/compra/x/?evento=e1' })
+		).toEqual(permitir);
 	});
 
 	it('/compras mantiene su comportamiento', () => {
@@ -397,10 +406,63 @@ describe('hrefCompra y /compra/:id (feature 006)', () => {
 		);
 	});
 
-	it('tras el login, el COMPRADOR vuelve al detalle y el ORGANIZADOR no', () => {
+	it('tras el login, ambos roles vuelven al detalle de compra', () => {
 		expect(destinoTrasLogin(COMPRADOR, '/compra/x')).toBe('/compra/x');
-		expect(destinoTrasLogin(ORGANIZADOR, '/compra/x')).toBe(
-			'/organizador/eventos'
+		expect(destinoTrasLogin(ORGANIZADOR, '/compra/x?evento=e1')).toBe(
+			'/compra/x?evento=e1'
 		);
+	});
+});
+
+describe('hrefComprasEvento y /evento/:id/compras (feature 007)', () => {
+	it('arma la ruta de las compras del evento con el ID codificado', () => {
+		expect(hrefComprasEvento('abc')).toBe('/evento/abc/compras');
+		expect(hrefComprasEvento('a b')).toBe('/evento/a%20b/compras');
+	});
+
+	it('visitante va a login; ORGANIZADOR entra; COMPRADOR va al detalle', () => {
+		expect(
+			decidirAcceso({ usuario: VISITANTE, ruta: '/evento/x/compras' })
+		).toEqual(redirigir('/login?volverA=%2Fevento%2Fx%2Fcompras'));
+		expect(
+			decidirAcceso({ usuario: ORGANIZADOR, ruta: '/evento/x/compras' })
+		).toEqual(permitir);
+		expect(
+			decidirAcceso({ usuario: COMPRADOR, ruta: '/evento/x/compras' })
+		).toEqual(redirigir('/evento/x'));
+	});
+
+	it('ignora query y barra final al decidir', () => {
+		expect(
+			decidirAcceso({ usuario: VISITANTE, ruta: '/evento/x/compras/?q=1' })
+		).toEqual(redirigir('/login?volverA=%2Fevento%2Fx%2Fcompras'));
+		expect(
+			decidirAcceso({ usuario: ORGANIZADOR, ruta: '/evento/x/compras?q=1' })
+		).toEqual(permitir);
+		expect(
+			decidirAcceso({ usuario: COMPRADOR, ruta: '/evento/x/compras/' })
+		).toEqual(redirigir('/evento/x'));
+	});
+
+	it('el detalle y el checkout del evento no cambian', () => {
+		expect(decidirAcceso({ usuario: VISITANTE, ruta: '/evento/x' })).toEqual(
+			permitir
+		);
+		expect(decidirAcceso({ usuario: ORGANIZADOR, ruta: '/evento/x' })).toEqual(
+			permitir
+		);
+		expect(
+			decidirAcceso({ usuario: COMPRADOR, ruta: '/evento/x/comprar' })
+		).toEqual(permitir);
+		expect(
+			decidirAcceso({ usuario: ORGANIZADOR, ruta: '/evento/x/comprar' })
+		).toEqual(redirigir('/evento/x'));
+	});
+
+	it('tras el login, solo el ORGANIZADOR vuelve a las compras del evento', () => {
+		expect(destinoTrasLogin(ORGANIZADOR, '/evento/x/compras')).toBe(
+			'/evento/x/compras'
+		);
+		expect(destinoTrasLogin(COMPRADOR, '/evento/x/compras')).toBe('/explorar');
 	});
 });

@@ -196,6 +196,34 @@ describe('Detalle del evento — US1 (contracts/pantallas.md › /evento/[idEven
 		expect(screen.getByLabelText('Agregar a favoritos')).toBeTruthy();
 	});
 
+	it('si el evento ya es favorito, el corazón aparece marcado (corrección 3)', async () => {
+		usuarioService.listarFavoritos.mockResolvedValue([EVENTO]);
+		await abrir({ usuario: COMPRADOR });
+		await listo();
+		const corazon = await screen.findByRole('button', {
+			name: 'Quitar de favoritos'
+		});
+		expect(corazon.props.accessibilityState).toEqual(
+			expect.objectContaining({ selected: true })
+		);
+	});
+
+	it('marcar favorito desde el detalle lo deja marcado (corrección 3)', async () => {
+		usuarioService.listarFavoritos.mockResolvedValue([]);
+		usuarioService.agregarFavorito.mockResolvedValue([EVENTO]);
+		await abrir({ usuario: COMPRADOR });
+		await listo();
+		await act(async () => {
+			fireEvent.press(
+				screen.getByRole('button', { name: 'Agregar a favoritos' })
+			);
+		});
+		const corazon = screen.getByRole('button', { name: 'Quitar de favoritos' });
+		expect(corazon.props.accessibilityState).toEqual(
+			expect.objectContaining({ selected: true })
+		);
+	});
+
 	it('visitante toca el corazón → login con volverA del detalle', async () => {
 		await abrir();
 		await listo();

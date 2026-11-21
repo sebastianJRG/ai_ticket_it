@@ -84,6 +84,7 @@ describe('GET /api/eventos/:idEvento', () => {
 		assert.equal(body.categoria.nombre, 'Música');
 		assert.equal(body.tiposEntrada.length, 1);
 		assert.equal(body.tiposEntrada[0].precio, 100);
+		assert.equal(body.tiposEntrada[0].disponibles, 50);
 		assert.equal(body.organizador.nombre, 'Org');
 	});
 

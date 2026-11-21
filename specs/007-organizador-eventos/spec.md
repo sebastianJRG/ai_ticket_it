@@ -26,7 +26,7 @@ El organizador completa nombre, categoría, fecha y hora, descripción, imágene
 
 1. **Given** el formulario, **When** agrega un tercer tipo de entrada y quita el segundo, **Then** quedan los tipos esperados (mínimo 1, el único no se puede quitar).
 2. **Given** campos inválidos (vacíos, fecha pasada, precio negativo, cupo no entero o ≤ 0), **When** pierde el foco o publica, **Then** ve errores que explican cómo corregirlos, iguales a las reglas del servidor.
-3. **Given** datos válidos, **When** publica, **Then** el evento se crea, ve un aviso y va a su detalle de compras.
+3. **Given** datos válidos, **When** publica, **Then** el evento se crea, ve un aviso y va a Compras del evento.
 4. **Given** que no existe la categoría deseada, **When** la crea desde el selector (nombre y descripción), **Then** queda disponible y seleccionada.
 5. **Given** el servidor rechaza (400), **When** publica, **Then** ve el mensaje del servidor y conserva lo cargado.
 
@@ -92,6 +92,7 @@ El organizador accede desde la pestaña Mensajes a las compras de sus eventos pa
 **Acceptance Scenarios**:
 
 1. **Given** eventos con compras, **When** abre Mensajes, **Then** ve las compras agrupadas por evento (comprador, tipo, estado) y al tocar una abre su chat.
+2. **Given** una compra elegida (desde Mensajes o desde Compras del evento), **When** se abre, **Then** ve el detalle compartido de la compra (resumen, comprador, estado) con las pestañas Detalle y Chat; el contenido del chat lo completa la feature 008.
 
 ### Edge Cases
 
@@ -129,3 +130,5 @@ El organizador accede desde la pestaña Mensajes a las compras de sus eventos pa
 - **Borrador**: el backend no guarda borradores; solo "Publicar".
 - **Multimedia**: URLs de imagen escritas por el organizador; subir archivos queda fuera de alcance.
 - No hay edición ni borrado de eventos en esta feature.
+- **URLs de imagen**: las URLs no vacías deben empezar con `http://` o `https://`. Es la única regla del formulario más estricta que el servidor (que acepta cualquier texto) y es deliberada, porque otra URL nunca se mostraría.
+- **Pestañas de Compras del evento**: Pendientes, Confirmadas, Utilizadas y Canceladas. "Canceladas" agrupa CANCELADA y REEMBOLSADA (el distintivo de estado las diferencia), para no superar las 4 pestañas visibles.

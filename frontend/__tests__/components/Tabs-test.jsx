@@ -80,4 +80,34 @@ describe('Tabs (contracts/componentes.md › Tabs)', () => {
 			expect(alCambiar).toHaveBeenCalledWith('canceladas');
 		}
 	);
+
+	it('desplazable: va en un ScrollView horizontal y las pestañas no se estiran (corrección 1)', async () => {
+		await renderConTema(
+			<Tabs
+				pestanas={PESTANAS}
+				seleccionada="activas"
+				alCambiar={() => {}}
+				desplazable
+			/>
+		);
+		const scroll = screen.getByTestId('tabs-scroll');
+		expect(scroll.props.horizontal).toBe(true);
+		const estilo = (el) =>
+			[el.props.style].flat(Infinity).reduce((a, s) => ({ ...a, ...s }), {});
+		for (const tab of screen.getAllByRole('tab')) {
+			expect(estilo(tab).flex).toBeUndefined();
+		}
+		expect(estilo(screen.getByTestId('tabs')).gap).toBeGreaterThan(0);
+	});
+
+	it('sin desplazable no hay ScrollView y las pestañas se reparten el ancho', async () => {
+		await renderConTema(
+			<Tabs pestanas={PESTANAS} seleccionada="activas" alCambiar={() => {}} />
+		);
+		expect(screen.queryByTestId('tabs-scroll')).toBeNull();
+		const estilo = [screen.getAllByRole('tab')[0].props.style]
+			.flat(Infinity)
+			.reduce((a, s) => ({ ...a, ...s }), {});
+		expect(estilo.flex).toBe(1);
+	});
 });

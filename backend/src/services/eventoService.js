@@ -5,6 +5,7 @@ import {
 } from '../dto/evento.js';
 import { idEventoSchema } from '../dto/resenia.js';
 import Evento from '../models/evento.js';
+import { ESTADOS_QUE_RESERVAN } from '../models/estadoCompra.js';
 import TipoEntrada from '../models/tipoEntrada.js';
 import CategoriaRepository from '../repositories/categoriaRepository.js';
 import EventoRepository from '../repositories/eventoRepository.js';
@@ -20,6 +21,7 @@ export default class EventoService {
 	 * @param {TipoEntradaRepository} tipoEntradaRepository
 	 * @param {import('../repositories/reseniaRepository.js').default} [reseniaRepository] Necesario para ordenar por puntaje
 	 * @param {{info: (linea: string) => void}} [logger=console] Destino de los logs estructurados (JSON)
+	 * @param {import('../repositories/compraRepository.js').default} [compraRepository] Necesario para informar el cupo disponible en el detalle
 	 */
 	constructor(
 		eventoRepository,
@@ -27,7 +29,8 @@ export default class EventoService {
 		usuarioRepository,
 		tipoEntradaRepository,
 		reseniaRepository,
-		logger = console
+		logger = console,
+		compraRepository = null
 	) {
 		/** @private */
 		this.logger = logger;
@@ -41,6 +44,8 @@ export default class EventoService {
 		this.tipoEntradaRepository = tipoEntradaRepository;
 		/** @private */
 		this.reseniaRepository = reseniaRepository;
+		/** @private */
+		this.compraRepository = compraRepository;
 	}
 
 	/** Busca eventos con búsqueda textual, filtro por categoría y ordenamiento opcional.
@@ -153,6 +158,8 @@ export default class EventoService {
 	/** Obtiene un evento por su ID.
 	 * @param {string} id - ID del evento (texto no vacío)
 	 * @returns {Promise<Evento & {puntajeOrganizador: number|null}>} El evento con el puntaje de su organizador
+	 *   y, en cada tipo de entrada, `disponibles` (cupo menos las entradas en compras PENDIENTE,
+	 *   CONFIRMADA o UTILIZADA; sin repositorio de compras, el cupo total)
 	 * @throws {ErrorHttp} 400 si el ID es vacío o no es un texto
 	 * @throws {ErrorHttp} 404 si el evento no existe
 	 */
@@ -168,7 +175,40 @@ export default class EventoService {
 		if (!evento) {
 			throw new ErrorHttp(404, `El evento con ID ${resultado.data} no existe.`);
 		}
-		return this._conPuntaje(evento, await this._puntajesPorOrganizador());
+		const conPuntaje = this._conPuntaje(
+			evento,
+			await this._puntajesPorOrganizador()
+		);
+		return this._conDisponibles(conPuntaje);
+	}
+
+	/** Agrega `disponibles` a cada tipo de entrada de una copia del evento (no toca lo guardado).
+	 * @private
+	 * @param {Evento & {puntajeOrganizador: number|null}} evento - Copia del evento a enriquecer
+	 * @returns {Promise<Evento & {puntajeOrganizador: number|null}>} El mismo objeto, con tipos de entrada copiados
+	 */
+	async _conDisponibles(evento) {
+		const compras = this.compraRepository
+			? await this.compraRepository.buscarPorEventoId(evento.id)
+			: [];
+		const reservadas = new Map();
+		for (const c of compras) {
+			if (!ESTADOS_QUE_RESERVAN.has(c.estado)) continue;
+			const id = c.tipoEntrada?.id;
+			reservadas.set(id, (reservadas.get(id) ?? 0) + c.cantidad);
+		}
+		evento.tiposEntrada = evento.tiposEntrada.map((tipo) => {
+			const copia = Object.assign(
+				Object.create(Object.getPrototypeOf(tipo)),
+				tipo
+			);
+			copia.disponibles = Math.max(
+				0,
+				tipo.cupo - (reservadas.get(tipo.id) ?? 0)
+			);
+			return copia;
+		});
+		return evento;
 	}
 
 	/** Resuelve una lista de IDs a eventos (por ejemplo, los favoritos de un comprador).

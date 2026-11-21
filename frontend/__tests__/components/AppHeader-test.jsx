@@ -76,4 +76,26 @@ describe.each(['dark', 'light'])('AppHeader (%s)', (scheme) => {
 		await fireEvent.press(screen.getByRole('button', { name: 'Compartir' }));
 		expect(acciones[0].alPresionar).toHaveBeenCalledTimes(1);
 	});
+
+	it('una acción activa se anuncia seleccionada y una ocupada se deshabilita (corrección 3)', async () => {
+		await renderConTema(
+			<AppHeader
+				titulo="Evento"
+				acciones={[
+					{
+						icono: 'Heart',
+						label: 'Quitar de favoritos',
+						alPresionar: jest.fn(),
+						activo: true,
+						ocupado: true
+					}
+				]}
+			/>,
+			{ scheme }
+		);
+		const boton = screen.getByRole('button', { name: 'Quitar de favoritos' });
+		expect(boton.props.accessibilityState).toEqual(
+			expect.objectContaining({ selected: true, disabled: true })
+		);
+	});
 });

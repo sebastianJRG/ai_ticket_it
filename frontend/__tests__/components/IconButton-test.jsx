@@ -37,3 +37,34 @@ describe('IconButton', () => {
 		expect(onPress).not.toHaveBeenCalled();
 	});
 });
+
+/** Busca en el árbol del botón el primer nodo con la prop `fill`. */
+const conFill = (nodo) => {
+	if (!nodo || typeof nodo !== 'object') return null;
+	if (nodo.props && typeof nodo.props.fill === 'string') return nodo;
+	for (const hijo of nodo.children ?? []) {
+		const r = conFill(hijo);
+		if (r) return r;
+	}
+	return null;
+};
+
+describe('IconButton relleno y seleccionado (corrección 3)', () => {
+	it('sin fill el ícono queda vacío y no seleccionado', async () => {
+		await setup();
+		const boton = screen.getByRole('button');
+		expect(conFill(boton).props.fill).toBe('none');
+		expect(boton.props.accessibilityState).toEqual(
+			expect.objectContaining({ selected: false })
+		);
+	});
+
+	it('con fill y seleccionado pinta el ícono y lo anuncia', async () => {
+		await setup({ fill: '#ff4d94', color: '#ff4d94', seleccionado: true });
+		const boton = screen.getByRole('button');
+		expect(conFill(boton).props.fill).toBe('#ff4d94');
+		expect(boton.props.accessibilityState).toEqual(
+			expect.objectContaining({ selected: true })
+		);
+	});
+});

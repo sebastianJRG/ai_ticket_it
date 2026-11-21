@@ -148,6 +148,8 @@ export default function DetalleEvento() {
 		acciones.push({
 			icono: 'Heart',
 			label: activo ? 'Quitar de favoritos' : 'Agregar a favoritos',
+			activo,
+			ocupado: corazon === 'alternar' && estaPendiente(evento.id),
 			alPresionar: () => {
 				if (corazon === 'alternar') {
 					if (!estaPendiente(evento.id)) alternar(evento);
@@ -243,6 +245,12 @@ export default function DetalleEvento() {
 									key={tipo.id}
 									nombre={tipo.nombre}
 									descripcion={tipo.descripcion}
+									cupoTexto={tipo.textoCupo}
+									quedanPocas={
+										!tipo.agotado &&
+										(tipo.disponibles <= 5 ||
+											tipo.disponibles <= tipo.cupo * 0.1)
+									}
 									precioTexto={tipo.precioTexto}
 									agotado={tipo.agotado}
 									interactive={false}

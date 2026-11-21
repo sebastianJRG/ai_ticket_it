@@ -5,7 +5,8 @@
  *   más las rutas del detalle y del checkout de un evento
  *   (specs/005-detalle-evento-compra/contracts/pantallas.md › Rutas) y la del
  *   detalle de compra (specs/006-mis-compras-comprador/contracts/pantallas.md
- *   › Rutas y acceso).
+ *   › Rutas y acceso), abierto también al organizador, y la de las compras de
+ *   un evento (specs/007-organizador-eventos/contracts/pantallas.md › Rutas y acceso).
  * @owner Equipo Al Ticket It — frontend
  * @license MIT
  */
@@ -109,6 +110,7 @@ const PRIVADAS_COMPRADOR = new Set([
 const DETALLE_EVENTO = /^\/evento\/[^/]+$/;
 const CHECKOUT = /^\/evento\/([^/]+)\/comprar$/;
 const DETALLE_COMPRA = /^\/compra\/[^/]+$/;
+const COMPRAS_EVENTO = /^\/evento\/([^/]+)\/compras$/;
 
 const PERMITIR = Object.freeze({ tipo: 'permitir' });
 
@@ -172,12 +174,25 @@ export function hrefCheckout(idEvento) {
 }
 
 /**
- * Ruta del detalle de una compra (feature 006, research R1).
+ * Ruta del detalle de una compra (feature 006, research R1). El organizador
+ * necesita el evento, porque solo puede leer las compras por evento
+ * (feature 007, research R9).
  * @param {string} idCompra ID de la compra.
- * @returns {string} `/compra/<id codificado>`.
+ * @param {{eventoId?: string}} [opciones] Evento de la compra (organizador).
+ * @returns {string} `/compra/<id codificado>`, con `?evento=<id codificado>` si hay `eventoId`.
  */
-export function hrefCompra(idCompra) {
-	return `/compra/${encodeURIComponent(idCompra)}`;
+export function hrefCompra(idCompra, { eventoId } = {}) {
+	const base = `/compra/${encodeURIComponent(idCompra)}`;
+	return eventoId ? `${base}?evento=${encodeURIComponent(eventoId)}` : base;
+}
+
+/**
+ * Ruta de las compras y la disponibilidad de un evento (feature 007, research R1).
+ * @param {string} idEvento ID del evento.
+ * @returns {string} `/evento/<id codificado>/compras`.
+ */
+export function hrefComprasEvento(idEvento) {
+	return `${hrefEvento(idEvento)}/compras`;
 }
 
 /**
@@ -197,12 +212,16 @@ export function decidirAcceso({ usuario, ruta } = {}) {
 		if (!usuario) return redirigir(hrefLogin(r));
 		return rol === 'COMPRADOR' ? PERMITIR : redirigir(`/evento/${checkout[1]}`);
 	}
+	const comprasEvento = r.match(COMPRAS_EVENTO);
+	if (comprasEvento) {
+		if (!usuario) return redirigir(hrefLogin(r));
+		return rol === 'ORGANIZADOR'
+			? PERMITIR
+			: redirigir(`/evento/${comprasEvento[1]}`);
+	}
 	if (DETALLE_EVENTO.test(r)) return PERMITIR;
 	if (DETALLE_COMPRA.test(r)) {
-		if (!usuario) return redirigir(hrefLogin(r));
-		return rol === 'COMPRADOR'
-			? PERMITIR
-			: redirigir(RUTAS.organizador.eventos);
+		return usuario ? PERMITIR : redirigir(hrefLogin(r));
 	}
 	if (PUBLICAS_COMPRADOR.has(r)) {
 		return rol === 'ORGANIZADOR'

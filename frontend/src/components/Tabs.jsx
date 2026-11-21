@@ -2,12 +2,13 @@
  * @file Pestañas para alternar vistas del mismo contenido, con contador
  *   opcional: `underline` para filtrar listas y `segmented` para 2–3 vistas de
  *   una entidad (design-system/docs/componentes/Tabs.md;
- *   specs/006-mis-compras-comprador/research.md R7).
+ *   specs/006-mis-compras-comprador/research.md R7). Con `desplazable`, las
+ *   pestañas se separan y se deslizan en horizontal si no entran.
  * @owner Equipo Al Ticket It — frontend
  * @license MIT
  */
-import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 
 /**
@@ -26,6 +27,7 @@ import { useTheme } from '../theme/ThemeContext';
  * @property {function(string): void} alCambiar Recibe la clave tocada.
  * @property {'underline'|'segmented'} [variante] `underline` por defecto.
  * @property {string} [testID] Identificador de pruebas (`tabs` por defecto).
+ * @property {boolean} [desplazable] Pestañas con su ancho natural, separadas y en un scroll horizontal (`false` por defecto).
  */
 
 /**
@@ -38,12 +40,27 @@ export function Tabs({
 	seleccionada,
 	alCambiar,
 	variante = 'underline',
-	testID = 'tabs'
+	testID = 'tabs',
+	desplazable = false
 }) {
 	const t = useTheme();
 	const c = t.colors;
 	const segmentada = variante === 'segmented';
-	return (
+	const scroll = useRef(null);
+	const posiciones = useRef({});
+
+	// Lleva a la vista la pestaña elegida si quedó fuera del área visible.
+	useEffect(() => {
+		const x = posiciones.current[seleccionada];
+		if (desplazable && typeof x === 'number') {
+			scroll.current?.scrollTo?.({
+				x: Math.max(0, x - t.spacing[4]),
+				animated: true
+			});
+		}
+	}, [desplazable, seleccionada, t]);
+
+	const lista = (
 		<View
 			accessibilityRole="tablist"
 			testID={testID}
@@ -59,7 +76,8 @@ export function Tabs({
 					: {
 							flexDirection: 'row',
 							borderBottomWidth: 1,
-							borderBottomColor: c.border
+							borderBottomColor: c.border,
+							...(desplazable ? { gap: t.spacing[2], minWidth: '100%' } : {})
 						}
 			}
 		>
@@ -82,14 +100,17 @@ export function Tabs({
 						}
 						accessibilityState={{ selected: activa }}
 						onPress={() => alCambiar(p.clave)}
+						onLayout={(e) => {
+							posiciones.current[p.clave] = e.nativeEvent.layout.x;
+						}}
 						style={({ pressed }) => ({
-							flex: 1,
+							...(desplazable ? {} : { flex: 1 }),
 							minHeight: t.sizes.touchMin,
 							flexDirection: 'row',
 							alignItems: 'center',
 							justifyContent: 'center',
 							gap: t.spacing[2],
-							paddingHorizontal: t.spacing[2],
+							paddingHorizontal: desplazable ? t.spacing[4] : t.spacing[2],
 							opacity: pressed ? t.opacity.pressed : 1,
 							...(segmentada
 								? {
@@ -135,5 +156,18 @@ export function Tabs({
 				);
 			})}
 		</View>
+	);
+
+	if (!desplazable) return lista;
+	return (
+		<ScrollView
+			ref={scroll}
+			testID={`${testID}-scroll`}
+			horizontal
+			showsHorizontalScrollIndicator={false}
+			contentContainerStyle={{ flexGrow: 1 }}
+		>
+			{lista}
+		</ScrollView>
 	);
 }

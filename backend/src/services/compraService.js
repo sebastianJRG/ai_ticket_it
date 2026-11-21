@@ -8,17 +8,10 @@ import { crearCompraSchema, idCompraSchema } from '../dto/compra.js';
 import { idEventoSchema } from '../dto/resenia.js';
 import CambioEstadoCompra from '../models/cambioEstadoCompra.js';
 import Compra from '../models/compra.js';
-import EstadoCompra from '../models/estadoCompra.js';
+import EstadoCompra, { ESTADOS_QUE_RESERVAN } from '../models/estadoCompra.js';
 import { COMPRADOR, ORGANIZADOR } from '../models/roles.js';
 import ErrorHttp from '../utils/errorHttp.js';
 import ExclusionMutua from '../utils/exclusionMutua.js';
-
-/** Estados en los que una compra ocupa cupo. CANCELADA y REEMBOLSADA lo liberan. */
-const ESTADOS_QUE_RESERVAN = new Set([
-	EstadoCompra.PENDIENTE,
-	EstadoCompra.CONFIRMADA,
-	EstadoCompra.UTILIZADA
-]);
 
 /** Milisegundos de un día, para calcular los días restantes hasta un evento. */
 const DIA_MS = 24 * 60 * 60 * 1000;

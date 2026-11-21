@@ -16,6 +16,8 @@ import { Icon } from './Icon';
  * @property {'plain' | 'filled' | 'onImage'} [variant] Estilo: plain (header), filled (flota sobre bg), onImage (sobre foto).
  * @property {string} [color] Color del ícono (por defecto según variante).
  * @property {boolean} [disabled] Deshabilitado.
+ * @property {string} [fill] Relleno del ícono (p. ej. corazón activo); `none` por defecto.
+ * @property {boolean} [seleccionado] Estado activo (se anuncia como seleccionado).
  * @property {function(): void} [onPress] Handler de presión.
  */
 
@@ -30,6 +32,8 @@ export function IconButton({
 	variant = 'plain',
 	color,
 	disabled,
+	fill = 'none',
+	seleccionado = false,
 	onPress
 }) {
 	const t = useTheme();
@@ -44,7 +48,7 @@ export function IconButton({
 		<Pressable
 			accessibilityRole="button"
 			accessibilityLabel={label}
-			accessibilityState={{ disabled: !!disabled }}
+			accessibilityState={{ disabled: !!disabled, selected: !!seleccionado }}
 			disabled={disabled}
 			onPress={disabled ? undefined : onPress}
 			style={({ pressed }) => ({
@@ -57,7 +61,7 @@ export function IconButton({
 				opacity: disabled ? t.opacity.disabled : pressed ? t.opacity.pressed : 1
 			})}
 		>
-			<Icon name={icon} size={t.sizes.iconLg} color={ink} />
+			<Icon name={icon} size={t.sizes.iconLg} color={ink} fill={fill} />
 		</Pressable>
 	);
 }

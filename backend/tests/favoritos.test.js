@@ -272,7 +272,7 @@ describe('GET /api/usuarios/favoritos', () => {
 		);
 	});
 
-	it('cada evento tiene el mismo formato que GET /api/eventos/:idEvento', async () => {
+	it('cada evento tiene el mismo formato que GET /api/eventos/:idEvento (salvo `disponibles`, que solo trae el detalle)', async () => {
 		const favoritos = await (
 			await pedir('GET', undefined, comprador.token)
 		).json();
@@ -281,7 +281,13 @@ describe('GET /api/usuarios/favoritos', () => {
 			const detalle = await (
 				await fetch(`${baseUrl}/api/eventos/${favorito.id}`)
 			).json();
-			assert.deepEqual(favorito, detalle);
+			const sinDisponibles = {
+				...detalle,
+				tiposEntrada: detalle.tiposEntrada.map(
+					({ disponibles, ...tipo }) => tipo
+				)
+			};
+			assert.deepEqual(favorito, sinDisponibles);
 		}
 	});
 

@@ -20,6 +20,8 @@ const MAX_ACCIONES = 2;
  * @property {string} icono Nombre del ícono Lucide.
  * @property {string} label Texto accesible.
  * @property {function(): void} alPresionar Handler.
+ * @property {boolean} [activo] Acción encendida (p. ej. favorito): ícono relleno con `secondary`.
+ * @property {boolean} [ocupado] Hay una petición en curso: se deshabilita.
  */
 
 /**
@@ -80,6 +82,10 @@ export function AppHeader({
 							<IconButton
 								key={a.label}
 								icon={a.icono}
+								color={a.activo ? c.secondary : undefined}
+								fill={a.activo ? c.secondary : 'none'}
+								seleccionado={!!a.activo}
+								disabled={!!a.ocupado}
 								label={a.label}
 								variant="filled"
 								onPress={a.alPresionar}
@@ -148,6 +154,10 @@ export function AppHeader({
 				<IconButton
 					key={a.label}
 					icon={a.icono}
+					color={a.activo ? c.secondary : undefined}
+					fill={a.activo ? c.secondary : 'none'}
+					seleccionado={!!a.activo}
+					disabled={!!a.ocupado}
 					label={a.label}
 					variant={varianteBoton}
 					onPress={a.alPresionar}
