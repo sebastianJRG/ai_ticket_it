@@ -19,7 +19,7 @@ import { Icon } from './Icon';
 
 /**
  * Muestra el estado de una compra sin depender solo del color.
- * @param props Ver {@link StatusBadgeProps}.
+ * @param {StatusBadgeProps} props Ver {@link StatusBadgeProps}.
  * @returns Badge, o null si el estado es desconocido.
  */
 export function StatusBadge({ status, daysLeft, size = 'md' }) {

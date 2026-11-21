@@ -1,5 +1,6 @@
 /**
- * @file Layout raíz: carga de fuentes, safe areas, theme, sesión y Stack raíz.
+ * @file Layout raíz: carga de fuentes, safe areas, theme, avisos, sesión,
+ *   favoritos del comprador (feature 004, research R7) y Stack raíz.
  *   Mientras se restaura la sesión muestra `PantallaCarga` y no monta rutas
  *   (specs/003-navegacion-sesion/research.md R5).
  * @owner Equipo Al Ticket It — frontend
@@ -25,6 +26,7 @@ import { ThemeProvider, useTheme } from '../theme/ThemeContext';
 import { AuthProvider, useAuth } from '../auth/AuthContext';
 import { PantallaCarga } from '../components/PantallaCarga';
 import { ToastProvider, useToast } from '../feedback/ToastContext';
+import { FavoritosProvider } from '../favoritos/FavoritosContext';
 
 /**
  * Stack raíz; no se monta hasta conocer la sesión para que ninguna guardia
@@ -92,7 +94,9 @@ export default function RootLayout() {
 			<ThemeProvider>
 				<ToastProvider>
 					<SesionConAviso>
-						<Navigator />
+						<FavoritosProvider>
+							<Navigator />
+						</FavoritosProvider>
 					</SesionConAviso>
 				</ToastProvider>
 			</ThemeProvider>

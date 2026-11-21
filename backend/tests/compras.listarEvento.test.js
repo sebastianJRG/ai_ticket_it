@@ -91,7 +91,10 @@ after(() => new Promise((resolve) => server.close(resolve)));
 
 describe('GET /api/eventos/:idEvento/compras', () => {
 	it('responde 401 sin token', async () => {
-		assert.equal((await api('GET', `/eventos/${evento.id}/compras`)).status, 401);
+		assert.equal(
+			(await api('GET', `/eventos/${evento.id}/compras`)).status,
+			401
+		);
 	});
 
 	it('responde 403 a un COMPRADOR', async () => {

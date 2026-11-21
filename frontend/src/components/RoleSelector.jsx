@@ -22,7 +22,7 @@ import { ChoiceCard } from './ChoiceCard';
 
 /**
  * Grupo de dos ChoiceCard con selección única.
- * @param props Ver {@link RoleSelectorProps}.
+ * @param {RoleSelectorProps} props Ver {@link RoleSelectorProps}.
  * @returns Vista con rol radiogroup.
  */
 export function RoleSelector({ value = 'COMPRADOR', onChange }) {

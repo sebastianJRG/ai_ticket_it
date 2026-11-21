@@ -27,11 +27,17 @@ describe('CategoriaService.crearCategoria', () => {
 	describe('categoria repetida', async () => {
 		it('debe manejar categoria duplicada', async () => {
 			// Primera creacion
-			await service.crearCategoria({ nombre: 'VIP', descripcion: 'Entradas VIP' });
-			
+			await service.crearCategoria({
+				nombre: 'VIP',
+				descripcion: 'Entradas VIP'
+			});
+
 			// Segunda creacion con mismo nombre
 			try {
-				const resultado = await service.crearCategoria({ nombre: 'VIP', descripcion: 'Otras VIP' });
+				const resultado = await service.crearCategoria({
+					nombre: 'VIP',
+					descripcion: 'Otras VIP'
+				});
 				assert.ok(resultado.id);
 			} catch (error) {
 				assert.ok(error || resultado);
@@ -42,7 +48,9 @@ describe('CategoriaService.crearCategoria', () => {
 	describe('datos invalidos', async () => {
 		it('debe fallar con datos sin nombre', async () => {
 			try {
-				const resultado = await service.crearCategoria({ descripcion: 'Sin nombre' });
+				const resultado = await service.crearCategoria({
+					descripcion: 'Sin nombre'
+				});
 				assert.ok(false, 'Debe haber lanzado error');
 			} catch (error) {
 				assert.ok(error.message);

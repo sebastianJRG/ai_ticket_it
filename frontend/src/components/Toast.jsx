@@ -35,7 +35,7 @@ const ICONO = {
 
 /**
  * Tarjeta del aviso. `error` se anuncia como alerta; el resto como región viva.
- * @param props Ver {@link ToastProps}.
+ * @param {ToastProps} props Ver {@link ToastProps}.
  * @returns {JSX.Element} Aviso.
  */
 export function Toast({ tono = 'info', titulo, mensaje, accion, alCerrar }) {

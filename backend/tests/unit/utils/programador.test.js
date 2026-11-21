@@ -3,7 +3,14 @@
  *
  * @license ISC
  */
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import {
+	describe,
+	it,
+	expect,
+	beforeEach,
+	afterEach,
+	jest
+} from '@jest/globals';
 import { programarTarea } from '../../../src/utils/programador.js';
 
 describe('programarTarea', () => {

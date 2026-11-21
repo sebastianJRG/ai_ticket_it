@@ -20,7 +20,7 @@ import { Icon } from './Icon';
 
 /**
  * Card seleccionable; toda la card es el target con rol radio.
- * @param props Ver {@link ChoiceCardProps}.
+ * @param {ChoiceCardProps} props Ver {@link ChoiceCardProps}.
  * @returns Elemento Pressable con rol radio.
  */
 export function ChoiceCard({ icon, title, description, selected, onPress }) {

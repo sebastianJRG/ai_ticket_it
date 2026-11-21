@@ -36,7 +36,10 @@ describe('crearCompraSchema', () => {
 	it.each([
 		['compradorId', 'El ID del comprador es obligatorio y debe ser un texto.'],
 		['eventoId', 'El ID del evento es obligatorio y debe ser un texto.'],
-		['tipoEntradaId', 'El ID del tipo de entrada es obligatorio y debe ser un texto.']
+		[
+			'tipoEntradaId',
+			'El ID del tipo de entrada es obligatorio y debe ser un texto.'
+		]
 	])('rechaza si falta %s, con mensaje en español', (campo, mensaje) => {
 		const datos = valido();
 		delete datos[campo];
@@ -48,7 +51,10 @@ describe('crearCompraSchema', () => {
 	});
 
 	it('rechaza un ID vacío', () => {
-		const resultado = crearCompraSchema.safeParse({ ...valido(), eventoId: '   ' });
+		const resultado = crearCompraSchema.safeParse({
+			...valido(),
+			eventoId: '   '
+		});
 
 		expect(resultado.success).toBe(false);
 		expect(resultado.error.issues[0].message).toBe(

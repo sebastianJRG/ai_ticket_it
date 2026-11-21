@@ -4,7 +4,10 @@
  * @license ISC
  */
 import { describe, it, expect } from '@jest/globals';
-import { aMensajeRespuesta, crearMensajeSchema } from '../../../src/dto/mensaje.js';
+import {
+	aMensajeRespuesta,
+	crearMensajeSchema
+} from '../../../src/dto/mensaje.js';
 import Mensaje from '../../../src/models/mensaje.js';
 import { construirUsuario } from '../../helpers/eventosFixtures.js';
 

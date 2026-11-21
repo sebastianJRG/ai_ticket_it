@@ -34,7 +34,7 @@ const MAX_ACCIONES = 2;
 
 /**
  * Header con safe area superior.
- * @param props Ver {@link AppHeaderProps}.
+ * @param {AppHeaderProps} props Ver {@link AppHeaderProps}.
  * @returns {JSX.Element} Header de la pantalla.
  */
 export function AppHeader({

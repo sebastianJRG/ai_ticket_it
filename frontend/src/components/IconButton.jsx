@@ -21,7 +21,7 @@ import { Icon } from './Icon';
 
 /**
  * Botón de ícono con área táctil mínima de 44x44.
- * @param props Ver {@link IconButtonProps}.
+ * @param {IconButtonProps} props Ver {@link IconButtonProps}.
  * @returns Elemento Pressable con rol button.
  */
 export function IconButton({

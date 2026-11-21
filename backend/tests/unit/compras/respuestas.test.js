@@ -103,7 +103,9 @@ describe('serializadores de respuesta', () => {
 		it('no modifica el evento original', () => {
 			aEventoRespuesta(evento);
 
-			expect(evento.organizador.contraseniaHash).toBe('hash-secreto-de-contrasenia');
+			expect(evento.organizador.contraseniaHash).toBe(
+				'hash-secreto-de-contrasenia'
+			);
 		});
 
 		it('incluye puntajeOrganizador y lo deja en null si el evento no lo trae', () => {
@@ -163,7 +165,9 @@ describe('serializadores de respuesta', () => {
 		it('no modifica la compra original', () => {
 			aCompraRespuesta(compra);
 
-			expect(compra.comprador.contraseniaHash).toBe('hash-secreto-de-contrasenia');
+			expect(compra.comprador.contraseniaHash).toBe(
+				'hash-secreto-de-contrasenia'
+			);
 			expect(compra.evento.organizador).toBeDefined();
 		});
 	});

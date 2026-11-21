@@ -18,7 +18,7 @@ import * as Lucide from 'lucide-react-native';
 
 /**
  * Renderiza un ícono Lucide decorativo (no accesible por sí solo).
- * @param props Ver {@link IconProps}.
+ * @param {IconProps} props Ver {@link IconProps}.
  * @returns El ícono, o null si el nombre no existe.
  */
 export function Icon({

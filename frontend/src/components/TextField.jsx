@@ -33,7 +33,7 @@ import { IconButton } from './IconButton';
 
 /**
  * Campo de texto (alto 52, texto 16).
- * @param props Ver {@link TextFieldProps}.
+ * @param {TextFieldProps} props Ver {@link TextFieldProps}.
  * @returns Label, input y helper/error.
  */
 export function TextField({

@@ -48,10 +48,19 @@ describe('CompraService.crearCompra', () => {
 		usuarioRepo = new UsuarioRepository();
 		cambioRepo = new CambioEstadoCompraRepository();
 		reloj = () => AHORA;
-		servicio = new CompraService(compraRepo, eventoRepo, usuarioRepo, cambioRepo, reloj);
+		servicio = new CompraService(
+			compraRepo,
+			eventoRepo,
+			usuarioRepo,
+			cambioRepo,
+			reloj
+		);
 
 		comprador = await usuarioRepo.crear(construirUsuario({ rol: 'COMPRADOR' }));
-		evento = await construirEvento(eventoRepo, { precios: [100, 250], cupo: 5 });
+		evento = await construirEvento(eventoRepo, {
+			precios: [100, 250],
+			cupo: 5
+		});
 		tipo = evento.tiposEntrada[0];
 	});
 
@@ -68,7 +77,10 @@ describe('CompraService.crearCompra', () => {
 		});
 
 		it('calcula el total como precio × cantidad', async () => {
-			const compra = await comprar({ tipoEntradaId: evento.tiposEntrada[1].id, cantidad: 3 });
+			const compra = await comprar({
+				tipoEntradaId: evento.tiposEntrada[1].id,
+				cantidad: 3
+			});
 
 			expect(compra.total).toBe(750);
 		});
@@ -134,7 +146,9 @@ describe('CompraService.crearCompra', () => {
 				construirUsuario({ rol: 'ORGANIZADOR', nombreUsuario: 'org.test' })
 			);
 
-			await expect(comprar({ compradorId: organizador.id })).rejects.toMatchObject({
+			await expect(
+				comprar({ compradorId: organizador.id })
+			).rejects.toMatchObject({
 				status: 403,
 				message: 'Solo los compradores pueden realizar compras.'
 			});
@@ -183,7 +197,10 @@ describe('CompraService.crearCompra', () => {
 					tipoEntradaId: tipo.id,
 					cantidad: 1
 				})
-			).rejects.toMatchObject({ status: 400, message: 'El evento ya ocurrió.' });
+			).rejects.toMatchObject({
+				status: 400,
+				message: 'El evento ya ocurrió.'
+			});
 		});
 	});
 
@@ -214,7 +231,9 @@ describe('CompraService.crearCompra', () => {
 			await comprar({ cantidad: 3 });
 			await comprar({ cantidad: 2 });
 
-			await expect(comprar({ cantidad: 1 })).rejects.toMatchObject({ status: 409 });
+			await expect(comprar({ cantidad: 1 })).rejects.toMatchObject({
+				status: 409
+			});
 		});
 
 		it('un tipo de entrada no consume el cupo de otro', async () => {
@@ -230,7 +249,11 @@ describe('CompraService.crearCompra', () => {
 
 		it('un evento no consume el cupo de otro', async () => {
 			await comprar({ cantidad: 5 });
-			const otro = await construirEvento(eventoRepo, { nombre: 'Otro', prefijoTipos: 'u', cupo: 5 });
+			const otro = await construirEvento(eventoRepo, {
+				nombre: 'Otro',
+				prefijoTipos: 'u',
+				cupo: 5
+			});
 
 			const compra = await comprar({
 				eventoId: otro.id,

@@ -49,7 +49,7 @@ function BarraPestanas({ state, emitter, navigateToTab, tabs }) {
 
 /**
  * Área con pestañas protegida por {@link decidirAcceso}.
- * @param props Ver {@link AreaConPestanasProps}.
+ * @param {AreaConPestanasProps} props Ver {@link AreaConPestanasProps}.
  * @returns {JSX.Element} `Redirect` si la ruta no corresponde a la sesión, o el navegador de pestañas.
  */
 export function AreaConPestanas({ tabs, prefijo, listeners }) {

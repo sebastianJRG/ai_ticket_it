@@ -33,7 +33,11 @@ describe('requerirRol', () => {
 	});
 
 	it('responde 403 si el rol no está permitido', () => {
-		requerirRol('COMPRADOR')({ user: { id: '1', rol: 'ORGANIZADOR' } }, res, next);
+		requerirRol('COMPRADOR')(
+			{ user: { id: '1', rol: 'ORGANIZADOR' } },
+			res,
+			next
+		);
 
 		expect(next).toHaveBeenCalledTimes(1);
 		const error = next.mock.calls[0][0];
@@ -42,7 +46,11 @@ describe('requerirRol', () => {
 	});
 
 	it('continúa sin error si el rol coincide', () => {
-		requerirRol('COMPRADOR')({ user: { id: '1', rol: 'COMPRADOR' } }, res, next);
+		requerirRol('COMPRADOR')(
+			{ user: { id: '1', rol: 'COMPRADOR' } },
+			res,
+			next
+		);
 
 		expect(next).toHaveBeenCalledTimes(1);
 		expect(next).toHaveBeenCalledWith();

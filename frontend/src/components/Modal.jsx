@@ -27,7 +27,7 @@ import { Button } from './Button';
 
 /**
  * Diálogo de confirmación accesible.
- * @param props Ver {@link ModalProps}.
+ * @param {ModalProps} props Ver {@link ModalProps}.
  * @returns {JSX.Element} Modal nativo.
  */
 export function Modal({

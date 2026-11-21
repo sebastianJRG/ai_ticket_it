@@ -42,7 +42,7 @@ function useReducirMovimiento() {
 
 /**
  * Bloque decorativo que pulsa la opacidad entre `opacity.skeletonMin` y 1.
- * @param props Ver {@link SkeletonProps}.
+ * @param {SkeletonProps} props Ver {@link SkeletonProps}.
  * @returns {JSX.Element} Vista animada no accesible.
  */
 export function Skeleton({

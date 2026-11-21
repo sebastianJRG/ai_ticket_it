@@ -12,7 +12,9 @@ describe('MensajeRepository', () => {
 
 	/** Persiste un mensaje de la compra indicada. */
 	const guardar = (compraId, texto) =>
-		repo.crear(new Mensaje(null, { id: 'u1' }, texto, new Date(), { id: compraId }));
+		repo.crear(
+			new Mensaje(null, { id: 'u1' }, texto, new Date(), { id: compraId })
+		);
 
 	beforeEach(() => {
 		repo = new MensajeRepository();

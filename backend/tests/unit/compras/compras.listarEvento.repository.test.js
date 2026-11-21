@@ -29,7 +29,10 @@ describe('CompraRepository.buscarPorEventoId', () => {
 		repo = new CompraRepository();
 		const eventos = new EventoRepository();
 		evento = await construirEvento(eventos, { nombre: 'Uno' });
-		otroEvento = await construirEvento(eventos, { nombre: 'Dos', prefijoTipos: 'x' });
+		otroEvento = await construirEvento(eventos, {
+			nombre: 'Dos',
+			prefijoTipos: 'x'
+		});
 	});
 
 	it('devuelve vacío si el evento no tiene compras', async () => {

@@ -52,7 +52,9 @@ describe('listarEventosSchema', () => {
 		const resultado = listarEventosSchema.safeParse({ order: 'up' });
 
 		expect(resultado.success).toBe(false);
-		expect(resultado.error.issues[0].message).toBe('order debe ser asc o desc.');
+		expect(resultado.error.issues[0].message).toBe(
+			'order debe ser asc o desc.'
+		);
 	});
 
 	it.each([[['a', 'b']], [123]])('rechaza q que no es texto (%j)', (q) => {

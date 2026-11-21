@@ -25,7 +25,11 @@ describe('EventoController.listar', () => {
 
 	it('responde 200 con los eventos que devuelve el servicio', async () => {
 		const eventos = [
-			{ id: '1', nombre: 'Rock Fest', organizador: construirUsuario({ id: '9', rol: 'ORGANIZADOR' }) }
+			{
+				id: '1',
+				nombre: 'Rock Fest',
+				organizador: construirUsuario({ id: '9', rol: 'ORGANIZADOR' })
+			}
 		];
 		servicio.buscarEventos.mockResolvedValue(eventos);
 
@@ -37,7 +41,12 @@ describe('EventoController.listar', () => {
 			{
 				id: '1',
 				nombre: 'Rock Fest',
-				organizador: { id: '9', nombre: 'Ana', apellido: 'Pérez', rol: 'ORGANIZADOR' },
+				organizador: {
+					id: '9',
+					nombre: 'Ana',
+					apellido: 'Pérez',
+					rol: 'ORGANIZADOR'
+				},
 				puntajeOrganizador: null
 			}
 		]);
@@ -46,7 +55,11 @@ describe('EventoController.listar', () => {
 
 	it('no filtra los hashes del organizador en la respuesta', async () => {
 		servicio.buscarEventos.mockResolvedValue([
-			{ id: '1', nombre: 'Rock Fest', organizador: construirUsuario({ id: '9', rol: 'ORGANIZADOR' }) }
+			{
+				id: '1',
+				nombre: 'Rock Fest',
+				organizador: construirUsuario({ id: '9', rol: 'ORGANIZADOR' })
+			}
 		]);
 
 		await controlador.listar(req, res, next);

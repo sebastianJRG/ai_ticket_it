@@ -21,9 +21,9 @@ describe('CategoriaController.crear', () => {
 			const req = { user: undefined };
 			const res = { status: null, json: () => {} };
 			const next = () => {};
-			
+
 			sandboxController.crear(req, res, next);
-			
+
 			// Verificar que next fue llamado (error handling)
 			assert.ok(true, 'next debería haber sido llamado');
 		});
@@ -32,7 +32,7 @@ describe('CategoriaController.crear', () => {
 			const req = { user: { rol: 'COMPRADOR' } };
 			const res = { status: null, json: () => {} };
 			const next = () => {};
-			
+
 			sandboxController.crear(req, res, next);
 			assert.ok(true, 'should handle non-organizer');
 		});
@@ -40,10 +40,13 @@ describe('CategoriaController.crear', () => {
 
 	describe('validación de datos Zod', () => {
 		it('debe manejar datos inválidos de Zod', () => {
-			const req = { user: { rol: 'ORGANIZADOR' }, body: { descripcion: 'Sin nombre' } };
+			const req = {
+				user: { rol: 'ORGANIZADOR' },
+				body: { descripcion: 'Sin nombre' }
+			};
 			const res = { status: null, json: () => {} };
 			const next = () => {};
-			
+
 			sandboxController.crear(req, res, next);
 			assert.ok(true, 'should handle invalid Zod data');
 		});
@@ -51,10 +54,13 @@ describe('CategoriaController.crear', () => {
 
 	describe('éxito completo', () => {
 		it('delegar a service y retornar 201', () => {
-			const req = { user: { rol: 'ORGANIZADOR' }, body: { nombre: 'VIP', descripcion: 'Entradas VIP' } };
+			const req = {
+				user: { rol: 'ORGANIZADOR' },
+				body: { nombre: 'VIP', descripcion: 'Entradas VIP' }
+			};
 			const res = { status: null, json: () => {} };
 			const next = () => {};
-			
+
 			sandboxController.crear(req, res, next);
 			assert.ok(true, 'should succeed with valid data and organizer role');
 		});
@@ -90,14 +96,21 @@ describe('CategoriaController.listar', () => {
 	});
 
 	it('responde 200 con las categorías del servicio', async () => {
-		await servicio.crearCategoria({ nombre: 'Música', descripcion: 'Conciertos' });
+		await servicio.crearCategoria({
+			nombre: 'Música',
+			descripcion: 'Conciertos'
+		});
 		await servicio.crearCategoria({ nombre: 'Teatro', descripcion: 'Obras' });
 
 		await controlador.listar({}, res, next);
 
 		assert.equal(estado, 200);
 		assert.deepEqual(
-			cuerpo.map(({ id, nombre, descripcion }) => ({ id, nombre, descripcion })),
+			cuerpo.map(({ id, nombre, descripcion }) => ({
+				id,
+				nombre,
+				descripcion
+			})),
 			[
 				{ id: '1', nombre: 'Música', descripcion: 'Conciertos' },
 				{ id: '2', nombre: 'Teatro', descripcion: 'Obras' }

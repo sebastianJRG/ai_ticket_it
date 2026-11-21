@@ -4,7 +4,7 @@ import Categoria from '../models/categoria.js';
 /**
  * Controlador para la creación de categorías.
  * Solo usuarios con rol ORGANIZADOR pueden crear categorías.
- * 
+ *
  * @param {import('express').Request} req - Petición HTTP con req.user del token JWT
  * @param {import('express').Response} res - Respuesta HTTP
  * @param {import('express').NextFunction} next - Función de manejo de errores
@@ -40,7 +40,9 @@ export default class CategoriaController {
 
 			// 2. Validar rol: solo ORGANIZADOR puede crear categorías
 			if (req.user.rol !== 'ORGANIZADOR') {
-				const error = new Error('Permisos denegados: solo organizadores pueden crear categorías');
+				const error = new Error(
+					'Permisos denegados: solo organizadores pueden crear categorías'
+				);
 				error.status = 403;
 				return next(error);
 			}
@@ -56,7 +58,9 @@ export default class CategoriaController {
 			}
 
 			// 4. Delegar creación al service (validará Zod y BD)
-			const categoriaCreada = await this.categoriaService.crearCategoria(resultado.data);
+			const categoriaCreada = await this.categoriaService.crearCategoria(
+				resultado.data
+			);
 
 			// 5. Responder con la categoría creada y estado 201
 			return res.status(201).json(categoriaCreada);

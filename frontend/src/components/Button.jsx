@@ -21,7 +21,7 @@ import { useTheme } from '../theme/ThemeContext';
 
 /**
  * Botón con estados default/pressed/disabled/loading.
- * @param props Ver {@link ButtonProps}.
+ * @param {ButtonProps} props Ver {@link ButtonProps}.
  * @returns Elemento Pressable con rol button.
  */
 export function Button({

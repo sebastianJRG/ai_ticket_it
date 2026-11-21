@@ -5,10 +5,20 @@
  */
 // Formatos es-AR sin depender de Intl (Hermes en Android puede no traer locales completos).
 
+/**
+ * Parte entera con separador de miles (punto).
+ * @param {number} n Número.
+ * @returns {string} "1.234".
+ */
 const thousands = (n) =>
 	String(Math.trunc(Math.abs(n))).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
-/** 25000 → "$ 25.000" · 1250.5 → "$ 1.250,50" · 0 → "Gratis" */
+/**
+ * Precio en pesos: 25000 → "$ 25.000" · 1250.5 → "$ 1.250,50" · 0 → "Gratis".
+ * @param {number} value Monto.
+ * @param {{free?: string|null}} [opciones] Texto para 0 (`'Gratis'`); `null` muestra "$ 0".
+ * @returns {string} Precio formateado.
+ */
 export function formatPrice(value, { free = 'Gratis' } = {}) {
 	if (value === 0 && free) return free;
 	const sign = value < 0 ? '−' : '';
@@ -16,13 +26,23 @@ export function formatPrice(value, { free = 'Gratis' } = {}) {
 	return `${sign}$ ${thousands(value)}${cents ? ',' + String(cents).padStart(2, '0') : ''}`;
 }
 
-/** Rango para cards: "Desde $ 25.000" (o el precio único si min === max). */
+/**
+ * Rango para cards: "Desde $ 25.000" (o el precio único si min === max).
+ * @param {number} min Precio mínimo.
+ * @param {number} [max] Precio máximo.
+ * @returns {string} Texto del precio.
+ */
 export function formatPriceFrom(min, max) {
 	if (min === max || max == null) return formatPrice(min);
 	return `Desde ${formatPrice(min)}`;
 }
 
-/** Rango completo: "$ 25.000 – $ 80.000" */
+/**
+ * Rango completo: "$ 25.000 – $ 80.000".
+ * @param {number} min Precio mínimo.
+ * @param {number} max Precio máximo.
+ * @returns {string} Rango formateado.
+ */
 export function formatPriceRange(min, max) {
 	return min === max
 		? formatPrice(min)
@@ -76,6 +96,9 @@ const toDate = (d) => (d instanceof Date ? d : new Date(d));
  *        'day'    → "14 dic"
  *        'numeric'→ "14/12/2026"
  *        'time'   → "21:00"
+ * @param {Date|string} date Fecha.
+ * @param {'short'|'long'|'day'|'numeric'|'time'} [style] Estilo (`short` por defecto).
+ * @returns {string} Fecha formateada.
  */
 export function formatDate(date, style = 'short') {
 	const d = toDate(date);
@@ -96,7 +119,12 @@ export function formatDate(date, style = 'short') {
 	}
 }
 
-/** Días enteros entre hoy y el evento (por fecha calendario, no por horas). */
+/**
+ * Días enteros entre hoy y el evento (por fecha calendario, no por horas).
+ * @param {Date|string} date Fecha del evento.
+ * @param {Date|string} [now] Momento de referencia.
+ * @returns {number} Días calendario (negativo si ya pasó).
+ */
 export function daysUntil(date, now = new Date()) {
 	const a = toDate(date),
 		b = toDate(now);
@@ -105,16 +133,32 @@ export function daysUntil(date, now = new Date()) {
 	return Math.round((A - B) / 86400000);
 }
 
-/** 0 → "Es hoy" · 1 → "Es mañana" · 5 → "Faltan 5 días" */
+/**
+ * Cuenta regresiva: 0 → "Es hoy" · 1 → "Es mañana" · 5 → "Faltan 5 días".
+ * @param {number} n Días restantes.
+ * @returns {string} Texto de la cuenta regresiva.
+ */
 export function formatDaysLeft(n) {
 	if (n <= 0) return 'Es hoy';
 	if (n === 1) return 'Es mañana';
 	return `Faltan ${n} días`;
 }
 
-/** 4.6 → "4,6" */
+/**
+ * Puntaje con coma y un decimal: 4.6 → "4,6".
+ * @param {number} v Puntaje.
+ * @returns {string} Puntaje formateado.
+ */
 export const formatRating = (v) => v.toFixed(1).replace('.', ',');
-/** 1234 → "1.234" */
+/**
+ * Cantidad con miles: 1234 → "1.234".
+ * @param {number} n Cantidad.
+ * @returns {string} Cantidad formateada.
+ */
 export const formatCount = (n) => thousands(n);
-/** Cantidad de entradas: 1 → "1 entrada", 3 → "3 entradas" */
+/**
+ * Cantidad de entradas: 1 → "1 entrada", 3 → "3 entradas".
+ * @param {number} n Cantidad.
+ * @returns {string} Texto con plural.
+ */
 export const formatTickets = (n) => `${n} ${n === 1 ? 'entrada' : 'entradas'}`;

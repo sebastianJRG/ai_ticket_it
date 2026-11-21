@@ -21,7 +21,7 @@ import { Icon } from './Icon';
 
 /**
  * Barra inferior con etiquetas siempre visibles; alto 64 + safe area inferior.
- * @param props Ver {@link BottomNavProps}.
+ * @param {BottomNavProps} props Ver {@link BottomNavProps}.
  * @returns {JSX.Element} Contenedor con rol tablist.
  */
 export function BottomNav({ items, activo, dots = [], alSeleccionar }) {

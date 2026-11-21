@@ -1,4 +1,5 @@
 import prettierConfig from 'eslint-config-prettier';
+import jsdoc from 'eslint-plugin-jsdoc';
 import globals from 'globals';
 
 export default [
@@ -34,6 +35,37 @@ export default [
 				process: 'readonly',
 				global: 'writable'
 			}
+		}
+	},
+	// JSDoc obligatorio en el código del frontend (constitución, principio 6).
+	// Los props desestructurados se documentan con @typedef/@property, por eso
+	// no se exige un @param por cada propiedad desestructurada.
+	{
+		files: ['frontend/src/**/*.js', 'frontend/src/**/*.jsx'],
+		plugins: { jsdoc },
+		settings: { jsdoc: { mode: 'typescript' } },
+		rules: {
+			'jsdoc/require-jsdoc': [
+				'error',
+				{
+					publicOnly: true,
+					require: {
+						FunctionDeclaration: true,
+						ClassDeclaration: true,
+						ArrowFunctionExpression: true,
+						FunctionExpression: true,
+						MethodDefinition: true
+					}
+				}
+			],
+			'jsdoc/require-param': ['error', { checkDestructured: false }],
+			'jsdoc/require-param-type': 'error',
+			'jsdoc/require-returns': 'error',
+			'jsdoc/require-file-overview': [
+				'error',
+				{ tags: { file: { mustExist: true, preventDuplicates: true } } }
+			],
+			'jsdoc/check-tag-names': ['error', { definedTags: ['owner', 'license'] }]
 		}
 	},
 	// Tests del frontend (Jest)

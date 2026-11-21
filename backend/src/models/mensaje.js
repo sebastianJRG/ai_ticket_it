@@ -8,7 +8,13 @@ export default class Mensaje {
 	 * @param {Date} [enviado=new Date()]
 	 * @param {{id: string}|null} [compra=null] - Compra a la que pertenece el chat
 	 */
-	constructor(id = null, usuario, mensaje, enviado = new Date(), compra = null) {
+	constructor(
+		id = null,
+		usuario,
+		mensaje,
+		enviado = new Date(),
+		compra = null
+	) {
 		/** @type {string|null} */
 		this.id = id;
 

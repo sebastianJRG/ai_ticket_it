@@ -29,7 +29,7 @@ const ICONOS = {
 
 /**
  * Estado vacío centrado.
- * @param props Ver {@link EmptyStateProps}.
+ * @param {EmptyStateProps} props Ver {@link EmptyStateProps}.
  * @returns {JSX.Element} Vista del estado vacío.
  */
 export function EmptyState({ icono = 'ticket', titulo, cuerpo, accion }) {

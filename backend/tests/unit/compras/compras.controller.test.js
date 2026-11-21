@@ -53,7 +53,11 @@ describe('CompraController.crear', () => {
 		expect(res.json.mock.calls[0][0]).toEqual({
 			id: compra.id,
 			comprador: { id: '5', nombre: 'Ana', apellido: 'Pérez' },
-			evento: { id: compra.evento.id, nombre: 'Rock Fest', fecha: compra.evento.fecha },
+			evento: {
+				id: compra.evento.id,
+				nombre: 'Rock Fest',
+				fecha: compra.evento.fecha
+			},
 			tipoEntrada: { id: 't1', nombre: 'Tipo 1', precio: 100 },
 			cantidad: 2,
 			total: 200,
@@ -93,7 +97,9 @@ describe('CompraController.crear', () => {
 	});
 
 	it('delega el error en next y no responde si el servicio rechaza', async () => {
-		const error = new Error('Cupo insuficiente: quedan 0 entradas disponibles.');
+		const error = new Error(
+			'Cupo insuficiente: quedan 0 entradas disponibles.'
+		);
 		servicio.crearCompra.mockRejectedValue(error);
 
 		await controlador.crear(req, res, next);

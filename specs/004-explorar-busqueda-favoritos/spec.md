@@ -12,6 +12,8 @@
 
 Traza a **CU-03** (buscar por texto o explorar por categorías) y **CU-11** (ordenar por precio, fecha y puntaje del organizador), y muestra el puntaje del organizador que alimenta **CU-10**. Depende de 001 (servicios), 003 (navegación) y, para favoritos, de 002.
 
+**Terminología**: "Búsqueda" es la pantalla de la pestaña **Buscar** (ruta `/buscar`); los tres nombres refieren a lo mismo.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Explorar eventos por categoría (Priority: P1) — CU-03
@@ -83,7 +85,7 @@ El comprador marca eventos con el corazón y los ve en la pestaña Favoritos.
 - Error de red: estado de error con "Reintentar".
 - Sin categorías: no se muestran chips de categoría (solo "Todo").
 - Respuestas de búsqueda que llegan fuera de orden: se muestra solo la del último texto escrito.
-- Organizador: no ve corazón (favoritos es solo de comprador).
+- Organizador: no ve corazón (favoritos es solo de comprador). Como las reglas de 003 ya lo redirigen fuera de Explorar, Búsqueda y Favoritos, en esta feature se garantiza en la tarjeta (corazón oculto para ORGANIZADOR) y se hace visible en el detalle del evento (feature 005).
 
 ## Requirements *(mandatory)*
 
@@ -92,7 +94,7 @@ El comprador marca eventos con el corazón y los ve en la pestaña Favoritos.
 - **FR-001**: Explorar MUST mostrar categorías del servidor como chips con opción "Todo" y filtrar eventos por categoría.
 - **FR-002**: Explorar MUST mostrar eventos destacados y una lista de próximos eventos futuros por fecha.
 - **FR-003**: Búsqueda MUST consultar por texto con espera tras dejar de escribir (~300 ms), mostrar contador de resultados y filtros activos removibles.
-- **FR-004**: Los resultados MUST poder ordenarse por precio, fecha o puntaje del organizador, en sentido ascendente o descendente.
+- **FR-004**: Los resultados de Búsqueda MUST poder ordenarse (Explorar usa un orden fijo por fecha ascendente) por precio, fecha o puntaje del organizador, en sentido ascendente o descendente.
 - **FR-005**: Cada tarjeta MUST mostrar nombre, fecha, categoría, precio desde (mínimo de sus tipos de entrada), imagen (primera de multimedia o arte por categoría) y puntaje del organizador.
 - **FR-006**: Tocar una tarjeta MUST abrir el detalle del evento (feature 005).
 - **FR-007**: Los compradores MUST poder agregar/quitar favoritos desde la tarjeta y ver la lista en la pestaña Favoritos.
@@ -112,6 +114,6 @@ El comprador marca eventos con el corazón y los ve en la pestaña Favoritos.
 ## Assumptions
 
 - El filtrado y orden los hace el servidor; la app no reordena salvo separar "Muy pronto".
-- Sin paginación (el backend no pagina); los esqueletos se usan solo en la carga.
+- Sin paginación (el backend no pagina); los esqueletos se usan solo mientras se espera una respuesta del servidor (carga inicial o nueva consulta al cambiar texto, categoría u orden), nunca para paginar.
 - "Destacados" = los próximos eventos futuros (no hay criterio de destacado en el backend).
 - El backend no expone ubicación del evento ni de la persona: fuera de alcance.

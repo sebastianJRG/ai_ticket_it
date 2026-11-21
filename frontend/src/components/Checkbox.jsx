@@ -20,7 +20,7 @@ import { Icon } from './Icon';
 
 /**
  * Casilla con área táctil de 44 de alto en toda la fila.
- * @param props Ver {@link CheckboxProps}.
+ * @param {CheckboxProps} props Ver {@link CheckboxProps}.
  * @returns Fila Pressable con rol checkbox y mensaje de error opcional.
  */
 export function Checkbox({

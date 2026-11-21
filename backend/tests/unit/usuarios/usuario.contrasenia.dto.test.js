@@ -4,7 +4,10 @@
  * @license ISC
  */
 import { describe, it, expect } from '@jest/globals';
-import { crearUsuarioSchema, actualizarUsuarioSchema } from '../../../src/dto/usuario.js';
+import {
+	crearUsuarioSchema,
+	actualizarUsuarioSchema
+} from '../../../src/dto/usuario.js';
 
 const datosBase = {
 	nombre: 'Ana',
@@ -17,7 +20,10 @@ describe('contraseña: carácter especial', () => {
 	it.each(['Clave!segura9', 'Clave_segura9', 'Mi-clave2025'])(
 		'crearUsuarioSchema acepta %s',
 		(contrasenia) => {
-			const resultado = crearUsuarioSchema.safeParse({ ...datosBase, contrasenia });
+			const resultado = crearUsuarioSchema.safeParse({
+				...datosBase,
+				contrasenia
+			});
 			expect(resultado.success).toBe(true);
 		}
 	);
@@ -25,12 +31,17 @@ describe('contraseña: carácter especial', () => {
 	it.each(['Clave_segura9', 'Mi-clave2025'])(
 		'actualizarUsuarioSchema acepta %s',
 		(contrasenia) => {
-			expect(actualizarUsuarioSchema.safeParse({ contrasenia }).success).toBe(true);
+			expect(actualizarUsuarioSchema.safeParse({ contrasenia }).success).toBe(
+				true
+			);
 		}
 	);
 
 	it('rechaza una contraseña sin ningún carácter especial', () => {
-		const resultado = crearUsuarioSchema.safeParse({ ...datosBase, contrasenia: 'Clave1234' });
+		const resultado = crearUsuarioSchema.safeParse({
+			...datosBase,
+			contrasenia: 'Clave1234'
+		});
 		expect(resultado.success).toBe(false);
 	});
 });

@@ -434,6 +434,11 @@ function build(mode) {
 
 export const darkTheme = build('dark');
 export const lightTheme = build('light');
+/**
+ * Theme para un esquema de color.
+ * @param {'dark'|'light'|null|undefined} scheme Esquema (`useColorScheme()`); oscuro por defecto.
+ * @returns {typeof darkTheme} Theme claro u oscuro.
+ */
 export const getTheme = (scheme) =>
 	scheme === 'light' ? lightTheme : darkTheme;
 export default darkTheme;

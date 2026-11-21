@@ -5,7 +5,8 @@ import {
 	fireEvent,
 	renderRouter,
 	screen,
-	testRouter
+	testRouter,
+	within
 } from 'expo-router/testing-library';
 import { crearAuthFalso, COMPRADOR, ORGANIZADOR } from '../helpers/authFalso';
 import { TABS_COMPRADOR, TABS_ORGANIZADOR } from '../../src/navegacion/reglas';
@@ -37,7 +38,18 @@ jest.mock('../../src/auth/AuthContext', () => {
 	};
 });
 jest.mock('../../src/services/usuarioService', () => ({
-	obtenerPerfil: jest.fn(() => new Promise(() => {}))
+	obtenerPerfil: jest.fn(() => new Promise(() => {})),
+	listarFavoritos: jest.fn(() => Promise.resolve([])),
+	agregarFavorito: jest.fn(() => Promise.resolve([])),
+	quitarFavorito: jest.fn(() => Promise.resolve([]))
+}));
+// Explorar y Buscar (feature 004) consultan eventos y categorías al montar.
+jest.mock('../../src/services/eventoService', () => ({
+	listarEventos: jest.fn(() => Promise.resolve([])),
+	obtenerEvento: jest.fn(() => new Promise(() => {}))
+}));
+jest.mock('../../src/services/categoriaService', () => ({
+	listarCategorias: jest.fn(() => Promise.resolve([]))
 }));
 
 const APP = path.resolve(__dirname, '../../src/app');
@@ -54,6 +66,10 @@ async function abrir(url, estado) {
 	return renderRouter(APP, { initialUrl: url });
 }
 
+/** Pestañas de la barra inferior (los chips de categoría también son `tab`). */
+const pestanasBarra = () =>
+	within(screen.getByTestId('bottom-nav')).getAllByRole('tab');
+
 const etiquetasVisibles = (tabs) =>
 	tabs.every((t) => screen.queryByRole('tab', { name: t.etiqueta }));
 
@@ -67,14 +83,14 @@ describe('Navegación por rol y sesión — US1', () => {
 	it('COMPRADOR abre en Explorar con su barra de 5 pestañas (US1-1)', async () => {
 		await abrir('/', { usuario: COMPRADOR });
 		expect(screen).toHavePathname('/explorar');
-		expect(screen.getAllByRole('tab')).toHaveLength(5);
+		expect(pestanasBarra()).toHaveLength(5);
 		expect(etiquetasVisibles(TABS_COMPRADOR)).toBe(true);
 	});
 
 	it('ORGANIZADOR abre en Mis eventos con su barra de 4 pestañas (US1-2)', async () => {
 		await abrir('/', { usuario: ORGANIZADOR });
 		expect(screen).toHavePathname('/organizador/eventos');
-		expect(screen.getAllByRole('tab')).toHaveLength(4);
+		expect(pestanasBarra()).toHaveLength(4);
 		expect(etiquetasVisibles(TABS_ORGANIZADOR)).toBe(true);
 	});
 
@@ -138,7 +154,7 @@ describe('Navegación del visitante — US2', () => {
 	it('abre en Explorar (SC-001)', async () => {
 		await abrir('/');
 		expect(screen).toHavePathname('/explorar');
-		expect(screen.getAllByRole('tab')).toHaveLength(5);
+		expect(pestanasBarra()).toHaveLength(5);
 	});
 
 	it('puede ver Buscar y el detalle de un evento (FR-003)', async () => {
@@ -231,6 +247,6 @@ describe('Perfil y expiración — US3', () => {
 		await abrir('/explorar', { usuario: COMPRADOR });
 		await act(async () => mockSesion.set(crearAuthFalso()));
 		expect(screen).toHavePathname('/explorar');
-		expect(screen.getAllByRole('tab')).toHaveLength(5);
+		expect(pestanasBarra()).toHaveLength(5);
 	});
 });

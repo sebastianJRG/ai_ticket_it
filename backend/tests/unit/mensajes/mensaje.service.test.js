@@ -130,7 +130,9 @@ describe('MensajeService', () => {
 		});
 
 		it('rechaza con 403 a otro comprador', async () => {
-			await expect(enviar(otroComprador)).rejects.toMatchObject({ status: 403 });
+			await expect(enviar(otroComprador)).rejects.toMatchObject({
+				status: 403
+			});
 		});
 
 		it('rechaza con 403 a un organizador que no es del evento', async () => {
@@ -191,8 +193,16 @@ describe('MensajeService', () => {
 			const paraComprador = await listar(comprador);
 			const paraOrganizador = await listar(organizador);
 
-			expect(paraComprador.map((m) => m.mensaje)).toEqual(['uno', 'dos', 'tres']);
-			expect(paraOrganizador.map((m) => m.mensaje)).toEqual(['uno', 'dos', 'tres']);
+			expect(paraComprador.map((m) => m.mensaje)).toEqual([
+				'uno',
+				'dos',
+				'tres'
+			]);
+			expect(paraOrganizador.map((m) => m.mensaje)).toEqual([
+				'uno',
+				'dos',
+				'tres'
+			]);
 		});
 
 		it('no mezcla mensajes de otras compras', async () => {
@@ -208,7 +218,9 @@ describe('MensajeService', () => {
 		});
 
 		it('rechaza con 403 a otro comprador', async () => {
-			await expect(listar(otroComprador)).rejects.toMatchObject({ status: 403 });
+			await expect(listar(otroComprador)).rejects.toMatchObject({
+				status: 403
+			});
 		});
 
 		it('rechaza con 403 a un organizador que no es del evento', async () => {

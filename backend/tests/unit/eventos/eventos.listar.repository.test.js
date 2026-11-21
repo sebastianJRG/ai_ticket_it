@@ -43,7 +43,11 @@ describe('EventoRepository.buscarEventos', () => {
 	it('sin filtros devuelve todos los eventos en orden de creación', async () => {
 		const resultado = await repositorio.buscarEventos({});
 
-		expect(nombres(resultado)).toEqual(['Rock Fest', 'Obra Hamlet', 'Jazz Night']);
+		expect(nombres(resultado)).toEqual([
+			'Rock Fest',
+			'Obra Hamlet',
+			'Jazz Night'
+		]);
 	});
 
 	it('funciona sin argumentos', async () => {
@@ -77,13 +81,17 @@ describe('EventoRepository.buscarEventos', () => {
 	});
 
 	it('filtra por categoría', async () => {
-		const resultado = await repositorio.buscarEventos({ categoriaId: 'cat-musica' });
+		const resultado = await repositorio.buscarEventos({
+			categoriaId: 'cat-musica'
+		});
 
 		expect(nombres(resultado)).toEqual(['Rock Fest', 'Jazz Night']);
 	});
 
 	it('devuelve [] si la categoría no existe', async () => {
-		const resultado = await repositorio.buscarEventos({ categoriaId: 'no-existe' });
+		const resultado = await repositorio.buscarEventos({
+			categoriaId: 'no-existe'
+		});
 
 		expect(resultado).toEqual([]);
 	});
@@ -98,7 +106,10 @@ describe('EventoRepository.buscarEventos', () => {
 	});
 
 	it('ignora texto y categoría vacíos', async () => {
-		const resultado = await repositorio.buscarEventos({ texto: '', categoriaId: '' });
+		const resultado = await repositorio.buscarEventos({
+			texto: '',
+			categoriaId: ''
+		});
 
 		expect(resultado).toHaveLength(3);
 	});

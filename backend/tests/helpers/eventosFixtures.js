@@ -24,7 +24,10 @@ const FECHA_POR_DEFECTO = new Date('2030-01-10T00:00:00.000Z');
  * @param {string} [datos.nombre='Categoría']
  * @returns {Categoria}
  */
-export function construirCategoria({ id = 'cat-1', nombre = 'Categoría' } = {}) {
+export function construirCategoria({
+	id = 'cat-1',
+	nombre = 'Categoría'
+} = {}) {
 	return new Categoria(id, nombre, `Descripción de ${nombre}`);
 }
 
@@ -85,7 +88,13 @@ export async function construirEvento(
 ) {
 	const tiposEntrada = precios.map(
 		(precio, i) =>
-			new TipoEntrada(`${prefijoTipos}${i + 1}`, `Tipo ${i + 1}`, 'Entrada', precio, cupo)
+			new TipoEntrada(
+				`${prefijoTipos}${i + 1}`,
+				`Tipo ${i + 1}`,
+				'Entrada',
+				precio,
+				cupo
+			)
 	);
 	const evento = new Evento(
 		null,
@@ -135,7 +144,13 @@ export async function construirResenia(
  */
 export async function construirCompra(
 	repositorio,
-	{ comprador, evento, tipoEntrada, cantidad = 1, estado = EstadoCompra.PENDIENTE }
+	{
+		comprador,
+		evento,
+		tipoEntrada,
+		cantidad = 1,
+		estado = EstadoCompra.PENDIENTE
+	}
 ) {
 	return repositorio.crear(
 		new Compra(

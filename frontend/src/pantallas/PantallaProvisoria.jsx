@@ -23,7 +23,7 @@ import { EmptyState } from '../components/EmptyState';
 
 /**
  * Pantalla con {@link AppHeader} y un {@link EmptyState}.
- * @param props Ver {@link PantallaProvisoriaProps}.
+ * @param {PantallaProvisoriaProps} props Ver {@link PantallaProvisoriaProps}.
  * @returns {JSX.Element} Pantalla provisoria.
  */
 export function PantallaProvisoria({
