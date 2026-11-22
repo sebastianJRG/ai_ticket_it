@@ -79,9 +79,20 @@ Completar con experiencias propias; esto es una base:
 ---
 
 ## Consejos para la grabación
-- Grabar el recorrido primero y la explicación del código aparte, y después editar. Si algo falla en vivo, se repite solo esa parte.
-- Llevar la cuenta del tiempo por sección. Si el video se pasa de 10 min, recortar primero el error de "Sin cupo" y la parte de Mis compras del organizador.
+> El paso a paso de la imagen está en [`VIDEO.md`](VIDEO.md) y el texto para leer en [`AUDIO.md`](AUDIO.md), con los mismos ID de toma.
+
+Imagen y audio se graban por separado: **primero la pantalla, después la voz**. La interfaz tiene tiempos que no se controlan (el chat tarda hasta 5 s, hay cargas y cambios de ventana entre ana y bruno), así que es más fácil cortar esas esperas y después hablar sobre el video que repetir clics hasta que coincidan con un audio ya grabado.
+
+1. **Ensayo en voz alta con cronómetro**, sin grabar, para medir cuánto tarda cada sección.
+2. **Grabar la pantalla sin audio**, en tomas separadas: recorrido (2), back-end (3) y front-end (4). Mover el cursor y el scroll despacio, y quedarse 2–3 s en cada archivo o línea que se nombra. Si algo falla, se repite solo esa toma.
+3. **Recortar el video**: sacar esperas, cargas y errores. Ahí queda la duración final de cada sección.
+4. **Grabar el audio por sección mirando el video recortado**, con el guion al lado. Si una frase no entra, se corta. Si sobra imagen, se congela un cuadro o se baja la velocidad.
+5. **Intro (1) y conclusión (5): primero el audio**, con una imagen fija encima (portada, cámara o diapositiva).
+6. **Montar** y revisar la sincronización y que el total quede entre 8:30 y 9:45.
+
+Además:
 - Hacer zoom en el editor (Ctrl + +) para que el código se lea en el video.
+- Si el video se pasa de 10 min, recortar primero el error de "Sin cupo" y la parte de Mis compras del organizador.
 
 ## Verificación
 - Hacer un ensayo completo con el seed antes de grabar. Revisar que el chat actualice sin recargar y que, después de reseñar la compra UTILIZADA de ana, la calificación ya no se ofrezca.
