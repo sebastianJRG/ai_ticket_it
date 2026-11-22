@@ -144,13 +144,13 @@ describe('MensajeService', () => {
 
 		it('rechaza con 403 a otro comprador', async () => {
 			await expect(enviar(otroComprador)).rejects.toMatchObject({
-				status: 403
+				name: 'ForbiddenError'
 			});
 		});
 
 		it('rechaza con 403 a un organizador que no es del evento', async () => {
 			await expect(enviar(otroOrganizador)).rejects.toMatchObject({
-				status: 403
+				name: 'ForbiddenError'
 			});
 		});
 
@@ -161,7 +161,7 @@ describe('MensajeService', () => {
 					usuarioId: comprador.id,
 					mensaje: 'Hola'
 				})
-			).rejects.toMatchObject({ status: 404 });
+			).rejects.toMatchObject({ name: 'NotFoundError' });
 		});
 
 		it('rechaza con 404 si el usuario no existe', async () => {
@@ -171,7 +171,7 @@ describe('MensajeService', () => {
 					usuarioId: '999',
 					mensaje: 'Hola'
 				})
-			).rejects.toMatchObject({ status: 404 });
+			).rejects.toMatchObject({ name: 'NotFoundError' });
 		});
 
 		it.each([
@@ -188,7 +188,7 @@ describe('MensajeService', () => {
 					mensaje: 'Hola',
 					...cambios
 				})
-			).rejects.toMatchObject({ status: 400 });
+			).rejects.toMatchObject({ name: 'BadRequestError' });
 			expect(await mensajeRepo.obtenerTodos()).toHaveLength(0);
 		});
 	});
@@ -232,26 +232,26 @@ describe('MensajeService', () => {
 
 		it('rechaza con 403 a otro comprador', async () => {
 			await expect(listar(otroComprador)).rejects.toMatchObject({
-				status: 403
+				name: 'ForbiddenError'
 			});
 		});
 
 		it('rechaza con 403 a un organizador que no es del evento', async () => {
 			await expect(listar(otroOrganizador)).rejects.toMatchObject({
-				status: 403
+				name: 'ForbiddenError'
 			});
 		});
 
 		it('rechaza con 404 si la compra no existe', async () => {
 			await expect(
 				servicio.listarPorCompra({ compraId: '999', usuarioId: comprador.id })
-			).rejects.toMatchObject({ status: 404 });
+			).rejects.toMatchObject({ name: 'NotFoundError' });
 		});
 
 		it('rechaza con 400 si el ID de compra es inválido', async () => {
 			await expect(
 				servicio.listarPorCompra({ compraId: ' ', usuarioId: comprador.id })
-			).rejects.toMatchObject({ status: 400 });
+			).rejects.toMatchObject({ name: 'BadRequestError' });
 		});
 	});
 

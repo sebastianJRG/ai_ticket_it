@@ -156,14 +156,14 @@ describe('ReseniaService', () => {
 				await comprarEn();
 
 				await expect(reseniar({ puntuacion: 6 })).rejects.toMatchObject({
-					status: 400,
+					name: 'BadRequestError',
 					message: 'La puntuación debe estar entre 1 y 5.'
 				});
 			});
 
 			it('rechaza con 400 un detalle vacío', async () => {
 				await expect(reseniar({ detalle: '  ' })).rejects.toMatchObject({
-					status: 400
+					name: 'BadRequestError'
 				});
 			});
 
@@ -179,7 +179,7 @@ describe('ReseniaService', () => {
 		describe('entidades relacionadas', () => {
 			it('rechaza con 404 un comprador inexistente', async () => {
 				await expect(reseniar({ compradorId: '999' })).rejects.toMatchObject({
-					status: 404,
+					name: 'NotFoundError',
 					message: 'El comprador con ID 999 no existe.'
 				});
 			});
@@ -188,14 +188,14 @@ describe('ReseniaService', () => {
 				await expect(
 					reseniar({ compradorId: organizador.id })
 				).rejects.toMatchObject({
-					status: 403,
+					name: 'ForbiddenError',
 					message: 'Solo los compradores pueden reseñar eventos.'
 				});
 			});
 
 			it('rechaza con 404 un evento inexistente', async () => {
 				await expect(reseniar({ eventoId: '999' })).rejects.toMatchObject({
-					status: 404,
+					name: 'NotFoundError',
 					message: 'El evento con ID 999 no existe.'
 				});
 			});
@@ -207,7 +207,7 @@ describe('ReseniaService', () => {
 				ahora = ANTES;
 
 				await expect(reseniar()).rejects.toMatchObject({
-					status: 400,
+					name: 'BadRequestError',
 					message: 'El evento aún no ha ocurrido.'
 				});
 				expect(await reseniaRepo.obtenerTodos()).toEqual([]);
@@ -215,7 +215,7 @@ describe('ReseniaService', () => {
 
 			it('rechaza con 403 si el comprador no tiene ninguna compra del evento', async () => {
 				await expect(reseniar()).rejects.toMatchObject({
-					status: 403,
+					name: 'ForbiddenError',
 					message:
 						'Solo puedes reseñar eventos en los que tengas una entrada utilizada.'
 				});
@@ -226,14 +226,18 @@ describe('ReseniaService', () => {
 				async (estado) => {
 					await comprarEn(estado);
 
-					await expect(reseniar()).rejects.toMatchObject({ status: 403 });
+					await expect(reseniar()).rejects.toMatchObject({
+						name: 'ForbiddenError'
+					});
 				}
 			);
 
 			it('rechaza con 403 si la compra es de otro comprador', async () => {
 				await comprarEn(CONFIRMADA, { quien: otroComprador });
 
-				await expect(reseniar()).rejects.toMatchObject({ status: 403 });
+				await expect(reseniar()).rejects.toMatchObject({
+					name: 'ForbiddenError'
+				});
 			});
 
 			it('rechaza con 403 si la compra es de otro evento', async () => {
@@ -243,7 +247,9 @@ describe('ReseniaService', () => {
 				});
 				await comprarEn(CONFIRMADA, { en: otroEvento });
 
-				await expect(reseniar()).rejects.toMatchObject({ status: 403 });
+				await expect(reseniar()).rejects.toMatchObject({
+					name: 'ForbiddenError'
+				});
 			});
 
 			it('rechaza con 409 una segunda reseña del mismo comprador al mismo evento', async () => {
@@ -251,7 +257,7 @@ describe('ReseniaService', () => {
 				await reseniar();
 
 				await expect(reseniar({ puntuacion: 1 })).rejects.toMatchObject({
-					status: 409,
+					name: 'ConflictError',
 					message: 'Ya reseñaste este evento.'
 				});
 				expect(await reseniaRepo.obtenerTodos()).toHaveLength(1);
@@ -266,8 +272,8 @@ describe('ReseniaService', () => {
 					1
 				);
 				expect(
-					resultados.find((r) => r.status === 'rejected').reason.status
-				).toBe(409);
+					resultados.find((r) => r.status === 'rejected').reason.name
+				).toBe('ConflictError');
 				expect(await reseniaRepo.obtenerTodos()).toHaveLength(1);
 			});
 		});
@@ -332,14 +338,14 @@ describe('ReseniaService', () => {
 
 		it('rechaza con 404 un evento inexistente', async () => {
 			await expect(servicio.listarPorEvento('999')).rejects.toMatchObject({
-				status: 404,
+				name: 'NotFoundError',
 				message: 'El evento con ID 999 no existe.'
 			});
 		});
 
 		it('rechaza con 400 un ID vacío', async () => {
 			await expect(servicio.listarPorEvento('')).rejects.toMatchObject({
-				status: 400
+				name: 'BadRequestError'
 			});
 		});
 	});
@@ -385,19 +391,19 @@ describe('ReseniaService', () => {
 
 		it('rechaza con 404 un usuario inexistente', async () => {
 			await expect(servicio.listarPorOrganizador('999')).rejects.toMatchObject({
-				status: 404
+				name: 'NotFoundError'
 			});
 		});
 
 		it('rechaza con 404 si el usuario no es ORGANIZADOR', async () => {
 			await expect(
 				servicio.listarPorOrganizador(comprador.id)
-			).rejects.toMatchObject({ status: 404 });
+			).rejects.toMatchObject({ name: 'NotFoundError' });
 		});
 
 		it('rechaza con 400 un ID vacío', async () => {
 			await expect(servicio.listarPorOrganizador('  ')).rejects.toMatchObject({
-				status: 400
+				name: 'BadRequestError'
 			});
 		});
 	});

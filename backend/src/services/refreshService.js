@@ -11,6 +11,7 @@ import { refreshUsuarioSchema } from '../dto/usuario.js';
 import { hashContrasenia } from '../utils/hashing.js';
 import { buscarPorRefreshToken } from '../utils/buscarPorRefreshToken.js';
 import { JWT_SECRET, JWT_ACCESS_EXPIRATION } from '../utils/configJwt.js';
+import { BadRequestError, UnauthorizedError } from '../errors/index.js';
 
 /**
  * Servicio que gestiona la renovación de tokens.
@@ -32,7 +33,8 @@ export default class RefreshService {
 	 *
 	 * @param {object} datos - Cuerpo de la petición con refreshToken.
 	 * @returns {Promise<{accessToken: string, refreshToken: string, usuario: object}>}
-	 * @throws {Error} Si el refresh token es inválido, expirado o la validación falla.
+	 * @throws {BadRequestError} Si la validación de los datos falla.
+	 * @throws {UnauthorizedError} Si el refresh token es inválido o expiró.
 	 */
 	async renovar(datos) {
 		const resultado = refreshUsuarioSchema.safeParse(datos);
@@ -48,9 +50,7 @@ export default class RefreshService {
 			} else {
 				message = 'Error de validación';
 			}
-			const error = new Error(message);
-			error.status = 400;
-			throw error;
+			throw new BadRequestError(message);
 		}
 
 		const { refreshToken } = resultado.data;
@@ -61,9 +61,7 @@ export default class RefreshService {
 		);
 
 		if (!usuario) {
-			const error = new Error('Refresh token inválido o expirado.');
-			error.status = 401;
-			throw error;
+			throw new UnauthorizedError('Refresh token inválido o expirado.');
 		}
 
 		const accessToken = jwt.sign(

@@ -1,4 +1,5 @@
 import { aEventoRespuesta } from '../dto/evento.js';
+import { ForbiddenError, UnauthorizedError } from '../errors/index.js';
 
 /**
  * Controlador para la creación de eventos.
@@ -8,8 +9,8 @@ import { aEventoRespuesta } from '../dto/evento.js';
  * @param {import('express').Response} res - Respuesta HTTP
  * @param {import('express').NextFunction} next - Función de manejo de errores
  * @returns {Promise<void>}
- * @throws {Error} 401 si no hay token/usuario no autenticado
- * @throws {Error} 403 si el usuario no es organizador
+ * @throws {UnauthorizedError} Si no hay token/usuario no autenticado (vía next)
+ * @throws {ForbiddenError} Si el usuario no es organizador (vía next)
  * @property {import('../models/evento.js').default} eventoCreado - El evento creado
  */
 export default class EventoController {
@@ -29,7 +30,7 @@ export default class EventoController {
 	 * @param {import('express').Response} res - Respuesta HTTP
 	 * @param {import('express').NextFunction} next - Función de error siguiente
 	 * @returns {Promise<void>}
-	 * @throws {Error} 400 si algún parámetro de consulta es inválido (vía next)
+	 * @throws {BadRequestError} Si algún parámetro de consulta es inválido (vía next)
 	 */
 	async listar(req, res, next) {
 		try {
@@ -68,18 +69,18 @@ export default class EventoController {
 		try {
 			// 1. Validar autenticación mediante JWT
 			if (!req.user) {
-				const error = new Error('No autorizado - token JWT inválido o ausente');
-				error.status = 401;
-				return next(error);
+				return next(
+					new UnauthorizedError('No autorizado - token JWT inválido o ausente')
+				);
 			}
 
 			// 2. Validar rol: solo ORGANIZADOR puede crear eventos
 			if (req.user.rol !== 'ORGANIZADOR') {
-				const error = new Error(
-					'Permisos denegados: solo organizadores pueden crear eventos'
+				return next(
+					new ForbiddenError(
+						'Permisos denegados: solo organizadores pueden crear eventos'
+					)
 				);
-				error.status = 403;
-				return next(error);
 			}
 
 			// 3. Delegar creación al service (ya validará Zod y BD)

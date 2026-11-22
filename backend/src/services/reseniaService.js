@@ -12,7 +12,12 @@ import {
 import EstadoCompra from '../models/estadoCompra.js';
 import Resenia from '../models/resenia.js';
 import { COMPRADOR, ORGANIZADOR } from '../models/roles.js';
-import ErrorHttp from '../utils/errorHttp.js';
+import {
+	BadRequestError,
+	ConflictError,
+	ForbiddenError,
+	NotFoundError
+} from '../errors/index.js';
 import ExclusionMutua from '../utils/exclusionMutua.js';
 
 /** Estados de compra que habilitan a reseñar el evento: solo entradas ya utilizadas. */
@@ -60,16 +65,15 @@ export default class ReseniaService {
 	 * @param {string} datosResenia.detalle
 	 * @param {number} datosResenia.puntuacion - Entero de 1 a 5
 	 * @returns {Promise<Resenia>} La reseña creada
-	 * @throws {ErrorHttp} 400 si los datos son inválidos o el evento aún no ocurrió
-	 * @throws {ErrorHttp} 403 si el usuario no es COMPRADOR o no tiene una compra UTILIZADA del evento
-	 * @throws {ErrorHttp} 404 si el comprador o el evento no existen
-	 * @throws {ErrorHttp} 409 si el comprador ya reseñó el evento
+	 * @throws {BadRequestError} Si los datos son inválidos o el evento aún no ocurrió
+	 * @throws {ForbiddenError} Si el usuario no es COMPRADOR o no tiene una compra UTILIZADA del evento
+	 * @throws {NotFoundError} Si el comprador o el evento no existen
+	 * @throws {ConflictError} Si el comprador ya reseñó el evento
 	 */
 	async crearResenia(datosResenia) {
 		const resultado = crearReseniaSchema.safeParse(datosResenia);
 		if (!resultado.success) {
-			throw new ErrorHttp(
-				400,
+			throw new BadRequestError(
 				resultado.error.issues[0]?.message || 'Error de validación'
 			);
 		}
@@ -77,18 +81,18 @@ export default class ReseniaService {
 
 		const comprador = await this.usuarioRepository.buscarPorId(compradorId);
 		if (!comprador) {
-			throw new ErrorHttp(404, `El comprador con ID ${compradorId} no existe.`);
+			throw new NotFoundError(`El comprador con ID ${compradorId} no existe.`);
 		}
 		if (comprador.rol !== COMPRADOR.nombre) {
-			throw new ErrorHttp(403, 'Solo los compradores pueden reseñar eventos.');
+			throw new ForbiddenError('Solo los compradores pueden reseñar eventos.');
 		}
 
 		const evento = await this.eventoRepository.buscarPorId(eventoId);
 		if (!evento) {
-			throw new ErrorHttp(404, `El evento con ID ${eventoId} no existe.`);
+			throw new NotFoundError(`El evento con ID ${eventoId} no existe.`);
 		}
 		if (new Date(evento.fecha) > this.reloj()) {
-			throw new ErrorHttp(400, 'El evento aún no ha ocurrido.');
+			throw new BadRequestError('El evento aún no ha ocurrido.');
 		}
 
 		return this.exclusion.ejecutar(async () => {
@@ -97,8 +101,7 @@ export default class ReseniaService {
 				evento.id
 			);
 			if (!compras.some((c) => ESTADOS_QUE_HABILITAN.has(c.estado))) {
-				throw new ErrorHttp(
-					403,
+				throw new ForbiddenError(
 					'Solo puedes reseñar eventos en los que tengas una entrada utilizada.'
 				);
 			}
@@ -107,7 +110,7 @@ export default class ReseniaService {
 				evento.id
 			);
 			if (existente) {
-				throw new ErrorHttp(409, 'Ya reseñaste este evento.');
+				throw new ConflictError('Ya reseñaste este evento.');
 			}
 
 			return this.reseniaRepository.crear(
@@ -120,14 +123,13 @@ export default class ReseniaService {
 	 * Lista las reseñas de un evento, en orden de creación.
 	 * @param {string} idEvento - ID del evento (viene de la URL)
 	 * @returns {Promise<Resenia[]>} Reseñas del evento (vacío si no tiene)
-	 * @throws {ErrorHttp} 400 si el ID es inválido
-	 * @throws {ErrorHttp} 404 si el evento no existe
+	 * @throws {BadRequestError} Si el ID es inválido
+	 * @throws {NotFoundError} Si el evento no existe
 	 */
 	async listarPorEvento(idEvento) {
 		const resultado = idEventoSchema.safeParse(idEvento);
 		if (!resultado.success) {
-			throw new ErrorHttp(
-				400,
+			throw new BadRequestError(
 				resultado.error.issues[0]?.message || 'Error de validación'
 			);
 		}
@@ -135,7 +137,7 @@ export default class ReseniaService {
 
 		const evento = await this.eventoRepository.buscarPorId(id);
 		if (!evento) {
-			throw new ErrorHttp(404, `El evento con ID ${id} no existe.`);
+			throw new NotFoundError(`El evento con ID ${id} no existe.`);
 		}
 		return this.reseniaRepository.buscarPorEventoId(evento.id);
 	}
@@ -145,14 +147,13 @@ export default class ReseniaService {
 	 * Permite mostrar en cada evento la experiencia previa con ese organizador.
 	 * @param {string} idOrganizador - ID del organizador (viene de la URL)
 	 * @returns {Promise<Resenia[]>} Reseñas de sus eventos (vacío si no tiene)
-	 * @throws {ErrorHttp} 400 si el ID es inválido
-	 * @throws {ErrorHttp} 404 si el usuario no existe o no es ORGANIZADOR
+	 * @throws {BadRequestError} Si el ID es inválido
+	 * @throws {NotFoundError} Si el usuario no existe o no es ORGANIZADOR
 	 */
 	async listarPorOrganizador(idOrganizador) {
 		const resultado = idUsuarioSchema.safeParse(idOrganizador);
 		if (!resultado.success) {
-			throw new ErrorHttp(
-				400,
+			throw new BadRequestError(
 				resultado.error.issues[0]?.message || 'Error de validación'
 			);
 		}
@@ -160,7 +161,7 @@ export default class ReseniaService {
 
 		const organizador = await this.usuarioRepository.buscarPorId(id);
 		if (!organizador || organizador.rol !== ORGANIZADOR.nombre) {
-			throw new ErrorHttp(404, `El organizador con ID ${id} no existe.`);
+			throw new NotFoundError(`El organizador con ID ${id} no existe.`);
 		}
 		return this.reseniaRepository.buscarPorOrganizadorId(organizador.id);
 	}

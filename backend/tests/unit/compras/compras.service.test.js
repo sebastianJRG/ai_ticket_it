@@ -114,14 +114,14 @@ describe('CompraService.crearCompra', () => {
 	describe('validación del cuerpo', () => {
 		it('rechaza con 400 una cantidad inválida', async () => {
 			await expect(comprar({ cantidad: 0 })).rejects.toMatchObject({
-				status: 400,
+				name: 'BadRequestError',
 				message: 'La cantidad debe ser mayor a 0.'
 			});
 		});
 
 		it('rechaza con 400 si falta el evento', async () => {
 			await expect(comprar({ eventoId: undefined })).rejects.toMatchObject({
-				status: 400
+				name: 'BadRequestError'
 			});
 		});
 
@@ -136,7 +136,7 @@ describe('CompraService.crearCompra', () => {
 	describe('entidades relacionadas', () => {
 		it('rechaza con 404 un comprador inexistente', async () => {
 			await expect(comprar({ compradorId: '999' })).rejects.toMatchObject({
-				status: 404,
+				name: 'NotFoundError',
 				message: 'El comprador con ID 999 no existe.'
 			});
 		});
@@ -149,21 +149,21 @@ describe('CompraService.crearCompra', () => {
 			await expect(
 				comprar({ compradorId: organizador.id })
 			).rejects.toMatchObject({
-				status: 403,
+				name: 'ForbiddenError',
 				message: 'Solo los compradores pueden realizar compras.'
 			});
 		});
 
 		it('rechaza con 404 un evento inexistente', async () => {
 			await expect(comprar({ eventoId: '999' })).rejects.toMatchObject({
-				status: 404,
+				name: 'NotFoundError',
 				message: 'El evento con ID 999 no existe.'
 			});
 		});
 
 		it('rechaza con 404 un tipo de entrada inexistente', async () => {
 			await expect(comprar({ tipoEntradaId: 'zzz' })).rejects.toMatchObject({
-				status: 404,
+				name: 'NotFoundError',
 				message: 'El tipo de entrada con ID zzz no pertenece al evento.'
 			});
 		});
@@ -176,7 +176,7 @@ describe('CompraService.crearCompra', () => {
 
 			await expect(
 				comprar({ tipoEntradaId: otroEvento.tiposEntrada[0].id })
-			).rejects.toMatchObject({ status: 404 });
+			).rejects.toMatchObject({ name: 'NotFoundError' });
 		});
 	});
 
@@ -198,7 +198,7 @@ describe('CompraService.crearCompra', () => {
 					cantidad: 1
 				})
 			).rejects.toMatchObject({
-				status: 400,
+				name: 'BadRequestError',
 				message: 'El evento ya ocurrió.'
 			});
 		});
@@ -213,7 +213,7 @@ describe('CompraService.crearCompra', () => {
 
 		it('rechaza con 409 una unidad por encima del cupo', async () => {
 			await expect(comprar({ cantidad: 6 })).rejects.toMatchObject({
-				status: 409,
+				name: 'ConflictError',
 				message: 'Cupo insuficiente: quedan 5 entradas disponibles.'
 			});
 		});
@@ -222,7 +222,7 @@ describe('CompraService.crearCompra', () => {
 			await comprar({ cantidad: 4 });
 
 			await expect(comprar({ cantidad: 2 })).rejects.toMatchObject({
-				status: 409,
+				name: 'ConflictError',
 				message: 'Cupo insuficiente: queda 1 entrada disponible.'
 			});
 		});
@@ -232,7 +232,7 @@ describe('CompraService.crearCompra', () => {
 			await comprar({ cantidad: 2 });
 
 			await expect(comprar({ cantidad: 1 })).rejects.toMatchObject({
-				status: 409
+				name: 'ConflictError'
 			});
 		});
 
@@ -282,7 +282,7 @@ describe('CompraService.crearCompra', () => {
 			const intento = comprar({ cantidad: 1 });
 
 			if (ocupa) {
-				await expect(intento).rejects.toMatchObject({ status: 409 });
+				await expect(intento).rejects.toMatchObject({ name: 'ConflictError' });
 			} else {
 				await expect(intento).resolves.toMatchObject({ cantidad: 1 });
 			}
@@ -319,7 +319,7 @@ describe('CompraService.crearCompra', () => {
 			expect(exitosas).toHaveLength(3);
 			expect(rechazadas).toHaveLength(5);
 			for (const r of rechazadas) {
-				expect(r.reason.status).toBe(409);
+				expect(r.reason.name).toBe('ConflictError');
 			}
 			expect(await compraRepo.obtenerTodos()).toHaveLength(3);
 			expect(await cambioRepo.obtenerTodos()).toHaveLength(3);

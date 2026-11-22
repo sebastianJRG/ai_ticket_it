@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import FavoritoController from '../../../src/controllers/favoritoController.js';
-import ErrorHttp from '../../../src/utils/errorHttp.js';
+import { BadRequestError, NotFoundError } from '../../../src/errors/index.js';
 
 /**
  * Evento de dominio con organizador completo (incluye hashes que no deben salir).
@@ -94,7 +94,7 @@ describe('FavoritoController.agregar', () => {
 	});
 
 	it('pasa los errores del servicio a next', async () => {
-		const error = new ErrorHttp(404, 'El evento con ID 7 no existe.');
+		const error = new NotFoundError('El evento con ID 7 no existe.');
 		usuarioService.agregarAFavoritos.mockRejectedValue(error);
 
 		await controlador.agregar(req, res, next);
@@ -127,7 +127,7 @@ describe('FavoritoController.quitar', () => {
 	});
 
 	it('pasa los errores del servicio a next', async () => {
-		const error = new ErrorHttp(400, 'El ID del evento no puede estar vacío.');
+		const error = new BadRequestError('El ID del evento no puede estar vacío.');
 		usuarioService.removerDeFavoritos.mockRejectedValue(error);
 
 		await controlador.quitar(req, res, next);
@@ -156,7 +156,7 @@ describe('FavoritoController.listar', () => {
 	});
 
 	it('pasa los errores del servicio a next', async () => {
-		const error = new ErrorHttp(404, 'El usuario no existe.');
+		const error = new NotFoundError('El usuario no existe.');
 		usuarioService.listarFavoritos.mockRejectedValue(error);
 
 		await controlador.listar(req, res, next);

@@ -2,6 +2,7 @@ import EstadoCompra from './estadoCompra.js';
 import Evento from './evento.js';
 import TipoEntrada from './tipoEntrada.js';
 import Usuario from './usuario.js';
+import { ConflictError } from '../errors/index.js';
 
 /**
  * Transiciones válidas de `EstadoCompra`. UTILIZADA, CANCELADA y REEMBOLSADA son terminales.
@@ -73,11 +74,11 @@ export default class Compra {
 	 * Actualiza el estado actual de la compra respetando las transiciones permitidas.
 	 * @param {EstadoCompra} nuevoEstado
 	 * @returns {void}
-	 * @throws {Error} Si la transición desde el estado actual no está permitida (el estado no cambia)
+	 * @throws {ConflictError} Si la transición desde el estado actual no está permitida (el estado no cambia)
 	 */
 	actualizarEstado(nuevoEstado) {
 		if (!this.puedeTransicionarA(nuevoEstado)) {
-			throw new Error(
+			throw new ConflictError(
 				`Transición de estado no permitida: ${this.estado} → ${nuevoEstado}.`
 			);
 		}

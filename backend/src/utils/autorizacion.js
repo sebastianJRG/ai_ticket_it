@@ -5,26 +5,25 @@
  * @module utils/autorizacion
  * @license ISC
  */
-import ErrorHttp from './errorHttp.js';
+import { ForbiddenError, UnauthorizedError } from '../errors/index.js';
 
 /**
  * Crea un middleware que exige un usuario autenticado con alguno de los roles dados.
  * @param {...string} roles - Roles permitidos (por ejemplo, 'COMPRADOR')
- * @returns {import('express').RequestHandler} Middleware que llama a `next(ErrorHttp)` con 401 o 403, o a `next()` si se cumple
- * @throws {ErrorHttp} 401 si no hay usuario autenticado (vía next)
- * @throws {ErrorHttp} 403 si el rol del usuario no está permitido (vía next)
+ * @returns {import('express').RequestHandler} Middleware que llama a `next(error)` con 401 o 403, o a `next()` si se cumple
+ * @throws {UnauthorizedError} Si no hay usuario autenticado (vía next)
+ * @throws {ForbiddenError} Si el rol del usuario no está permitido (vía next)
  */
 export function requerirRol(...roles) {
 	return (req, res, next) => {
 		if (!req.user) {
 			return next(
-				new ErrorHttp(401, 'No autorizado - token JWT inválido o ausente')
+				new UnauthorizedError('No autorizado - token JWT inválido o ausente')
 			);
 		}
 		if (!roles.includes(req.user.rol)) {
 			return next(
-				new ErrorHttp(
-					403,
+				new ForbiddenError(
 					`Permisos denegados: se requiere el rol ${roles.join(' o ')}`
 				)
 			);

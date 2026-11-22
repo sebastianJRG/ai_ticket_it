@@ -6,7 +6,10 @@
  */
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { requerirRol } from '../../../src/utils/autorizacion.js';
-import ErrorHttp from '../../../src/utils/errorHttp.js';
+import {
+	UnauthorizedError,
+	ForbiddenError
+} from '../../../src/errors/index.js';
 
 describe('requerirRol', () => {
 	let res;
@@ -22,14 +25,14 @@ describe('requerirRol', () => {
 
 		expect(next).toHaveBeenCalledTimes(1);
 		const error = next.mock.calls[0][0];
-		expect(error).toBeInstanceOf(ErrorHttp);
-		expect(error.status).toBe(401);
+		expect(error).toBeInstanceOf(UnauthorizedError);
+		expect(error.statusCode).toBe(401);
 	});
 
 	it('responde 401 si el token fue inválido (user = null)', () => {
 		requerirRol('COMPRADOR')({ user: null }, res, next);
 
-		expect(next.mock.calls[0][0].status).toBe(401);
+		expect(next.mock.calls[0][0]).toBeInstanceOf(UnauthorizedError);
 	});
 
 	it('responde 403 si el rol no está permitido', () => {
@@ -41,8 +44,8 @@ describe('requerirRol', () => {
 
 		expect(next).toHaveBeenCalledTimes(1);
 		const error = next.mock.calls[0][0];
-		expect(error).toBeInstanceOf(ErrorHttp);
-		expect(error.status).toBe(403);
+		expect(error).toBeInstanceOf(ForbiddenError);
+		expect(error.statusCode).toBe(403);
 	});
 
 	it('continúa sin error si el rol coincide', () => {
@@ -73,6 +76,6 @@ describe('requerirRol', () => {
 		soloOrganizador(req, res, next);
 
 		expect(next.mock.calls[0]).toEqual([]);
-		expect(next.mock.calls[1][0].status).toBe(403);
+		expect(next.mock.calls[1][0]).toBeInstanceOf(ForbiddenError);
 	});
 });

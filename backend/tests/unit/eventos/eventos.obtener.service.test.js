@@ -65,7 +65,7 @@ describe('EventoService.obtenerPorId', () => {
 
 	it('lanza 404 si el evento no existe', async () => {
 		await expect(servicio.obtenerPorId('999')).rejects.toMatchObject({
-			status: 404,
+			name: 'NotFoundError',
 			message: 'El evento con ID 999 no existe.'
 		});
 	});
@@ -77,7 +77,7 @@ describe('EventoService.obtenerPorId', () => {
 		[42, 'no textual']
 	])('lanza 400 si el id es inválido (%p: %s)', async (id) => {
 		await expect(servicio.obtenerPorId(id)).rejects.toMatchObject({
-			status: 400
+			name: 'BadRequestError'
 		});
 	});
 });

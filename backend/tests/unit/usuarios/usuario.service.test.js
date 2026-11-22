@@ -31,13 +31,13 @@ describe('UsuarioService.obtenerPerfil', () => {
 
 	it('lanza 404 si el usuario no existe', async () => {
 		await expect(servicio.obtenerPerfil('999')).rejects.toMatchObject({
-			status: 404
+			name: 'NotFoundError'
 		});
 	});
 
 	it('lanza 404 si no se recibe id', async () => {
 		await expect(servicio.obtenerPerfil(undefined)).rejects.toMatchObject({
-			status: 404
+			name: 'NotFoundError'
 		});
 	});
 });

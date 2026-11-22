@@ -93,13 +93,13 @@ describe('UsuarioService.agregarAFavoritos', () => {
 	it('lanza 404 si el evento no existe', async () => {
 		await expect(
 			servicio.agregarAFavoritos(comprador.id, '999')
-		).rejects.toMatchObject({ status: 404 });
+		).rejects.toMatchObject({ name: 'NotFoundError' });
 	});
 
 	it('lanza 400 si el ID del evento queda vacío', async () => {
 		await expect(
 			servicio.agregarAFavoritos(comprador.id, '   ')
-		).rejects.toMatchObject({ status: 400 });
+		).rejects.toMatchObject({ name: 'BadRequestError' });
 	});
 
 	it('lanza 404 si el usuario no existe', async () => {
@@ -107,7 +107,7 @@ describe('UsuarioService.agregarAFavoritos', () => {
 
 		await expect(
 			servicio.agregarAFavoritos('999', evento.id)
-		).rejects.toMatchObject({ status: 404 });
+		).rejects.toMatchObject({ name: 'NotFoundError' });
 	});
 
 	it('no muta el arreglo de favoritos leído antes (persiste un arreglo nuevo)', async () => {
@@ -205,12 +205,12 @@ describe('UsuarioService.removerDeFavoritos', () => {
 	it('lanza 400 si el ID del evento queda vacío', async () => {
 		await expect(
 			servicio.removerDeFavoritos(comprador.id, '   ')
-		).rejects.toMatchObject({ status: 400 });
+		).rejects.toMatchObject({ name: 'BadRequestError' });
 	});
 
 	it('lanza 404 si el usuario no existe', async () => {
 		await expect(servicio.removerDeFavoritos('999', '1')).rejects.toMatchObject(
-			{ status: 404 }
+			{ name: 'NotFoundError' }
 		);
 	});
 
@@ -259,7 +259,7 @@ describe('UsuarioService.listarFavoritos', () => {
 
 	it('lanza 404 si el usuario no existe', async () => {
 		await expect(servicio.listarFavoritos('999')).rejects.toMatchObject({
-			status: 404
+			name: 'NotFoundError'
 		});
 	});
 

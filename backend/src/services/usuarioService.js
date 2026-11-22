@@ -2,7 +2,11 @@ import { idEventoSchema } from '../dto/resenia.js';
 import { actualizarUsuarioSchema, crearUsuarioSchema } from '../dto/usuario.js';
 import { COMPRADOR, ORGANIZADOR } from '../models/roles.js';
 import Usuario from '../models/usuario.js';
-import ErrorHttp from '../utils/errorHttp.js';
+import {
+	BadRequestError,
+	ConflictError,
+	NotFoundError
+} from '../errors/index.js';
 import { hashContrasenia } from '../utils/hashing.js';
 
 /** Mapeo entre roles y permisos del sistema.
@@ -33,29 +37,28 @@ export default class UsuarioService {
 	 * @private
 	 * @param {unknown} id - ID a validar
 	 * @returns {string} ID sin espacios alrededor
-	 * @throws {ErrorHttp} 400 si no es un texto o queda vacío
+	 * @throws {BadRequestError} Si no es un texto o queda vacío
 	 */
 	_validarIdEvento(id) {
 		const resultado = idEventoSchema.safeParse(id);
 		if (!resultado.success) {
-			throw new ErrorHttp(
-				400,
+			throw new BadRequestError(
 				resultado.error.issues[0]?.message || 'Error de validación'
 			);
 		}
 		return resultado.data;
 	}
 
-	/** Busca un usuario o falla con 404.
+	/** Busca un usuario o lanza NotFoundError.
 	 * @private
 	 * @param {string} usuarioId - ID del usuario (tomado del token JWT)
 	 * @returns {Promise<import('../models/usuario.js').default>} Usuario encontrado
-	 * @throws {ErrorHttp} 404 si el usuario no existe
+	 * @throws {NotFoundError} Si el usuario no existe
 	 */
 	async _usuarioOFallar(usuarioId) {
 		const usuario = await this.usuarioRepository.buscarPorId(usuarioId);
 		if (!usuario) {
-			throw new ErrorHttp(404, 'El usuario no existe.');
+			throw new NotFoundError('El usuario no existe.');
 		}
 		return usuario;
 	}
@@ -80,12 +83,12 @@ export default class UsuarioService {
 	/** Obtiene un usuario por su ID.
 	 * @param {string} usuarioId - El ID del usuario
 	 * @returns {Promise<import('../models/usuario.js').default>} El usuario encontrado
-	 * @throws {Error} Si el usuario no existe
+	 * @throws {NotFoundError} Si el usuario no existe
 	 */
 	async obtenerPorId(usuarioId) {
 		const usuario = await this.usuarioRepository.buscarPorId(usuarioId);
 		if (!usuario) {
-			throw new Error(`El usuario con ID ${usuarioId} no existe.`);
+			throw new NotFoundError(`El usuario con ID ${usuarioId} no existe.`);
 		}
 		return usuario;
 	}
@@ -93,12 +96,12 @@ export default class UsuarioService {
 	/** Obtiene el perfil del usuario autenticado.
 	 * @param {string} usuarioId - ID del usuario (tomado del token JWT)
 	 * @returns {Promise<import('../models/usuario.js').default>} El usuario encontrado
-	 * @throws {ErrorHttp} 404 si el usuario no existe
+	 * @throws {NotFoundError} Si el usuario no existe
 	 */
 	async obtenerPerfil(usuarioId) {
 		const usuario = await this.usuarioRepository.buscarPorId(usuarioId);
 		if (!usuario) {
-			throw new ErrorHttp(404, 'El usuario no existe.');
+			throw new NotFoundError('El usuario no existe.');
 		}
 		return usuario;
 	}
@@ -107,7 +110,8 @@ export default class UsuarioService {
 	 * Los permisos se asignan automáticamente según el rol enviado.
 	 * @param {object} datosUsuario - DTO con los datos del usuario
 	 * @returns {Promise<import('../models/usuario.js').default>} El usuario creado
-	 * @throws {Error} Si los datos son inválidos
+	 * @throws {BadRequestError} Si los datos son inválidos
+	 * @throws {ConflictError} Si el nombre de usuario ya está en uso
 	 */
 	async crearUsuario(datosUsuario) {
 		// 1️⃣ Validar el objeto plano que viene del controlador con Zod
@@ -116,7 +120,7 @@ export default class UsuarioService {
 		if (!resultado.success) {
 			const message =
 				resultado.error.issues[0]?.message || 'Error de validación';
-			throw new Error(message);
+			throw new BadRequestError(message);
 		}
 
 		// 2️⃣ Verificar unicidad del nombre de usuario
@@ -125,7 +129,7 @@ export default class UsuarioService {
 		const nombreUsuarioExistente =
 			await this.usuarioRepository.existePorNombreUsuario(nombreUsuario);
 		if (nombreUsuarioExistente) {
-			throw new Error('El nombre de usuario ya está en uso.');
+			throw new ConflictError('El nombre de usuario ya está en uso.');
 		}
 
 		// 3. Asignar permisos según el rol
@@ -160,13 +164,14 @@ export default class UsuarioService {
 	 * @param {string} usuarioId - ID del usuario a actualizar
 	 * @param {object} datosActualizacion - Datos a actualizar (nombre, apellido, contraseña)
 	 * @returns {Promise<import('../models/usuario.js').default>} El usuario actualizado
-	 * @throws {Error} Si el usuario no existe
+	 * @throws {NotFoundError} Si el usuario no existe
+	 * @throws {BadRequestError} Si los datos son inválidos, no hay nada que actualizar o se intenta cambiar el nombre de usuario
 	 */
 	async actualizarUsuario(usuarioId, datosActualizacion) {
 		// 1. Buscar si el usuario existe
 		const usuario = await this.usuarioRepository.buscarPorId(usuarioId);
 		if (!usuario) {
-			throw new Error(`El usuario con ID ${usuarioId} no existe.`);
+			throw new NotFoundError(`El usuario con ID ${usuarioId} no existe.`);
 		}
 
 		// 2️⃣ NUEVO: Verificar que no se intente modificar el nombre de usuario
@@ -174,7 +179,7 @@ export default class UsuarioService {
 			datosActualizacion.nombreUsuario &&
 			datosActualizacion.nombreUsuario !== usuario.nombreUsuario
 		) {
-			throw new Error('No se puede modificar el nombre de usuario.');
+			throw new BadRequestError('No se puede modificar el nombre de usuario.');
 		}
 
 		// 3. Validar los datos de entrada con Zod
@@ -182,14 +187,16 @@ export default class UsuarioService {
 		if (!resultado.success) {
 			const message =
 				resultado.error.issues[0]?.message || 'Error de validación';
-			throw new Error(message);
+			throw new BadRequestError(message);
 		}
 
 		const datosValidados = resultado.data;
 
 		// 4. Verificar que hayan mandado algo para actualizar (evita consultas inútiles a la BD)
 		if (Object.keys(datosValidados).length === 0) {
-			throw new Error('No se enviaron datos válidos para actualizar.');
+			throw new BadRequestError(
+				'No se enviaron datos válidos para actualizar.'
+			);
 		}
 
 		// 5. Mapear/Aplicar los nuevos valores a la entidad encontrada
@@ -220,8 +227,8 @@ export default class UsuarioService {
 	 * @param {string} eventoId - ID del evento a agregar
 	 * @param {{requestId?: string}} [contexto={}] - Datos de la petición para el log
 	 * @returns {Promise<string[]>} IDs de los favoritos, en orden de agregado
-	 * @throws {ErrorHttp} 400 si el ID del evento es vacío o no es un texto
-	 * @throws {ErrorHttp} 404 si el usuario o el evento no existen
+	 * @throws {BadRequestError} Si el ID del evento es vacío o no es un texto
+	 * @throws {NotFoundError} Si el usuario o el evento no existen
 	 */
 	async agregarAFavoritos(usuarioId, eventoId, contexto = {}) {
 		const id = this._validarIdEvento(eventoId);
@@ -233,7 +240,7 @@ export default class UsuarioService {
 		}
 		const evento = await this.eventoRepository.buscarPorId(id);
 		if (!evento) {
-			throw new ErrorHttp(404, `El evento con ID ${id} no existe.`);
+			throw new NotFoundError(`El evento con ID ${id} no existe.`);
 		}
 
 		// Arreglo nuevo: el clon del repositorio es superficial y comparte el original
@@ -255,7 +262,7 @@ export default class UsuarioService {
 	 * @param {string} usuarioId - ID del usuario (tomado del token JWT)
 	 * @param {{requestId?: string}} [contexto={}] - Datos de la petición para el log
 	 * @returns {Promise<string[]>} IDs de los favoritos, en orden de agregado (`[]` si no hay)
-	 * @throws {ErrorHttp} 404 si el usuario no existe
+	 * @throws {NotFoundError} Si el usuario no existe
 	 */
 	async listarFavoritos(usuarioId, contexto = {}) {
 		const usuario = await this._usuarioOFallar(usuarioId);
@@ -275,8 +282,8 @@ export default class UsuarioService {
 	 * @param {string} eventoId - ID del evento a quitar
 	 * @param {{requestId?: string}} [contexto={}] - Datos de la petición para el log
 	 * @returns {Promise<string[]>} IDs de los favoritos restantes, en orden de agregado
-	 * @throws {ErrorHttp} 400 si el ID del evento es vacío o no es un texto
-	 * @throws {ErrorHttp} 404 si el usuario no existe
+	 * @throws {BadRequestError} Si el ID del evento es vacío o no es un texto
+	 * @throws {NotFoundError} Si el usuario no existe
 	 */
 	async removerDeFavoritos(usuarioId, eventoId, contexto = {}) {
 		const id = this._validarIdEvento(eventoId);

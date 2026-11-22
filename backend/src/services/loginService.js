@@ -10,6 +10,7 @@ import crypto from 'node:crypto';
 import { loginUsuarioSchema } from '../dto/usuario.js';
 import { hashContrasenia, verifyContrasenia } from '../utils/hashing.js';
 import { JWT_SECRET, JWT_ACCESS_EXPIRATION } from '../utils/configJwt.js';
+import { BadRequestError, UnauthorizedError } from '../errors/index.js';
 
 /**
  * @private
@@ -42,7 +43,8 @@ export default class LoginService {
 	 *
 	 * @param {object} datos - Cuerpo de la petición con nombreUsuario y contrasenia.
 	 * @returns {Promise<{accessToken: string, refreshToken: string, usuario: object}>}
-	 * @throws {Error} Si las credenciales son inválidas o la validación falla.
+	 * @throws {BadRequestError} Si la validación de los datos falla.
+	 * @throws {UnauthorizedError} Si las credenciales son inválidas.
 	 */
 	async iniciarSesion(datos) {
 		const resultado = loginUsuarioSchema.safeParse(datos);
@@ -58,18 +60,14 @@ export default class LoginService {
 			} else {
 				message = 'Error de validación';
 			}
-			const error = new Error(message);
-			error.status = 400;
-			throw error;
+			throw new BadRequestError(message);
 		}
 
 		const { nombreUsuario, contrasenia } = resultado.data;
 
 		const usuario = await this.usuarioRepository.buscarUno({ nombreUsuario });
 		if (!usuario) {
-			const error = new Error('Credenciales inválidas.');
-			error.status = 401;
-			throw error;
+			throw new UnauthorizedError('Credenciales inválidas.');
 		}
 
 		const contraseniaValida = await verifyContrasenia(
@@ -77,9 +75,7 @@ export default class LoginService {
 			usuario.contraseniaHash
 		);
 		if (!contraseniaValida) {
-			const error = new Error('Credenciales inválidas.');
-			error.status = 401;
-			throw error;
+			throw new UnauthorizedError('Credenciales inválidas.');
 		}
 
 		const accessToken = jwt.sign(

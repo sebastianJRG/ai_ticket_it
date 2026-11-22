@@ -3,6 +3,11 @@ import assert from 'node:assert/strict';
 import CategoriaController from '../src/controllers/categoriaController.js';
 import CategoriaService from '../src/services/categoriaService.js';
 import CategoriaRepository from '../src/repositories/categoriaRepository.js';
+import {
+	BadRequestError,
+	UnauthorizedError,
+	ForbiddenError
+} from '../src/errors/index.js';
 
 describe('CategoriaController.crear', () => {
 	let sandboxController;
@@ -16,39 +21,45 @@ describe('CategoriaController.crear', () => {
 		sandboxController = new CategoriaController(mockService);
 	});
 
+	/**
+	 * Ejecuta `crear` y devuelve el error que el controlador pasó a `next`.
+	 * @param {object} req - Petición falsa
+	 * @returns {Promise<Error|undefined>} Error recibido por next
+	 */
+	async function errorDeCrear(req) {
+		let recibido;
+		const res = { status: () => res, json: () => {} };
+		await sandboxController.crear(req, res, (error) => {
+			recibido = error;
+		});
+		return recibido;
+	}
+
 	describe('validación de autenticación', () => {
-		it('debe llamar next con error cuando req.user es undefined', () => {
-			const req = { user: undefined };
-			const res = { status: null, json: () => {} };
-			const next = () => {};
+		it('pasa un UnauthorizedError a next cuando req.user es undefined', async () => {
+			const error = await errorDeCrear({ user: undefined });
 
-			sandboxController.crear(req, res, next);
-
-			// Verificar que next fue llamado (error handling)
-			assert.ok(true, 'next debería haber sido llamado');
+			assert.ok(error instanceof UnauthorizedError);
+			assert.equal(error.statusCode, 401);
 		});
 
-		it('debe rechazar cuando usuario no es organizador', () => {
-			const req = { user: { rol: 'COMPRADOR' } };
-			const res = { status: null, json: () => {} };
-			const next = () => {};
+		it('pasa un ForbiddenError a next cuando el usuario no es organizador', async () => {
+			const error = await errorDeCrear({ user: { rol: 'COMPRADOR' } });
 
-			sandboxController.crear(req, res, next);
-			assert.ok(true, 'should handle non-organizer');
+			assert.ok(error instanceof ForbiddenError);
+			assert.equal(error.statusCode, 403);
 		});
 	});
 
 	describe('validación de datos Zod', () => {
-		it('debe manejar datos inválidos de Zod', () => {
-			const req = {
+		it('pasa un BadRequestError a next con datos inválidos', async () => {
+			const error = await errorDeCrear({
 				user: { rol: 'ORGANIZADOR' },
 				body: { descripcion: 'Sin nombre' }
-			};
-			const res = { status: null, json: () => {} };
-			const next = () => {};
+			});
 
-			sandboxController.crear(req, res, next);
-			assert.ok(true, 'should handle invalid Zod data');
+			assert.ok(error instanceof BadRequestError);
+			assert.equal(error.statusCode, 400);
 		});
 	});
 

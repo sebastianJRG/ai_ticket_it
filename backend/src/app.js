@@ -7,6 +7,10 @@ import UsuariosRoutes from './routes/usuariosRoutes.js';
 import EventoService from './services/eventoService.js';
 import EventoRoutes from './routes/eventosRoutes.js';
 import { authMiddleware } from './utils/jwt.js';
+import {
+	rutaNoEncontrada,
+	crearManejadorErrores
+} from './utils/manejoErrores.js';
 import LoginService from './services/loginService.js';
 import RefreshService from './services/refreshService.js';
 import LogoutService from './services/logoutService.js';
@@ -55,11 +59,12 @@ export function createApp(repository) {
 		})
 	);
 
+	// ID de petición (req.id) para correlacionar los logs estructurados.
+	// Va antes del parser para que un JSON mal formado también tenga requestId.
+	app.use(asignarRequestId);
+
 	// Middleware para parsear JSON en el cuerpo de las peticiones
 	app.use(express.json());
-
-	// ID de petición (req.id) para correlacionar los logs estructurados
-	app.use(asignarRequestId);
 
 	// Repositorios - se crean en memoria si no se proveen
 	const usuarioRepository = repository || new UsuarioRepository();
@@ -166,24 +171,11 @@ export function createApp(repository) {
 		res.json({ status: 'ok', timestamp: new Date() });
 	});
 
-	// Middleware de manejo de errores 404
-	app.use((req, res, next) => {
-		const error = new Error('No encontrada');
-		error.status = 404;
-		next(error);
-	});
+	// Rutas inexistentes → NotFoundError
+	app.use(rutaNoEncontrada);
 
-	// Middleware de manejo de errores centralizado
-	app.use((error, req, res, next) => {
-		console.error(error);
-
-		if (error instanceof Error) {
-			const status = error.status || 400;
-			return res.status(status).json({ message: error.message });
-		}
-
-		return res.status(500).json({ message: 'Error interno del servidor' });
-	});
+	// Manejo centralizado de errores: traduce AppError a la respuesta HTTP
+	app.use(crearManejadorErrores());
 
 	return app;
 }

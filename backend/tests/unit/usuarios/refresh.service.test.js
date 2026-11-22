@@ -40,7 +40,7 @@ describe('RefreshService.renovar', () => {
 
 		await expect(
 			servicio.renovar({ refreshToken: 'token-inventado' })
-		).rejects.toMatchObject({ status: 401 });
+		).rejects.toMatchObject({ name: 'UnauthorizedError' });
 
 		expect(await repositorio.buscarVarios({})).toEqual(antes);
 	});
@@ -50,6 +50,6 @@ describe('RefreshService.renovar', () => {
 
 		await expect(
 			servicio.renovar({ refreshToken: 'token-de-b' })
-		).rejects.toMatchObject({ status: 401 });
+		).rejects.toMatchObject({ name: 'UnauthorizedError' });
 	});
 });

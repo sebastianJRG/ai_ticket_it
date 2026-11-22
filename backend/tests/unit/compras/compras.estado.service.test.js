@@ -119,7 +119,7 @@ describe('CompraService: cambios de estado', () => {
 			await expect(
 				accion.cancelar(compra.id, otroComprador.id)
 			).rejects.toMatchObject({
-				status: 403
+				name: 'ForbiddenError'
 			});
 			expect((await compraRepo.buscarPorId(compra.id)).estado).toBe(CONFIRMADA);
 		});
@@ -130,7 +130,7 @@ describe('CompraService: cambios de estado', () => {
 			await expect(
 				accion.cancelar(compra.id, otroOrganizador.id)
 			).rejects.toMatchObject({
-				status: 403
+				name: 'ForbiddenError'
 			});
 		});
 
@@ -142,7 +142,7 @@ describe('CompraService: cambios de estado', () => {
 				await expect(
 					accion.cancelar(compra.id, comprador.id)
 				).rejects.toMatchObject({
-					status: 409
+					name: 'ConflictError'
 				});
 				expect((await compraRepo.buscarPorId(compra.id)).estado).toBe(estado);
 			}
@@ -155,7 +155,7 @@ describe('CompraService: cambios de estado', () => {
 			await expect(
 				accion.cancelar(compra.id, comprador.id)
 			).rejects.toMatchObject({
-				status: 400,
+				name: 'BadRequestError',
 				message: 'El evento ya ocurrió.'
 			});
 			expect((await compraRepo.buscarPorId(compra.id)).estado).toBe(CONFIRMADA);
@@ -170,7 +170,7 @@ describe('CompraService: cambios de estado', () => {
 					tipoEntradaId: tipo.id,
 					cantidad: 1
 				});
-			await expect(comprar()).rejects.toMatchObject({ status: 409 });
+			await expect(comprar()).rejects.toMatchObject({ name: 'ConflictError' });
 
 			await accion.cancelar(reserva.id, comprador.id);
 
@@ -189,7 +189,7 @@ describe('CompraService: cambios de estado', () => {
 				1
 			);
 			const rechazada = resultados.find((r) => r.status === 'rejected');
-			expect(rechazada.reason.status).toBe(409);
+			expect(rechazada.reason.name).toBe('ConflictError');
 			expect(await cambioRepo.obtenerTodos()).toHaveLength(1);
 		});
 	});
@@ -210,7 +210,7 @@ describe('CompraService: cambios de estado', () => {
 			await expect(
 				accion.confirmar(compra.id, otroOrganizador.id)
 			).rejects.toMatchObject({
-				status: 403
+				name: 'ForbiddenError'
 			});
 		});
 
@@ -220,7 +220,7 @@ describe('CompraService: cambios de estado', () => {
 			await expect(
 				accion.confirmar(compra.id, comprador.id)
 			).rejects.toMatchObject({
-				status: 403
+				name: 'ForbiddenError'
 			});
 		});
 
@@ -232,7 +232,7 @@ describe('CompraService: cambios de estado', () => {
 				await expect(
 					accion.confirmar(compra.id, organizador.id)
 				).rejects.toMatchObject({
-					status: 409
+					name: 'ConflictError'
 				});
 			}
 		);
@@ -244,7 +244,7 @@ describe('CompraService: cambios de estado', () => {
 			await expect(
 				accion.confirmar(compra.id, organizador.id)
 			).rejects.toMatchObject({
-				status: 400,
+				name: 'BadRequestError',
 				message: 'El evento ya ocurrió.'
 			});
 		});
@@ -268,7 +268,7 @@ describe('CompraService: cambios de estado', () => {
 			await expect(
 				accion.reembolsar(compra.id, otroOrganizador.id)
 			).rejects.toMatchObject({
-				status: 403
+				name: 'ForbiddenError'
 			});
 		});
 
@@ -278,7 +278,7 @@ describe('CompraService: cambios de estado', () => {
 			await expect(
 				accion.reembolsar(compra.id, comprador.id)
 			).rejects.toMatchObject({
-				status: 403
+				name: 'ForbiddenError'
 			});
 		});
 
@@ -290,7 +290,7 @@ describe('CompraService: cambios de estado', () => {
 				await expect(
 					accion.reembolsar(compra.id, organizador.id)
 				).rejects.toMatchObject({
-					status: 409
+					name: 'ConflictError'
 				});
 			}
 		);
@@ -302,7 +302,7 @@ describe('CompraService: cambios de estado', () => {
 			await expect(
 				accion.reembolsar(compra.id, organizador.id)
 			).rejects.toMatchObject({
-				status: 400,
+				name: 'BadRequestError',
 				message: 'El evento ya ocurrió.'
 			});
 		});
@@ -316,7 +316,7 @@ describe('CompraService: cambios de estado', () => {
 					tipoEntradaId: tipo.id,
 					cantidad: 2
 				});
-			await expect(comprar()).rejects.toMatchObject({ status: 409 });
+			await expect(comprar()).rejects.toMatchObject({ name: 'ConflictError' });
 
 			await accion.reembolsar(compra.id, organizador.id);
 
@@ -346,7 +346,7 @@ describe('CompraService: cambios de estado', () => {
 
 			it('rechaza con 404 una compra inexistente', async () => {
 				await expect(accion[nombre]('999', actor().id)).rejects.toMatchObject({
-					status: 404,
+					name: 'NotFoundError',
 					message: 'La compra con ID 999 no existe.'
 				});
 			});
@@ -355,7 +355,7 @@ describe('CompraService: cambios de estado', () => {
 				const compra = await compraEn(estadoInicial);
 
 				await expect(accion[nombre](compra.id, '999')).rejects.toMatchObject({
-					status: 404
+					name: 'NotFoundError'
 				});
 			});
 
@@ -364,7 +364,7 @@ describe('CompraService: cambios de estado', () => {
 				['undefined', undefined]
 			])('rechaza con 400 un ID de compra %s', async (_etiqueta, id) => {
 				await expect(accion[nombre](id, actor().id)).rejects.toMatchObject({
-					status: 400
+					name: 'BadRequestError'
 				});
 			});
 

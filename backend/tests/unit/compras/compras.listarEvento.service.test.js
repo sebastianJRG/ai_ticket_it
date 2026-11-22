@@ -170,29 +170,31 @@ describe('CompraService.listarComprasDeEvento', () => {
 
 	it('rechaza con 403 a un organizador que no es dueño del evento', async () => {
 		await expect(listar(otroOrganizador)).rejects.toMatchObject({
-			status: 403
+			name: 'ForbiddenError'
 		});
 	});
 
 	it('rechaza con 403 a un comprador', async () => {
-		await expect(listar(comprador)).rejects.toMatchObject({ status: 403 });
+		await expect(listar(comprador)).rejects.toMatchObject({
+			name: 'ForbiddenError'
+		});
 	});
 
 	it('rechaza con 404 si el evento no existe', async () => {
 		await expect(listar(organizador, '999')).rejects.toMatchObject({
-			status: 404
+			name: 'NotFoundError'
 		});
 	});
 
 	it('rechaza con 404 si el usuario no existe', async () => {
 		await expect(
 			servicio.listarComprasDeEvento({ eventoId: evento.id, usuarioId: '999' })
-		).rejects.toMatchObject({ status: 404 });
+		).rejects.toMatchObject({ name: 'NotFoundError' });
 	});
 
 	it('rechaza con 400 si el ID de evento es inválido', async () => {
 		await expect(listar(organizador, '  ')).rejects.toMatchObject({
-			status: 400
+			name: 'BadRequestError'
 		});
 	});
 });

@@ -133,13 +133,15 @@ describe('CompraService.listarComprasDeComprador', () => {
 	);
 
 	it('rechaza con 403 a un ORGANIZADOR', async () => {
-		await expect(listar(organizador)).rejects.toMatchObject({ status: 403 });
+		await expect(listar(organizador)).rejects.toMatchObject({
+			name: 'ForbiddenError'
+		});
 	});
 
 	it('rechaza con 404 si el usuario no existe', async () => {
 		await expect(
 			servicio.listarComprasDeComprador({ usuarioId: '999' })
-		).rejects.toMatchObject({ status: 404 });
+		).rejects.toMatchObject({ name: 'NotFoundError' });
 	});
 });
 

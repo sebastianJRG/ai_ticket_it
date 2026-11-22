@@ -10,7 +10,11 @@ import { crearMensajeSchema } from '../dto/mensaje.js';
 import { idCompraSchema } from '../dto/compra.js';
 import Mensaje from '../models/mensaje.js';
 import { COMPRADOR, ORGANIZADOR } from '../models/roles.js';
-import ErrorHttp from '../utils/errorHttp.js';
+import {
+	BadRequestError,
+	ForbiddenError,
+	NotFoundError
+} from '../errors/index.js';
 
 export default class MensajeService {
 	/**
@@ -66,16 +70,15 @@ export default class MensajeService {
 	 * @param {string} datos.mensaje - Texto de 1 a 1000 caracteres
 	 * @param {{requestId?: string}} [contexto={}] - Datos de la petición para el log (`mensaje_creado`)
 	 * @returns {Promise<Mensaje>} El mensaje creado
-	 * @throws {ErrorHttp} 400 si el ID de compra o el texto son inválidos
-	 * @throws {ErrorHttp} 403 si el usuario no es el comprador ni el organizador de la compra
-	 * @throws {ErrorHttp} 404 si la compra o el usuario no existen
+	 * @throws {BadRequestError} Si el ID de compra o el texto son inválidos
+	 * @throws {ForbiddenError} Si el usuario no es el comprador ni el organizador de la compra
+	 * @throws {NotFoundError} Si la compra o el usuario no existen
 	 */
 	async crearMensaje({ compraId, usuarioId, mensaje }, contexto = {}) {
 		const id = this._validarIdCompra(compraId);
 		const resultado = crearMensajeSchema.safeParse({ mensaje });
 		if (!resultado.success) {
-			throw new ErrorHttp(
-				400,
+			throw new BadRequestError(
 				resultado.error.issues[0]?.message || 'Error de validación'
 			);
 		}
@@ -104,9 +107,9 @@ export default class MensajeService {
 	 * @param {string} datos.usuarioId - ID del usuario que consulta (viene del token)
 	 * @param {{requestId?: string}} [contexto={}] - Datos de la petición para el log (`mensajes_listados`)
 	 * @returns {Promise<Mensaje[]>} Mensajes de la compra (vacío si no hay)
-	 * @throws {ErrorHttp} 400 si el ID de compra es inválido
-	 * @throws {ErrorHttp} 403 si el usuario no es el comprador ni el organizador de la compra
-	 * @throws {ErrorHttp} 404 si la compra o el usuario no existen
+	 * @throws {BadRequestError} Si el ID de compra es inválido
+	 * @throws {ForbiddenError} Si el usuario no es el comprador ni el organizador de la compra
+	 * @throws {NotFoundError} Si la compra o el usuario no existen
 	 */
 	async listarPorCompra({ compraId, usuarioId }, contexto = {}) {
 		const id = this._validarIdCompra(compraId);
@@ -126,13 +129,12 @@ export default class MensajeService {
 	 * @private
 	 * @param {string} compraId
 	 * @returns {string} ID de compra normalizado
-	 * @throws {ErrorHttp} 400 si el ID es inválido
+	 * @throws {BadRequestError} Si el ID es inválido
 	 */
 	_validarIdCompra(compraId) {
 		const resultado = idCompraSchema.safeParse(compraId);
 		if (!resultado.success) {
-			throw new ErrorHttp(
-				400,
+			throw new BadRequestError(
 				resultado.error.issues[0]?.message || 'Error de validación'
 			);
 		}
@@ -145,17 +147,17 @@ export default class MensajeService {
 	 * @param {string} compraId
 	 * @param {string} usuarioId
 	 * @returns {Promise<{compra: import('../models/compra.js').default, actor: import('../models/usuario.js').default}>}
-	 * @throws {ErrorHttp} 404 si la compra o el usuario no existen
-	 * @throws {ErrorHttp} 403 si el usuario no es el comprador ni el organizador del evento
+	 * @throws {NotFoundError} Si la compra o el usuario no existen
+	 * @throws {ForbiddenError} Si el usuario no es el comprador ni el organizador del evento
 	 */
 	async _obtenerCompraYActor(compraId, usuarioId) {
 		const compra = await this.compraRepository.buscarPorId(compraId);
 		if (!compra) {
-			throw new ErrorHttp(404, `La compra con ID ${compraId} no existe.`);
+			throw new NotFoundError(`La compra con ID ${compraId} no existe.`);
 		}
 		const actor = await this.usuarioRepository.buscarPorId(usuarioId);
 		if (!actor) {
-			throw new ErrorHttp(404, `El usuario con ID ${usuarioId} no existe.`);
+			throw new NotFoundError(`El usuario con ID ${usuarioId} no existe.`);
 		}
 		const esComprador =
 			actor.rol === COMPRADOR.nombre && compra.comprador.id === actor.id;
@@ -163,8 +165,7 @@ export default class MensajeService {
 			actor.rol === ORGANIZADOR.nombre &&
 			compra.evento.organizador?.id === actor.id;
 		if (!esComprador && !esOrganizador) {
-			throw new ErrorHttp(
-				403,
+			throw new ForbiddenError(
 				'Solo el comprador y el organizador de la compra pueden usar su chat.'
 			);
 		}

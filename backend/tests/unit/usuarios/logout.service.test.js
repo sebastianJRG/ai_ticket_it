@@ -34,7 +34,7 @@ describe('LogoutService.cerrarSesion', () => {
 	it('lanza 401 con un token inventado y no cierra ninguna sesión', async () => {
 		await expect(
 			servicio.cerrarSesion({ refreshToken: 'token-inventado' })
-		).rejects.toMatchObject({ status: 401 });
+		).rejects.toMatchObject({ name: 'UnauthorizedError' });
 
 		const a = await repositorio.buscarPorId(usuarioA.id);
 		const b = await repositorio.buscarPorId(usuarioB.id);

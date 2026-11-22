@@ -10,7 +10,12 @@ import CambioEstadoCompra from '../models/cambioEstadoCompra.js';
 import Compra from '../models/compra.js';
 import EstadoCompra, { ESTADOS_QUE_RESERVAN } from '../models/estadoCompra.js';
 import { COMPRADOR, ORGANIZADOR } from '../models/roles.js';
-import ErrorHttp from '../utils/errorHttp.js';
+import {
+	BadRequestError,
+	ConflictError,
+	ForbiddenError,
+	NotFoundError
+} from '../errors/index.js';
 import ExclusionMutua from '../utils/exclusionMutua.js';
 
 /** Milisegundos de un día, para calcular los días restantes hasta un evento. */
@@ -77,16 +82,15 @@ export default class CompraService {
 	 * @param {string} datosCompra.tipoEntradaId
 	 * @param {number} datosCompra.cantidad
 	 * @returns {Promise<Compra>} La compra creada
-	 * @throws {ErrorHttp} 400 si los datos son inválidos o el evento ya ocurrió
-	 * @throws {ErrorHttp} 403 si el usuario no es COMPRADOR
-	 * @throws {ErrorHttp} 404 si el comprador, el evento o el tipo de entrada no existen
-	 * @throws {ErrorHttp} 409 si no hay cupo suficiente
+	 * @throws {BadRequestError} Si los datos son inválidos o el evento ya ocurrió
+	 * @throws {ForbiddenError} Si el usuario no es COMPRADOR
+	 * @throws {NotFoundError} Si el comprador, el evento o el tipo de entrada no existen
+	 * @throws {ConflictError} Si no hay cupo suficiente
 	 */
 	async crearCompra(datosCompra) {
 		const resultado = crearCompraSchema.safeParse(datosCompra);
 		if (!resultado.success) {
-			throw new ErrorHttp(
-				400,
+			throw new BadRequestError(
 				resultado.error.issues[0]?.message || 'Error de validación'
 			);
 		}
@@ -94,22 +98,21 @@ export default class CompraService {
 
 		const comprador = await this.usuarioRepository.buscarPorId(compradorId);
 		if (!comprador) {
-			throw new ErrorHttp(404, `El comprador con ID ${compradorId} no existe.`);
+			throw new NotFoundError(`El comprador con ID ${compradorId} no existe.`);
 		}
 		if (comprador.rol !== COMPRADOR.nombre) {
-			throw new ErrorHttp(403, 'Solo los compradores pueden realizar compras.');
+			throw new ForbiddenError('Solo los compradores pueden realizar compras.');
 		}
 
 		const evento = await this.eventoRepository.buscarPorId(eventoId);
 		if (!evento) {
-			throw new ErrorHttp(404, `El evento con ID ${eventoId} no existe.`);
+			throw new NotFoundError(`El evento con ID ${eventoId} no existe.`);
 		}
 		this._exigirEventoFuturo(evento);
 
 		const tipoEntrada = evento.tiposEntrada.find((t) => t.id === tipoEntradaId);
 		if (!tipoEntrada) {
-			throw new ErrorHttp(
-				404,
+			throw new NotFoundError(
 				`El tipo de entrada con ID ${tipoEntradaId} no pertenece al evento.`
 			);
 		}
@@ -118,7 +121,7 @@ export default class CompraService {
 			const disponibles =
 				tipoEntrada.cupo - (await this._cantidadReservada(evento, tipoEntrada));
 			if (cantidad > disponibles) {
-				throw new ErrorHttp(409, this._mensajeCupo(disponibles));
+				throw new ConflictError(this._mensajeCupo(disponibles));
 			}
 
 			const compra = await this.compraRepository.crear(
@@ -152,10 +155,10 @@ export default class CompraService {
 	 * @param {string} datos.compraId - ID de la compra (viene de la URL)
 	 * @param {string} datos.usuarioId - ID del usuario que cancela (viene del token)
 	 * @returns {Promise<Compra>} La compra en estado CANCELADA
-	 * @throws {ErrorHttp} 400 si el ID es inválido o el evento ya ocurrió
-	 * @throws {ErrorHttp} 403 si el usuario no es el comprador ni el organizador del evento
-	 * @throws {ErrorHttp} 404 si la compra o el usuario no existen
-	 * @throws {ErrorHttp} 409 si la compra no está PENDIENTE ni CONFIRMADA
+	 * @throws {BadRequestError} Si el ID es inválido o el evento ya ocurrió
+	 * @throws {ForbiddenError} Si el usuario no es el comprador ni el organizador del evento
+	 * @throws {NotFoundError} Si la compra o el usuario no existen
+	 * @throws {ConflictError} Si la compra no está PENDIENTE ni CONFIRMADA
 	 */
 	cancelarCompra({ compraId, usuarioId }) {
 		return this._cambiarEstado(compraId, usuarioId, EstadoCompra.CANCELADA, {
@@ -171,10 +174,10 @@ export default class CompraService {
 	 * @param {string} datos.compraId - ID de la compra (viene de la URL)
 	 * @param {string} datos.usuarioId - ID del organizador (viene del token)
 	 * @returns {Promise<Compra>} La compra en estado CONFIRMADA
-	 * @throws {ErrorHttp} 400 si el ID es inválido o el evento ya ocurrió
-	 * @throws {ErrorHttp} 403 si el usuario no es el organizador del evento
-	 * @throws {ErrorHttp} 404 si la compra o el usuario no existen
-	 * @throws {ErrorHttp} 409 si la compra no está PENDIENTE
+	 * @throws {BadRequestError} Si el ID es inválido o el evento ya ocurrió
+	 * @throws {ForbiddenError} Si el usuario no es el organizador del evento
+	 * @throws {NotFoundError} Si la compra o el usuario no existen
+	 * @throws {ConflictError} Si la compra no está PENDIENTE
 	 */
 	confirmarCompra({ compraId, usuarioId }) {
 		return this._cambiarEstado(compraId, usuarioId, EstadoCompra.CONFIRMADA, {
@@ -189,10 +192,10 @@ export default class CompraService {
 	 * @param {string} datos.compraId - ID de la compra (viene de la URL)
 	 * @param {string} datos.usuarioId - ID del organizador (viene del token)
 	 * @returns {Promise<Compra>} La compra en estado REEMBOLSADA
-	 * @throws {ErrorHttp} 400 si el ID es inválido o el evento ya ocurrió
-	 * @throws {ErrorHttp} 403 si el usuario no es el organizador del evento
-	 * @throws {ErrorHttp} 404 si la compra o el usuario no existen
-	 * @throws {ErrorHttp} 409 si la compra no está CONFIRMADA
+	 * @throws {BadRequestError} Si el ID es inválido o el evento ya ocurrió
+	 * @throws {ForbiddenError} Si el usuario no es el organizador del evento
+	 * @throws {NotFoundError} Si la compra o el usuario no existen
+	 * @throws {ConflictError} Si la compra no está CONFIRMADA
 	 */
 	reembolsarCompra({ compraId, usuarioId }) {
 		return this._cambiarEstado(compraId, usuarioId, EstadoCompra.REEMBOLSADA, {
@@ -209,15 +212,14 @@ export default class CompraService {
 	 * @param {string} datos.usuarioId - ID del organizador (viene del token)
 	 * @returns {Promise<{compras: Compra[], disponibilidad: DisponibilidadTipoEntrada[]}>}
 	 *   Compras del evento en cualquier estado (vacío si no hay) y cupo disponible de cada tipo de entrada
-	 * @throws {ErrorHttp} 400 si el ID de evento es inválido
-	 * @throws {ErrorHttp} 403 si el usuario no es el organizador del evento
-	 * @throws {ErrorHttp} 404 si el evento o el usuario no existen
+	 * @throws {BadRequestError} Si el ID de evento es inválido
+	 * @throws {ForbiddenError} Si el usuario no es el organizador del evento
+	 * @throws {NotFoundError} Si el evento o el usuario no existen
 	 */
 	async listarComprasDeEvento({ eventoId, usuarioId }) {
 		const resultado = idEventoSchema.safeParse(eventoId);
 		if (!resultado.success) {
-			throw new ErrorHttp(
-				400,
+			throw new BadRequestError(
 				resultado.error.issues[0]?.message || 'Error de validación'
 			);
 		}
@@ -225,18 +227,17 @@ export default class CompraService {
 
 		const evento = await this.eventoRepository.buscarPorId(id);
 		if (!evento) {
-			throw new ErrorHttp(404, `El evento con ID ${id} no existe.`);
+			throw new NotFoundError(`El evento con ID ${id} no existe.`);
 		}
 		const actor = await this.usuarioRepository.buscarPorId(usuarioId);
 		if (!actor) {
-			throw new ErrorHttp(404, `El usuario con ID ${usuarioId} no existe.`);
+			throw new NotFoundError(`El usuario con ID ${usuarioId} no existe.`);
 		}
 		if (
 			actor.rol !== ORGANIZADOR.nombre ||
 			evento.organizador?.id !== actor.id
 		) {
-			throw new ErrorHttp(
-				403,
+			throw new ForbiddenError(
 				'Solo el organizador del evento puede ver sus compras.'
 			);
 		}
@@ -266,16 +267,16 @@ export default class CompraService {
 	 * @param {object} datos
 	 * @param {string} datos.usuarioId - ID del comprador (viene del token)
 	 * @returns {Promise<CompraConDiasRestantes[]>} Compras del comprador (vacío si no hay)
-	 * @throws {ErrorHttp} 403 si el usuario no es COMPRADOR
-	 * @throws {ErrorHttp} 404 si el usuario no existe
+	 * @throws {ForbiddenError} Si el usuario no es COMPRADOR
+	 * @throws {NotFoundError} Si el usuario no existe
 	 */
 	async listarComprasDeComprador({ usuarioId }) {
 		const usuario = await this.usuarioRepository.buscarPorId(usuarioId);
 		if (!usuario) {
-			throw new ErrorHttp(404, `El usuario con ID ${usuarioId} no existe.`);
+			throw new NotFoundError(`El usuario con ID ${usuarioId} no existe.`);
 		}
 		if (usuario.rol !== COMPRADOR.nombre) {
-			throw new ErrorHttp(403, 'Solo los compradores tienen compras propias.');
+			throw new ForbiddenError('Solo los compradores tienen compras propias.');
 		}
 		const ahora = this.reloj().getTime();
 		const compras = await this.compraRepository.buscarPorCompradorId(
@@ -307,7 +308,7 @@ export default class CompraService {
 	 * @param {string} reglas.accion - Verbo para el mensaje de error (por ejemplo, 'cancelar')
 	 * @param {(actor: import('../models/usuario.js').default, compra: Compra) => boolean} reglas.puedeActuar - Regla de propiedad
 	 * @returns {Promise<Compra>} La compra actualizada
-	 * @throws {ErrorHttp} 400, 403, 404 o 409 según la regla incumplida
+	 * @throws {BadRequestError|ForbiddenError|NotFoundError|ConflictError} Según la regla incumplida
 	 */
 	async _cambiarEstado(
 		compraId,
@@ -317,8 +318,7 @@ export default class CompraService {
 	) {
 		const resultado = idCompraSchema.safeParse(compraId);
 		if (!resultado.success) {
-			throw new ErrorHttp(
-				400,
+			throw new BadRequestError(
 				resultado.error.issues[0]?.message || 'Error de validación'
 			);
 		}
@@ -327,21 +327,19 @@ export default class CompraService {
 		return this.exclusion.ejecutar(async () => {
 			const compra = await this.compraRepository.buscarPorId(id);
 			if (!compra) {
-				throw new ErrorHttp(404, `La compra con ID ${id} no existe.`);
+				throw new NotFoundError(`La compra con ID ${id} no existe.`);
 			}
 			const actor = await this.usuarioRepository.buscarPorId(usuarioId);
 			if (!actor) {
-				throw new ErrorHttp(404, `El usuario con ID ${usuarioId} no existe.`);
+				throw new NotFoundError(`El usuario con ID ${usuarioId} no existe.`);
 			}
 			if (!puedeActuar(actor, compra)) {
-				throw new ErrorHttp(
-					403,
+				throw new ForbiddenError(
 					`No tienes permiso para ${accion} esta compra.`
 				);
 			}
 			if (!compra.puedeTransicionarA(estadoDestino)) {
-				throw new ErrorHttp(
-					409,
+				throw new ConflictError(
 					`No se puede ${accion} una compra en estado ${compra.estado}.`
 				);
 			}
@@ -394,7 +392,7 @@ export default class CompraService {
 	 * @param {import('../models/usuario.js').default|null} actor - Quien cambia el estado; null = sistema
 	 * @param {Date} fechaHora - Momento del cambio
 	 * @returns {Promise<Compra>} La compra actualizada
-	 * @throws {Error} Si la transición no está permitida desde el estado actual
+	 * @throws {ConflictError} Si la transición no está permitida desde el estado actual
 	 */
 	async _registrarTransicion(compra, estadoDestino, actor, fechaHora) {
 		compra.actualizarEstado(estadoDestino);
@@ -410,11 +408,11 @@ export default class CompraService {
 	 * @private
 	 * @param {import('../models/evento.js').default} evento
 	 * @returns {void}
-	 * @throws {ErrorHttp} 400 si la fecha del evento ya pasó
+	 * @throws {BadRequestError} Si la fecha del evento ya pasó
 	 */
 	_exigirEventoFuturo(evento) {
 		if (new Date(evento.fecha) <= this.reloj()) {
-			throw new ErrorHttp(400, 'El evento ya ocurrió.');
+			throw new BadRequestError('El evento ya ocurrió.');
 		}
 	}
 

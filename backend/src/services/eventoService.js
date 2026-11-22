@@ -11,7 +11,7 @@ import CategoriaRepository from '../repositories/categoriaRepository.js';
 import EventoRepository from '../repositories/eventoRepository.js';
 import TipoEntradaRepository from '../repositories/tipoEntradaRepository.js';
 import UsuarioRepository from '../repositories/usuarioRepository.js';
-import ErrorHttp from '../utils/errorHttp.js';
+import { BadRequestError, NotFoundError } from '../errors/index.js';
 
 export default class EventoService {
 	/** Constructor del servicio de eventos.
@@ -61,14 +61,14 @@ export default class EventoService {
 	 * @param {'precio'|'fecha'|'puntaje'} [query.sortBy] Criterio de ordenamiento
 	 * @param {'asc'|'desc'} [query.order] Sentido del ordenamiento
 	 * @returns {Promise<Array<Evento & {puntajeOrganizador: number|null}>>} Eventos que cumplen los criterios (puede ser vacío)
-	 * @throws {Error} Si algún parámetro de consulta es inválido
+	 * @throws {BadRequestError} Si algún parámetro de consulta es inválido
 	 */
 	async buscarEventos(query = {}) {
 		const resultado = listarEventosSchema.safeParse(query);
 		if (!resultado.success) {
 			const message =
 				resultado.error.issues[0]?.message || 'Error de validación';
-			throw new Error(message);
+			throw new BadRequestError(message);
 		}
 
 		const { q, categoriaId, sortBy, order } = resultado.data;
@@ -160,20 +160,19 @@ export default class EventoService {
 	 * @returns {Promise<Evento & {puntajeOrganizador: number|null}>} El evento con el puntaje de su organizador
 	 *   y, en cada tipo de entrada, `disponibles` (cupo menos las entradas en compras PENDIENTE,
 	 *   CONFIRMADA o UTILIZADA; sin repositorio de compras, el cupo total)
-	 * @throws {ErrorHttp} 400 si el ID es vacío o no es un texto
-	 * @throws {ErrorHttp} 404 si el evento no existe
+	 * @throws {BadRequestError} Si el ID es vacío o no es un texto
+	 * @throws {NotFoundError} Si el evento no existe
 	 */
 	async obtenerPorId(id) {
 		const resultado = idEventoSchema.safeParse(id);
 		if (!resultado.success) {
-			throw new ErrorHttp(
-				400,
+			throw new BadRequestError(
 				resultado.error.issues[0]?.message || 'Error de validación'
 			);
 		}
 		const evento = await this.eventoRepository.buscarPorId(resultado.data);
 		if (!evento) {
-			throw new ErrorHttp(404, `El evento con ID ${resultado.data} no existe.`);
+			throw new NotFoundError(`El evento con ID ${resultado.data} no existe.`);
 		}
 		const conPuntaje = this._conPuntaje(
 			evento,
@@ -240,6 +239,8 @@ export default class EventoService {
 	/** Crea un nuevo evento validando los campos y dependencias requeridas (categoría, organizador, tipos de entrada).
 	 * @param {object} datosEvento
 	 * @returns {Promise<Evento>}
+	 * @throws {BadRequestError} Si los datos son inválidos
+	 * @throws {NotFoundError} Si la categoría o el organizador no existen
 	 */
 	async crearEvento(datosEvento) {
 		// 1. Validación estructural y de tipos con Zod (reemplaza todos tus IFs manuales)
@@ -247,7 +248,7 @@ export default class EventoService {
 		if (!resultado.success) {
 			const message =
 				resultado.error.issues[0]?.message || 'Error de validación';
-			throw new Error(message);
+			throw new BadRequestError(message);
 		}
 
 		const datosValidados = resultado.data;
@@ -257,7 +258,7 @@ export default class EventoService {
 			datosValidados.categoriaId
 		);
 		if (!categoria) {
-			throw new Error(
+			throw new NotFoundError(
 				`La categoría con ID ${datosValidados.categoriaId} no existe.`
 			);
 		}
@@ -266,7 +267,7 @@ export default class EventoService {
 			datosValidados.organizadorId
 		);
 		if (!organizador) {
-			throw new Error(
+			throw new NotFoundError(
 				`El organizador con ID ${datosValidados.organizadorId} no existe.`
 			);
 		}
@@ -307,12 +308,14 @@ export default class EventoService {
 	 * @param {string} eventoId
 	 * @param {object} datosActualizacion
 	 * @returns {Promise<Evento>}
+	 * @throws {NotFoundError} Si el evento no existe
+	 * @throws {BadRequestError} Si los datos son inválidos, no hay nada que actualizar o se modifican tipos de entrada existentes
 	 */
 	async actualizarEvento(eventoId, datosActualizacion) {
 		// 1. Buscar el evento existente
 		const evento = await this.eventoRepository.buscarPorId(eventoId);
 		if (!evento) {
-			throw new Error(`El evento con ID ${eventoId} no existe.`);
+			throw new NotFoundError(`El evento con ID ${eventoId} no existe.`);
 		}
 
 		// 2. Validar con Zod (ignora organizadorId y hace todo opcional)
@@ -320,14 +323,16 @@ export default class EventoService {
 		if (!resultado.success) {
 			const message =
 				resultado.error.issues[0]?.message || 'Error de validación';
-			throw new Error(message);
+			throw new BadRequestError(message);
 		}
 
 		const datosValidados = resultado.data;
 
 		// Verificar si se enviaron datos
 		if (Object.keys(datosValidados).length === 0) {
-			throw new Error('No se enviaron datos válidos para actualizar.');
+			throw new BadRequestError(
+				'No se enviaron datos válidos para actualizar.'
+			);
 		}
 
 		// 3. Actualizar campos simples si vienen en la petición
@@ -358,7 +363,7 @@ export default class EventoService {
 			if (tipoViejos.every((tipo) => nuevosTiposEntrada.includes(tipo))) {
 				evento.tiposEntrada = nuevosTiposEntrada;
 			} else {
-				throw new Error(
+				throw new BadRequestError(
 					'No puede modificar tipos de entrada existentes, solo agregar'
 				);
 			}

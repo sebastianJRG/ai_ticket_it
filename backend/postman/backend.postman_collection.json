@@ -149,14 +149,14 @@
 					"response": []
 				},
 				{
-					"name": "Registrar usuario duplicado (400)",
+					"name": "Registrar usuario duplicado (409)",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+									"pm.test(\"Status 409\", () => pm.response.to.have.status(409));"
 								]
 							}
 						}
@@ -178,7 +178,7 @@
 								"usuarios"
 							]
 						},
-						"description": "Reutiliza `usuarioComprador` ya registrado. 400 'El nombre de usuario ya está en uso.'",
+						"description": "Reutiliza `usuarioComprador` ya registrado. 409 'El nombre de usuario ya está en uso.'",
 						"body": {
 							"mode": "raw",
 							"raw": "{\"nombre\":\"{{nombre}}\",\"apellido\":\"{{apellido}}\",\"nombreUsuario\":\"{{usuarioComprador}}\",\"contrasenia\":\"{{password}}\",\"rol\":\"COMPRADOR\"}",
@@ -1485,14 +1485,14 @@
 					"response": []
 				},
 				{
-					"name": "Crear evento con categoría inexistente (400)",
+					"name": "Crear evento con categoría inexistente (404)",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+									"pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
 								]
 							}
 						}
@@ -1518,7 +1518,7 @@
 								"eventos"
 							]
 						},
-						"description": "400: la categoría no existe.",
+						"description": "404: la categoría no existe.",
 						"body": {
 							"mode": "raw",
 							"raw": "{\"nombre\":\"X\",\"descripcion\":\"Y\",\"categoriaId\":\"999999\",\"fecha\":\"{{fechaEvento}}\",\"tiposEntrada\":[{\"nombre\":\"General\",\"descripcion\":\"Acceso general\",\"precio\":100,\"cupo\":10}]}",

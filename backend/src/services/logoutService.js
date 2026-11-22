@@ -7,6 +7,7 @@
  */
 import { logoutUsuarioSchema } from '../dto/usuario.js';
 import { buscarPorRefreshToken } from '../utils/buscarPorRefreshToken.js';
+import { BadRequestError, UnauthorizedError } from '../errors/index.js';
 
 /**
  * Servicio que gestiona el cierre de sesión, invalidando el refresh token actual.
@@ -28,7 +29,8 @@ export default class LogoutService {
 	 *
 	 * @param {object} datos - Cuerpo de la petición con refreshToken.
 	 * @returns {Promise<{ok: boolean, mensaje: string}>}
-	 * @throws {Error} Si el refresh token es inválido, expirado o la validación falla.
+	 * @throws {BadRequestError} Si la validación de los datos falla.
+	 * @throws {UnauthorizedError} Si el refresh token es inválido o expiró.
 	 */
 	async cerrarSesion(datos) {
 		const resultado = logoutUsuarioSchema.safeParse(datos);
@@ -44,9 +46,7 @@ export default class LogoutService {
 			} else {
 				message = 'Error de validación';
 			}
-			const error = new Error(message);
-			error.status = 400;
-			throw error;
+			throw new BadRequestError(message);
 		}
 
 		const { refreshToken } = resultado.data;
@@ -57,9 +57,7 @@ export default class LogoutService {
 		);
 
 		if (!usuario) {
-			const error = new Error('Refresh token inválido o expirado.');
-			error.status = 401;
-			throw error;
+			throw new UnauthorizedError('Refresh token inválido o expirado.');
 		}
 
 		usuario.refreshTokenHash = null;

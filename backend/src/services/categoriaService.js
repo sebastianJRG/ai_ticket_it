@@ -4,6 +4,7 @@ import {
 } from '../dto/categoria.js';
 import Categoria from '../models/categoria.js';
 import CategoriaRepository from '../repositories/categoriaRepository.js';
+import { BadRequestError, NotFoundError } from '../errors/index.js';
 
 export default class CategoriaService {
 	/**
@@ -26,11 +27,12 @@ export default class CategoriaService {
 	 * Obtiene una categoría por su ID.
 	 * @param {string} id
 	 * @returns {Promise<Categoria>}
+	 * @throws {NotFoundError} Si la categoría no existe
 	 */
 	async obtenerPorId(id) {
 		const categoria = await this.categoriaRepository.buscarPorId(id);
 		if (!categoria) {
-			throw new Error(`La categoría con ID ${id} no existe.`);
+			throw new NotFoundError(`La categoría con ID ${id} no existe.`);
 		}
 		return categoria;
 	}
@@ -39,6 +41,7 @@ export default class CategoriaService {
 	 * Crea una nueva categoría validando que los campos requeridos estén presentes.
 	 * @param {object} datosCategoria
 	 * @returns {Promise<Categoria>}
+	 * @throws {BadRequestError} Si los datos son inválidos
 	 */
 	async crearCategoria(datosCategoria) {
 		// 1. Validar los datos
@@ -55,7 +58,7 @@ export default class CategoriaService {
 			} else {
 				message = 'Error de validación';
 			}
-			throw new Error(message);
+			throw new BadRequestError(message);
 		}
 
 		const { nombre, descripcion } = resultado.data;
@@ -66,11 +69,19 @@ export default class CategoriaService {
 		return await this.categoriaRepository.crear(nuevaCategoria);
 	}
 
+	/**
+	 * Actualiza una categoría existente.
+	 * @param {string} categoriaId - ID de la categoría
+	 * @param {object} datosActualizacion - Campos a actualizar (nombre, descripción)
+	 * @returns {Promise<Categoria>} La categoría actualizada
+	 * @throws {NotFoundError} Si la categoría no existe
+	 * @throws {BadRequestError} Si los datos son inválidos o no hay nada que actualizar
+	 */
 	async actualizarCategoria(categoriaId, datosActualizacion) {
 		// 1. Verificar si existe (recordando que los IDs son strings)
 		const categoria = await this.categoriaRepository.buscarPorId(categoriaId);
 		if (!categoria) {
-			throw new Error(`La categoría con ID ${categoriaId} no existe.`);
+			throw new NotFoundError(`La categoría con ID ${categoriaId} no existe.`);
 		}
 
 		// 2. Validar qué campos enviaron para actualizar
@@ -87,13 +98,13 @@ export default class CategoriaService {
 			} else {
 				message = 'Error de validación';
 			}
-			throw new Error(message);
+			throw new BadRequestError(message);
 		}
 
 		const datosValidados = resultado.data;
 
 		if (Object.keys(datosValidados).length === 0) {
-			throw new Error(
+			throw new BadRequestError(
 				'No se enviaron datos válidos para actualizar la categoría.'
 			);
 		}

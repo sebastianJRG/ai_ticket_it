@@ -171,6 +171,13 @@ Solo COMPRADOR autenticado (el usuario sale del token), sin cuerpo. Las tres res
 - Eventos de log de favoritos: `favorito_agregado`, `favorito_quitado`, `favoritos_listados` y `eventos_resueltos`.
 - Eventos de log de mensajes (`MensajeService`, feature 008): `mensaje_creado` (`usuarioId`, `rol`, `compraId`, `estadoCompra`, `mensajeId`, `largo`) y `mensajes_listados` (`usuarioId`, `rol`, `compraId`, `estadoCompra`, `cantidad`). Nunca se registra el texto del mensaje. Solo se registran éxitos.
 
+### Manejo de errores (AppError)
+
+- Servicios, controladores, modelos y middlewares **no escriben códigos HTTP de error**: lanzan (o pasan a `next`) una subclase de `AppError` (`backend/src/errors/`, importar desde `errors/index.js`): `BadRequestError` (400), `UnauthorizedError` (401), `ForbiddenError` (403), `NotFoundError` (404) y `ConflictError` (409). Cada clase fija su `statusCode`; solo reciben el mensaje.
+- `backend/src/utils/manejoErrores.js` define `rutaNoEncontrada` (404 `No encontrada`) y `crearManejadorErrores({ logger })`, montados al final de `app.js`. Un `AppError` o un error 4xx del body-parser (JSON mal formado) responde `{ message }` con su código y se registra como `warn` (`error_controlado`). Cualquier otro error responde 500 `Error interno del servidor` (sin detalles) y se registra como `error` (`error_inesperado`, con `stack`). Ambos logs son JSON con `requestId`, `metodo` y `ruta`.
+- Las pruebas de servicios afirman la clase (`toThrow(NotFoundError)` o `toMatchObject({ name: 'NotFoundError' })`), no el número.
+- Cambios de comportamiento respecto de `ErrorHttp`/`error.status`: `POST /api/usuarios` con nombre de usuario en uso responde **409** (antes 400); `POST /api/eventos` con categoría u organizador inexistente responde **404** (antes 400); un error no controlado responde **500** (antes 400 con el mensaje interno).
+
 ### Eventos (Evento)
 
 - `GET /api/eventos` — público. Lista/busca eventos (query: `q`, `categoriaId`, `sortBy` = `precio` | `fecha` | `puntaje`, `order`). Cada evento incluye `puntajeOrganizador`: promedio de las reseñas de todos los eventos de su organizador (`null` si no tiene). `sortBy=puntaje` ordena por ese valor (descendente por defecto; los organizadores sin reseñas quedan al final).

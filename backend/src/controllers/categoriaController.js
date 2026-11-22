@@ -1,5 +1,10 @@
 import { crearCategoriaSchema } from '../dto/categoria.js';
 import Categoria from '../models/categoria.js';
+import {
+	BadRequestError,
+	ForbiddenError,
+	UnauthorizedError
+} from '../errors/index.js';
 
 /**
  * Controlador para la creación de categorías.
@@ -9,9 +14,9 @@ import Categoria from '../models/categoria.js';
  * @param {import('express').Response} res - Respuesta HTTP
  * @param {import('express').NextFunction} next - Función de manejo de errores
  * @returns {Promise<void>}
- * @throws {Error} 401 si no hay token/usuario no autenticado
- * @throws {Error} 403 si el usuario no es organizador
- * @throws {Error} 400 si la validación Zod falla
+ * @throws {UnauthorizedError} Si no hay token/usuario no autenticado (vía next)
+ * @throws {ForbiddenError} Si el usuario no es organizador (vía next)
+ * @throws {BadRequestError} Si la validación Zod falla (vía next)
  * @property {import('../models/categoria.js').default} categoriaCreada - La categoría creada
  */
 export default class CategoriaController {
@@ -33,18 +38,18 @@ export default class CategoriaController {
 		try {
 			// 1. Validar autenticación mediante JWT
 			if (!req.user) {
-				const error = new Error('No autorizado - token JWT inválido o ausente');
-				error.status = 401;
-				return next(error);
+				return next(
+					new UnauthorizedError('No autorizado - token JWT inválido o ausente')
+				);
 			}
 
 			// 2. Validar rol: solo ORGANIZADOR puede crear categorías
 			if (req.user.rol !== 'ORGANIZADOR') {
-				const error = new Error(
-					'Permisos denegados: solo organizadores pueden crear categorías'
+				return next(
+					new ForbiddenError(
+						'Permisos denegados: solo organizadores pueden crear categorías'
+					)
 				);
-				error.status = 403;
-				return next(error);
 			}
 
 			// 3. Validar estructura con Zod
@@ -52,9 +57,7 @@ export default class CategoriaController {
 			if (!resultado.success) {
 				const message =
 					resultado.error.issues[0]?.message || 'Error de validación';
-				const error = new Error(message);
-				error.status = 400;
-				return next(error);
+				return next(new BadRequestError(message));
 			}
 
 			// 4. Delegar creación al service (validará Zod y BD)

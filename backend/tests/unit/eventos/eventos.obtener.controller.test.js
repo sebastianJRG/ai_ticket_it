@@ -7,6 +7,7 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import EventoController from '../../../src/controllers/eventoController.js';
 import { construirUsuario } from '../../helpers/eventosFixtures.js';
+import { NotFoundError } from '../../../src/errors/index.js';
 
 describe('EventoController.obtener', () => {
 	let servicio;
@@ -65,7 +66,7 @@ describe('EventoController.obtener', () => {
 	});
 
 	it('delega el error en next y no responde si el servicio rechaza', async () => {
-		const error = Object.assign(new Error('no existe'), { status: 404 });
+		const error = new NotFoundError('no existe');
 		servicio.obtenerPorId.mockRejectedValue(error);
 
 		await controlador.obtener(req, res, next);
