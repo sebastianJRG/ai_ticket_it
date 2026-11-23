@@ -114,13 +114,13 @@ Texto para leer en el video "Ciclo de vida de una compra". Cada bloque tiene el 
 
 ## 5. Conclusión: desarrollo con IA
 
-### T5 — Cierre (~1:20)
+### T5 — Cierre (~1:30)
 > Para terminar, cómo usé la inteligencia artificial. Trabajé con desarrollo guiado por especificaciones, con spec-kit: cada funcionalidad tiene especificación, plan y tareas, y la implementó un agente siguiendo una constitución y un archivo de reglas del proyecto: capas, TDD, documentación obligatoria y español.
 >
 > La ventaja más clara fue la velocidad en el código repetitivo, como DTOs, tests y documentación, y la consistencia entre funcionalidades. También ayudó a detectar casos borde, como la concurrencia del cupo o el doble toque.
 >
-> La desventaja: hay que revisar todo lo que genera. Por ejemplo, la sesión no se guardaba en web, y al centralizar los errores cambiaron códigos de respuesta. Además, tiende a agregar más de lo pedido y, sin un contexto claro, no respeta la arquitectura.
+> En cuanto a las desventajas, la primera es que hay que revisar con detenimiento todo lo que genera. Por ejemplo, la sesión no se guardaba en web, y al centralizar los errores cambiaron códigos de respuesta.
 >
-> Lo que aprendí es que la calidad del resultado depende de la calidad de la especificación, y que los tests escritos primero funcionan como contrato para validar lo que genera. [completar: tu valoración personal en una o dos frases, por ejemplo qué partes entendés a fondo y cuáles tuviste que estudiar después.]
+> La segunda es que al principio retrasó mucho el proyecto. Antes de escribir código tuve que armar todo el contexto: la constitución, las reglas del proyecto y las skills. Y aun así, al comienzo el agente a veces no respetaba la constitución porque directamente no la leía, así que tuve que dejar explícito en las reglas que la leyera antes de cada tarea. Una vez armado ese harness, todo fluyó bien, pero hubo que pasar por esa etapa.
 >
-> En resumen, la IA multiplicó mi productividad, pero el criterio de diseño y la revisión siguen siendo responsabilidad del desarrollador. Gracias.
+> Como conclusión, diría que la IA retrasa bastante el inicio de un proyecto, pero lo acelera mucho una vez que tiene una buena base. Esa inversión inicial en contexto es lo que la vuelve confiable, y el criterio de diseño y la revisión siguen siendo responsabilidad del desarrollador. Gracias.
